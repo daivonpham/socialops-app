@@ -1,0 +1,43 @@
+/*
+ * CSS layer order — declared BEFORE anything loads so it wins for the session:
+ *   theme < base < antd < components < utilities
+ * - antd sits ABOVE Tailwind's preflight (`base`), so the kit's own reset/styles
+ *   are not wiped by preflight.
+ * - Tailwind `utilities` sit ABOVE antd, so a utility class applied to an antd
+ *   component (e.g. `my-2` on <Divider/>) always wins.
+ * antd styles land in the `antd` layer via <StyleProvider layer> (ThemeProvider).
+ */
+@layer theme, base, antd, components, utilities;
+
+@import 'tailwindcss';
+
+/* Tailwind 4 reads the JS config (which imports shared/styles/tokens.ts). */
+@config '../../../tailwind.config.ts';
+
+@layer base {
+  html {
+    @apply bg-bg-page font-sans text-body-md text-text-primary antialiased;
+  }
+
+  /* design.md §22: motion communicates state, so it must never be forced on
+     users who asked the OS to reduce it. !important also reaches antd's own
+     CSS-in-JS animations, which live in a lower layer. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 1ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* design.md §23: one focus treatment for the whole product — a 2px brand-600
+   ring at 2px offset. Declared once so no component reinvents it.
+   `outline-solid` is explicit because callers pair this with `outline-none`,
+   which would otherwise leave `--tw-outline-style: none` in the cascade. */
+@utility focus-ring {
+  @apply outline-solid outline-2 outline-offset-2 outline-border-focus;
+}
