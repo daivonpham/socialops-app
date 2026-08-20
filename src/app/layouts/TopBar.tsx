@@ -13,11 +13,28 @@ const topNav = getNavEntries('top')
  * controls + 12px vertical padding (design.md defines no explicit top bar height);
  * horizontal padding follows the page gutters of §6.1.
  */
-export function TopBar({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
+export function TopBar({
+  onOpenSidebar,
+  desktopSidebarExpanded = true,
+  onPreviewOpen,
+  onPreviewClose,
+}: {
+  onOpenSidebar?: () => void
+  desktopSidebarExpanded?: boolean
+  onPreviewOpen?: () => void
+  onPreviewClose?: () => void
+}) {
   return (
     <header className="flex shrink-0 items-stretch border-b border-border-subtle bg-bg-surface">
       {/* Same width + right border as the sidebar so the rail reads as one column. */}
-      <div className="flex min-w-0 items-center gap-2 px-3 py-3 md:w-sidebar md:shrink-0 md:border-r md:border-border-subtle">
+      <div
+        className={
+          'flex min-w-0 items-center gap-2 px-3 py-3 md:shrink-0 md:border-r md:border-border-subtle md:transition-[width] md:duration-drawer md:ease-standard ' +
+          (desktopSidebarExpanded ? 'md:w-sidebar' : 'md:w-sidebar-collapsed md:justify-center')
+        }
+        onMouseEnter={onPreviewOpen}
+        onMouseLeave={onPreviewClose}
+      >
         {onOpenSidebar ? (
           <Button
             variant="ghost"
@@ -38,7 +55,7 @@ export function TopBar({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
         >
           <Logo size="sm" />
         </Link>
-        <div className="hidden min-w-0 flex-1 md:block">
+        <div className={desktopSidebarExpanded ? 'hidden min-w-0 flex-1 md:block' : 'hidden'}>
           <WorkspaceSwitcher />
         </div>
       </div>

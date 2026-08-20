@@ -10,9 +10,15 @@ export const PLATFORM_LABEL: Record<Platform, string> = {
 }
 
 // Platform colors are contextual identifiers only (design.md §3.6) — icon-sized, never surfaces.
-const PLATFORM_ICON: Record<Platform, ReactNode> = {
-  facebook: <IconFacebook className="text-platform-facebook" />,
-  tiktok: <IconTikTok className="text-platform-tiktok" />,
+const PLATFORM_NAV: Record<Platform, { icon: ReactNode; activeIcon?: ReactNode }> = {
+  facebook: {
+    icon: <IconFacebook className="text-platform-facebook" />,
+    activeIcon: <IconFacebook className="text-text-inverse" />,
+  },
+  tiktok: {
+    icon: <IconTikTok className="text-text-primary" />,
+    activeIcon: <IconTikTok className="text-text-inverse" />,
+  },
 }
 
 /**
@@ -20,7 +26,13 @@ const PLATFORM_ICON: Record<Platform, ReactNode> = {
  * from this feature, not route/menu config. The layout passes `getHref` so the
  * feature never hard-codes app paths.
  */
-export function PlatformNavList({ getHref }: { getHref: (platform: Platform) => string }) {
+export function PlatformNavList({
+  getHref,
+  collapsed = false,
+}: {
+  getHref: (platform: Platform) => string
+  collapsed?: boolean
+}) {
   const { brandId } = useActiveBrand()
   const { data: counts, isPending, isError, isFetching, refetch } = useSocialAccountCounts(brandId)
 
@@ -52,12 +64,17 @@ export function PlatformNavList({ getHref }: { getHref: (platform: Platform) => 
         <NavItem
           key={platform}
           to={getHref(platform)}
-          icon={PLATFORM_ICON[platform]}
+          icon={PLATFORM_NAV[platform].icon}
+          activeIcon={PLATFORM_NAV[platform].activeIcon}
+          activeClassName="bg-neutral-800 text-text-inverse hover:bg-neutral-800"
+          collapsed={collapsed}
           label={PLATFORM_LABEL[platform]}
           badge={
-            <Tooltip title={`${counts[platform]} connected ${PLATFORM_LABEL[platform]} accounts`}>
-              <Badge count={counts[platform]} />
-            </Tooltip>
+            collapsed ? null : (
+              <Tooltip title={`${counts[platform]} connected ${PLATFORM_LABEL[platform]} accounts`}>
+                <Badge count={counts[platform]} />
+              </Tooltip>
+            )
           }
         />
       ))}

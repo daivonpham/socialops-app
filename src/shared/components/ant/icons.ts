@@ -7,11 +7,9 @@ export {
   BarChartOutlined as IconReports,
   DownOutlined as IconChevronDown,
   MenuOutlined as IconMenu,
-  FacebookFilled as IconFacebook,
   LogoutOutlined as IconSignOut,
   SettingOutlined as IconSettings,
   TeamOutlined as IconMembers,
-  TikTokOutlined as IconTikTok,
   UserOutlined as IconProfile,
   SearchOutlined as IconSearch,
   PlusOutlined as IconPlus,
@@ -19,3 +17,9 @@ export {
 } from '@ant-design/icons'
 
 export { PiCaretUpDownLight as IconCaretUpDown } from 'react-icons/pi'
+export { MdFacebook as IconFacebook } from 'react-icons/md'
+export { FaTiktok as IconTikTok } from 'react-icons/fa6'
+export {
+  RxPanelLeftMinimized as IconSidebarCollapse,
+  RxPanelRightMinimized as IconSidebarExpand,
+} from 'react-icons/rx'

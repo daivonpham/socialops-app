@@ -5,6 +5,12 @@ export type NavItemProps = {
   to: string
   label: string
   icon?: ReactNode
+  /** Shown instead of `icon` while the route is active. Falls back to `icon`. */
+  activeIcon?: ReactNode
+  /** Optional active-state override for special nav sections. */
+  activeClassName?: string
+  /** Icon-only collapsed state used by the desktop sidebar. */
+  collapsed?: boolean
   /** Trailing slot, e.g. a count <Badge/>. */
   badge?: ReactNode
   end?: boolean
@@ -16,25 +22,36 @@ export type NavItemProps = {
  * radius — is simpler as a styled NavLink than as a
  * restyled antd Menu.
  */
-export function NavItem({ to, label, icon, badge, end }: NavItemProps) {
+export function NavItem({ to, label, icon, activeIcon, activeClassName, collapsed = false, badge, end }: NavItemProps) {
   return (
     <NavLink
       to={to}
       end={end}
+      aria-label={collapsed ? label : undefined}
+      title={collapsed ? label : undefined}
       className={({ isActive }) =>
-        'flex h-10 items-center gap-2 rounded-lg px-3 text-label-md outline-none transition-colors duration-base ease-standard focus-visible:focus-ring ' +
+        'flex h-10 items-center rounded-lg text-label-md outline-none transition-colors duration-base ease-standard focus-visible:focus-ring ' +
+        (collapsed ? ' justify-center px-2' : ' gap-2 px-3') +
+        ' ' +
         (isActive
-          ? 'bg-bg-surface-muted text-text-primary'
+          ? (activeClassName ?? 'bg-bg-surface-muted text-text-primary')
           : 'text-text-secondary hover:bg-bg-surface-muted hover:text-text-primary')
       }
     >
-      {icon ? (
-        <span aria-hidden className="flex text-icon-md">
-          {icon}
-        </span>
-      ) : null}
-      <span className="min-w-0 flex-1 truncate">{label}</span>
-      {badge}
+      {({ isActive }) => {
+        const shownIcon = isActive && activeIcon ? activeIcon : icon
+        return (
+          <>
+            {shownIcon ? (
+              <span aria-hidden className="flex text-icon-md">
+                {shownIcon}
+              </span>
+            ) : null}
+            {collapsed ? null : <span className="min-w-0 flex-1 truncate">{label}</span>}
+            {collapsed ? null : badge}
+          </>
+        )
+      }}
     </NavLink>
   )
 }

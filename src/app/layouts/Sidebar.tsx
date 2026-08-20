@@ -18,9 +18,15 @@ const mainNav = getNavEntries('main')
 export function Sidebar({
   inDrawer = false,
   showScopeControls = false,
+  collapsed = false,
+  onPreviewOpen,
+  onPreviewClose,
 }: {
   inDrawer?: boolean
   showScopeControls?: boolean
+  collapsed?: boolean
+  onPreviewOpen?: () => void
+  onPreviewClose?: () => void
 }) {
   const { granted, isLoading } = usePermissions()
   const canSee = (entry: NavEntry) => !entry.requires || allOf(granted, entry.requires)
@@ -28,9 +34,15 @@ export function Sidebar({
   return (
     <aside
       className={
-        'flex shrink-0 flex-col gap-1 overflow-y-auto bg-bg-surface p-3 ' +
-        (inDrawer ? 'w-full' : 'w-sidebar border-r border-border-subtle')
+        'flex min-h-0 flex-1 shrink-0 flex-col gap-1 overflow-x-hidden overflow-y-auto bg-bg-surface transition-[width,padding] duration-drawer ease-standard ' +
+        (inDrawer
+          ? 'w-full p-3'
+          : collapsed
+            ? 'w-sidebar-collapsed border-r border-border-subtle p-2'
+            : 'w-sidebar border-r border-border-subtle p-3')
       }
+      onMouseEnter={onPreviewOpen}
+      onMouseLeave={onPreviewClose}
     >
       {showScopeControls ? (
         <>
@@ -42,27 +54,30 @@ export function Sidebar({
         </>
       ) : null}
 
-      <SectionLabel className="px-3 pb-1 pt-2">Summary</SectionLabel>
-      {summaryNav.filter(canSee).map(renderEntry)}
+      {collapsed ? null : <SectionLabel className="px-3 pb-1 pt-2">Summary</SectionLabel>}
+      {summaryNav.filter(canSee).map((entry) => renderEntry(entry, collapsed))}
 
-      <Divider className="my-2" />
+      <Divider className={collapsed ? 'my-1' : 'my-2'} />
 
-      <SectionLabel className="px-3 pb-1 pt-2">Platforms</SectionLabel>
-      <PlatformNavList getHref={(platform) => generatePath(ROUTES.PLATFORM, { platform })} />
+      {collapsed ? null : <SectionLabel className="px-3 pb-1 pt-2">Platforms</SectionLabel>}
+      <PlatformNavList
+        collapsed={collapsed}
+        getHref={(platform) => generatePath(ROUTES.PLATFORM, { platform })}
+      />
 
-      <Divider className="my-2" />
+      <Divider className={collapsed ? 'my-1' : 'my-2'} />
 
       {isLoading ? (
         <div className="px-3 py-2">
           <Spin size="sm" />
         </div>
       ) : (
-        mainNav.filter(canSee).map(renderEntry)
+        mainNav.filter(canSee).map((entry) => renderEntry(entry, collapsed))
       )}
     </aside>
   )
 }
 
-function renderEntry(entry: NavEntry) {
-  return <NavItem key={entry.path} to={entry.path} icon={entry.icon} label={entry.label} />
+function renderEntry(entry: NavEntry, collapsed: boolean) {
+  return <NavItem key={entry.path} to={entry.path} icon={entry.icon} label={entry.label} collapsed={collapsed} />
 }
