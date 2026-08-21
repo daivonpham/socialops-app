@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useWorkspaces } from '@/features/workspaces'
 import { useActiveBrand, useActiveWorkspace } from '@/shared/scope'
 import { Avatar, Button, SectionLabel, Spin } from '@/shared/ui'
@@ -10,6 +11,7 @@ import { useBrands } from '../api'
  * brand, so this page is where one gets picked (workspace first, then brand).
  */
 export default function BrandPickerPage() {
+  const { t } = useTranslation('brands')
   const navigate = useNavigate()
   const location = useLocation()
   const { workspaceId: activeWorkspaceId } = useActiveWorkspace()
@@ -33,13 +35,13 @@ export default function BrandPickerPage() {
     // Large onboarding panel: 16px radius and 24px padding (design.md §7, §6.1).
     <main className="flex min-h-screen items-center justify-center bg-bg-page p-4 md:p-6">
       <section className="w-full max-w-narrow rounded-xl border border-border bg-bg-surface p-6 shadow-xs">
-        <h1 className="text-heading-2 text-text-primary">Choose a brand</h1>
+        <h1 className="text-heading-2 text-text-primary">{t('picker.title')}</h1>
         <p className="mt-2 text-body-md text-text-secondary">
-          Accounts, content and permissions in SocialOps are scoped to one brand at a time.
+          {t('picker.description')}
         </p>
 
         <SectionLabel as="h2" className="mt-8 block">
-          Workspace
+          {t('picker.workspaceSection')}
         </SectionLabel>
         {isLoadingWorkspaces ? (
           <div className="mt-3 flex justify-center py-4">
@@ -62,10 +64,10 @@ export default function BrandPickerPage() {
         )}
 
         <SectionLabel as="h2" className="mt-6 block">
-          Brand
+          {t('picker.brandSection')}
         </SectionLabel>
         {pickedWorkspaceId === null ? (
-          <p className="mt-3 text-body-sm text-text-secondary">Pick a workspace first.</p>
+          <p className="mt-3 text-body-sm text-text-secondary">{t('picker.pickWorkspaceFirst')}</p>
         ) : isLoadingBrands ? (
           <div className="mt-3 flex justify-center py-4">
             <Spin />
@@ -84,7 +86,7 @@ export default function BrandPickerPage() {
         ) : (
           // design.md §34 — the empty branch is part of the state matrix, not an afterthought.
           <p className="mt-3 text-body-sm text-text-secondary">
-            This workspace has no brands yet. Ask a workspace admin to create one.
+            {t('picker.noBrands')}
           </p>
         )}
 
@@ -94,7 +96,7 @@ export default function BrandPickerPage() {
           onClick={openBrand}
           className="mt-8 w-full"
         >
-          Open brand
+          {t('picker.openBrand')}
         </Button>
       </section>
     </main>
@@ -118,7 +120,7 @@ function SelectableCard({
       // Compact interactive card: 8px radius, 16px padding, border-strong on
       // hover, brand-600 border + selection ring when picked (design.md §13.2).
       className={
-        'flex items-center gap-3 rounded-md border p-4 text-left outline-none transition-colors duration-base ease-standard focus-visible:focus-ring ' +
+        'flex items-center gap-3 rounded-md border p-4 text-start outline-none transition-colors duration-base ease-standard focus-visible:focus-ring ' +
         (selected
           ? 'border-border-focus bg-action-subtle ring-2 ring-brand-100'
           : 'border-border bg-bg-surface hover:border-border-strong')

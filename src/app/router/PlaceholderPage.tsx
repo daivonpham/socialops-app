@@ -1,9 +1,11 @@
 import { useMatches, useParams } from 'react-router-dom'
-import { PLATFORM_LABEL, type Platform } from '@/features/social-accounts'
+import { useTranslation } from 'react-i18next'
+import { PLATFORM_LABEL_KEY, type Platform } from '@/features/social-accounts'
 import type { AppRouteHandle } from './routes'
 
 /** Placeholder body for every shell route — real pages ship in later tasks. */
 export default function PlaceholderPage() {
+  const { t } = useTranslation(['app', 'socialAccounts'])
   const matches = useMatches()
   const { platform } = useParams()
 
@@ -13,14 +15,16 @@ export default function PlaceholderPage() {
     .find((value) => value !== undefined)
 
   const title =
-    nav?.label ??
-    (platform ? (PLATFORM_LABEL[platform as Platform] ?? platform) : 'Coming soon')
+    (nav?.labelKey ? t(nav.labelKey, { ns: 'app' }) : undefined) ??
+    (platform
+      ? t(PLATFORM_LABEL_KEY[platform as Platform], { ns: 'socialAccounts', defaultValue: platform })
+      : t('placeholder.comingSoon', { ns: 'app' }))
 
   return (
     <section>
       <h1 className="text-heading-1 text-text-primary">{title}</h1>
       <p className="mt-2 max-w-narrow text-body-md text-text-secondary">
-        This is a placeholder screen — the {title} feature ships in a later task.
+        {t('placeholder.description', { ns: 'app', title })}
       </p>
     </section>
   )

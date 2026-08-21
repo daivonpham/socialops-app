@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { createBrowserRouter, Navigate, type RouteObject } from 'react-router-dom'
+import type { AppNavigationKey } from '@/app/i18n/en-US'
 import { PERMISSIONS } from '@/shared/permissions'
 import { IconAllPlatforms, IconMembers, IconReports, IconSettings, Spin } from '@/shared/ui'
 import { ROUTES } from './paths'
@@ -12,7 +13,7 @@ export type NavSection = 'top' | 'summary' | 'main'
  * reads the same `requires`. No separate menu constants file exists.
  */
 export type AppRouteHandle = {
-  nav?: { label: string; section: NavSection; order: number; icon?: ReactNode }
+  nav?: { labelKey: AppNavigationKey; section: NavSection; order: number; icon?: ReactNode }
   /** Access needed to enter the route — UX only, the server enforces for real. */
   requires?: readonly string[]
 }
@@ -31,7 +32,12 @@ const layoutChildren: RouteObject[] = [
     path: ROUTES.ALL_PLATFORMS,
     lazy: placeholderPage,
     handle: handle({
-      nav: { label: 'All Platforms', section: 'summary', order: 10, icon: <IconAllPlatforms /> },
+      nav: {
+        labelKey: 'navigation.allPlatforms',
+        section: 'summary',
+        order: 10,
+        icon: <IconAllPlatforms />,
+      },
     }),
   },
   // Platform pages are reached from the data-driven <PlatformNavList/>, not from route nav metadata.
@@ -39,18 +45,18 @@ const layoutChildren: RouteObject[] = [
   {
     path: ROUTES.OVERVIEW,
     lazy: placeholderPage,
-    handle: handle({ nav: { label: 'Overview', section: 'top', order: 10 } }),
+    handle: handle({ nav: { labelKey: 'navigation.overview', section: 'top', order: 10 } }),
   },
   {
     path: ROUTES.PLANNING,
     lazy: placeholderPage,
-    handle: handle({ nav: { label: 'Planning', section: 'top', order: 20 } }),
+    handle: handle({ nav: { labelKey: 'navigation.planning', section: 'top', order: 20 } }),
   },
   {
     path: ROUTES.REPORTS,
     lazy: placeholderPage,
     handle: handle({
-      nav: { label: 'Reports', section: 'main', order: 10, icon: <IconReports /> },
+      nav: { labelKey: 'navigation.reports', section: 'main', order: 10, icon: <IconReports /> },
       requires: [PERMISSIONS.REPORTS_VIEW.key],
     }),
   },
@@ -58,7 +64,7 @@ const layoutChildren: RouteObject[] = [
     path: ROUTES.MEMBERS,
     lazy: placeholderPage,
     handle: handle({
-      nav: { label: 'Members', section: 'main', order: 20, icon: <IconMembers /> },
+      nav: { labelKey: 'navigation.members', section: 'main', order: 20, icon: <IconMembers /> },
       requires: [PERMISSIONS.MEMBERS_VIEW.key],
     }),
   },
@@ -66,7 +72,7 @@ const layoutChildren: RouteObject[] = [
     path: ROUTES.SETTINGS,
     lazy: placeholderPage,
     handle: handle({
-      nav: { label: 'Settings', section: 'main', order: 30, icon: <IconSettings /> },
+      nav: { labelKey: 'navigation.settings', section: 'main', order: 30, icon: <IconSettings /> },
       requires: [PERMISSIONS.SETTINGS_VIEW.key],
     }),
   },
@@ -75,7 +81,7 @@ const layoutChildren: RouteObject[] = [
 
 export type NavEntry = {
   path: string
-  label: string
+  labelKey: AppNavigationKey
   icon?: ReactNode
   order: number
   requires?: readonly string[]
@@ -87,8 +93,8 @@ export function getNavEntries(section: NavSection): NavEntry[] {
     .flatMap((route) => {
       const routeHandle = route.handle as AppRouteHandle | undefined
       if (!route.path || !routeHandle?.nav || routeHandle.nav.section !== section) return []
-      const { label, icon, order } = routeHandle.nav
-      return [{ path: route.path, label, icon, order, requires: routeHandle.requires }]
+      const { labelKey, icon, order } = routeHandle.nav
+      return [{ path: route.path, labelKey, icon, order, requires: routeHandle.requires }]
     })
     .sort((a, b) => a.order - b.order)
 }

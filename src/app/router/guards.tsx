@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link, Navigate, useLocation, useMatches } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { allOf, usePermissions } from '@/shared/permissions'
 import { useActiveBrand } from '@/shared/scope'
 import { Spin } from '@/shared/ui'
@@ -23,6 +24,7 @@ export function RequireBrand({ children }: { children: ReactNode }) {
 
 /** Reads the SAME `handle.requires` the sidebar uses — single access source per route. */
 export function RouteAccessGuard({ children }: { children: ReactNode }) {
+  const { t } = useTranslation('app')
   const matches = useMatches()
   const { granted, isLoading } = usePermissions()
 
@@ -45,16 +47,15 @@ export function RouteAccessGuard({ children }: { children: ReactNode }) {
   if (!allOf(granted, requires)) {
     return (
       <section className="max-w-narrow">
-        <h1 className="text-heading-2 text-text-primary">You don't have access to this page</h1>
+        <h1 className="text-heading-2 text-text-primary">{t('accessDenied.title')}</h1>
         <p className="mt-2 text-body-md text-text-secondary">
-          Your role in the current brand doesn't include this area. Switch to another brand or
-          ask a workspace admin.
+          {t('accessDenied.description')}
         </p>
         <Link
           to={ROUTES.ALL_PLATFORMS}
           className="mt-6 inline-block rounded-sm text-label-md text-link outline-none hover:text-link-hover focus-visible:focus-ring"
         >
-          Go to All Platforms
+          {t('accessDenied.goToAllPlatforms')}
         </Link>
       </section>
     )

@@ -5,9 +5,9 @@
  * new keys — they only combine these into access policies.
  */
 export const PERMISSIONS = {
-  REPORTS_VIEW: { key: 'reports.view', label: 'View reports' },
-  MEMBERS_VIEW: { key: 'members.view', label: 'View members' },
-  SETTINGS_VIEW: { key: 'settings.view', label: 'View settings' },
+  REPORTS_VIEW: { key: 'reports.view', labelKey: 'permissions.viewReports' },
+  MEMBERS_VIEW: { key: 'members.view', labelKey: 'permissions.viewMembers' },
+  SETTINGS_VIEW: { key: 'settings.view', labelKey: 'permissions.viewSettings' },
 } as const
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]['key']

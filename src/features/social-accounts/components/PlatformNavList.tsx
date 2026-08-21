@@ -1,13 +1,15 @@
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
+import { formatNumber, resolveLocale } from '@/shared/i18n'
 import { useActiveBrand } from '@/shared/scope'
 import { Badge, Button, IconFacebook, IconTikTok, NavItem, Spin, Tooltip } from '@/shared/ui'
 import { useSocialAccountCounts } from '../api'
 import { PLATFORMS, type Platform } from '../api/types'
 
-export const PLATFORM_LABEL: Record<Platform, string> = {
-  facebook: 'Facebook',
-  tiktok: 'TikTok',
-}
+export const PLATFORM_LABEL_KEY = {
+  facebook: 'platforms.facebook',
+  tiktok: 'platforms.tiktok',
+} as const satisfies Record<Platform, string>
 
 // Platform colors are contextual identifiers only (design.md §3.6) — icon-sized, never surfaces.
 const PLATFORM_NAV: Record<Platform, { icon: ReactNode; activeIcon?: ReactNode }> = {
@@ -33,6 +35,7 @@ export function PlatformNavList({
   getHref: (platform: Platform) => string
   collapsed?: boolean
 }) {
+  const { t, i18n } = useTranslation('socialAccounts')
   const { brandId } = useActiveBrand()
   const { data: counts, isPending, isError, isFetching, refetch } = useSocialAccountCounts(brandId)
 
@@ -49,10 +52,10 @@ export function PlatformNavList({
     return (
       <div className="px-3 py-2">
         <p className="text-body-sm text-text-secondary">
-          Couldn't load connected platforms for this brand.
+          {t('navigation.loadError')}
         </p>
         <Button variant="link" size="sm" loading={isFetching} onClick={() => void refetch()}>
-          Retry
+          {t('navigation.retry')}
         </Button>
       </div>
     )
@@ -60,24 +63,38 @@ export function PlatformNavList({
 
   return (
     <>
-      {PLATFORMS.map((platform) => (
-        <NavItem
-          key={platform}
-          to={getHref(platform)}
-          icon={PLATFORM_NAV[platform].icon}
-          activeIcon={PLATFORM_NAV[platform].activeIcon}
-          activeClassName="bg-neutral-800 text-text-inverse hover:bg-neutral-800"
-          collapsed={collapsed}
-          label={PLATFORM_LABEL[platform]}
-          badge={
-            collapsed ? null : (
-              <Tooltip title={`${counts[platform]} connected ${PLATFORM_LABEL[platform]} accounts`}>
-                <Badge count={counts[platform]} />
-              </Tooltip>
-            )
-          }
-        />
-      ))}
+      {PLATFORMS.map((platform) => {
+        const platformLabel = t(PLATFORM_LABEL_KEY[platform])
+        const count = counts[platform]
+        const formattedCount = formatNumber(
+          count,
+          resolveLocale(i18n.resolvedLanguage ?? i18n.language),
+        )
+        return (
+          <NavItem
+            key={platform}
+            to={getHref(platform)}
+            icon={PLATFORM_NAV[platform].icon}
+            activeIcon={PLATFORM_NAV[platform].activeIcon}
+            activeClassName="bg-neutral-800 text-text-inverse hover:bg-neutral-800"
+            collapsed={collapsed}
+            label={platformLabel}
+            badge={
+              collapsed ? null : (
+                <Tooltip
+                  title={t('navigation.connectedAccounts', {
+                    count,
+                    formattedCount,
+                    platform: platformLabel,
+                  })}
+                >
+                  <Badge count={formattedCount} />
+                </Tooltip>
+              )
+            }
+          />
+        )
+      })}
     </>
   )
 }

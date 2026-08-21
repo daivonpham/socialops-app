@@ -16,8 +16,10 @@
     "antd": "^5.29.3",
     "axios": "^1.19.0",
     "dayjs": "^1.11.21",
+    "i18next": "^26.4.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-i18next": "^17.0.12",
     "react-icons": "^5.7.0",
     "react-router-dom": "^7.18.2"
   },

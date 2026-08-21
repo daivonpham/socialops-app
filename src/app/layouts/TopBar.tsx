@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ROUTES } from '@/app/router/paths'
 import { getNavEntries } from '@/app/router/routes'
 import { BrandSwitcher } from '@/features/brands'
 import { WorkspaceSwitcher } from '@/features/workspaces'
+import { normalizeLocale, resolveLocale, SUPPORTED_LOCALES, type AppLocale } from '@/shared/i18n'
 import { Avatar, Button, Dropdown, IconMenu, IconProfile, IconSignOut, Logo, NavItem } from '@/shared/ui'
 
 const topNav = getNavEntries('top')
@@ -24,12 +26,13 @@ export function TopBar({
   onPreviewOpen?: () => void
   onPreviewClose?: () => void
 }) {
+  const { t } = useTranslation('app')
   return (
     <header className="flex shrink-0 items-stretch border-b border-border-subtle bg-bg-surface">
       {/* Same width + right border as the sidebar so the rail reads as one column. */}
       <div
         className={
-          'flex min-w-0 items-center gap-2 px-3 py-3 md:shrink-0 md:border-r md:border-border-subtle md:transition-[width] md:duration-drawer md:ease-standard ' +
+          'flex min-w-0 items-center gap-2 px-3 py-3 md:shrink-0 md:border-e md:border-border-subtle md:transition-[width] md:duration-drawer md:ease-standard ' +
           (desktopSidebarExpanded ? 'md:w-sidebar' : 'md:w-sidebar-collapsed md:justify-center')
         }
         onMouseEnter={onPreviewOpen}
@@ -39,7 +42,7 @@ export function TopBar({
           <Button
             variant="ghost"
             size="sm"
-            aria-label="Open navigation"
+            aria-label={t('topbar.openNavigation')}
             className="md:hidden"
             onClick={onOpenSidebar}
           >
@@ -50,7 +53,7 @@ export function TopBar({
         ) : null}
         <Link
           to={ROUTES.ROOT}
-          aria-label="SocialOps home"
+          aria-label={t('topbar.home')}
           className="shrink-0 rounded-sm outline-none focus-visible:focus-ring"
         >
           <Logo size="sm" />
@@ -65,9 +68,9 @@ export function TopBar({
           <BrandSwitcher />
         </div>
         <div className="flex-1" />
-        <nav aria-label="Primary" className="hidden items-center gap-1 lg:flex">
+        <nav aria-label={t('topbar.primaryNavigation')} className="hidden items-center gap-1 lg:flex">
           {topNav.map((entry) => (
-            <NavItem key={entry.path} to={entry.path} label={entry.label} />
+            <NavItem key={entry.path} to={entry.path} label={t(entry.labelKey)} />
           ))}
         </nav>
         <AccountMenu />
@@ -78,13 +81,27 @@ export function TopBar({
 
 /** Static chrome until an auth feature exists — no user endpoint is mocked on purpose. */
 function AccountMenu() {
+  const { t, i18n } = useTranslation('app')
+  const { t: tCommon } = useTranslation('common')
+  const locale = resolveLocale(i18n.resolvedLanguage ?? i18n.language)
+
   return (
     <Dropdown
       placement="bottomRight"
+      selectedKey={locale}
+      onSelect={(key) => {
+        const nextLocale = normalizeLocale(key)
+        if (nextLocale && nextLocale !== locale) void i18n.changeLanguage(nextLocale)
+      }}
       items={[
-        { key: 'profile', label: 'Profile', icon: <IconProfile /> },
+        { key: 'profile', label: t('account.profile'), icon: <IconProfile /> },
         { type: 'divider' },
-        { key: 'sign-out', label: 'Sign out', icon: <IconSignOut />, danger: true },
+        ...SUPPORTED_LOCALES.map((option) => ({
+          key: option,
+          label: t('account.languageOption', { language: localeDisplayName(option, tCommon) }),
+        })),
+        { type: 'divider' },
+        { key: 'sign-out', label: t('account.signOut'), icon: <IconSignOut />, danger: true },
       ]}
     >
       {/* The avatar renders initials, so this is not an icon-only button and
@@ -92,11 +109,15 @@ function AccountMenu() {
           very menu it opens (tooltip 700 > dropdown 500, design.md §10). */}
       <button
         type="button"
-        aria-label="Account menu"
+        aria-label={t('account.menu')}
         className="rounded-full outline-none focus-visible:focus-ring"
       >
         <Avatar name="Alex Nguyen" size="sm" />
       </button>
     </Dropdown>
   )
+}
+
+function localeDisplayName(locale: AppLocale, t: ReturnType<typeof useTranslation<'common'>>['t']) {
+  return locale === 'en-US' ? t('locales.enUS') : t('locales.viVN')
 }

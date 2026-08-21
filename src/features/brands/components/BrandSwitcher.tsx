@@ -3,6 +3,7 @@ import { Avatar, Button, Dropdown, IconCaretUpDown, Spin } from '@/shared/ui'
 import { useBrands } from '../api'
 
 export function BrandSwitcher() {
+  const { t } = useTranslation('brands')
   const { workspaceId } = useActiveWorkspace()
   const { brandId, selectBrand } = useActiveBrand()
   const { data: brands, isPending } = useBrands(workspaceId)
@@ -23,11 +24,11 @@ export function BrandSwitcher() {
         if (workspaceId !== null && key !== brandId) selectBrand(workspaceId, key)
       }}
     >
-      <Button variant="ghost" size="sm" aria-label="Switch brand" className="min-w-0 px-1.5">
+      <Button variant="ghost" size="sm" aria-label={t('switcher.ariaLabel')} className="min-w-0 px-1.5">
         <span className="flex min-w-0 items-center gap-2">
           {current ? <Avatar name={current.name} size="xs" /> : null}
           <span className="truncate text-body-sm text-text-secondary">
-            {current?.name ?? 'Select brand'}
+            {current?.name ?? t('switcher.selectPlaceholder')}
           </span>
           <IconCaretUpDown aria-hidden className="text-icon-sm text-text-tertiary" />
         </span>
@@ -35,3 +36,4 @@ export function BrandSwitcher() {
     </Dropdown>
   )
 }
+import { useTranslation } from 'react-i18next'

@@ -54,6 +54,7 @@ export function Dropdown({
   onSelect,
   placement = 'bottom',
   searchPlaceholder,
+  emptyText,
   footer,
   children,
 }: DropdownProps) {
@@ -64,7 +65,7 @@ export function Dropdown({
   const visibleItems = items.filter((item) => matchesQuery(item, query))
   const menuItems: MenuProps['items'] =
     visibleItems.length === 0
-      ? [{ key: '__empty', disabled: true, label: <span className="text-body-sm text-text-tertiary">No matches.</span> }]
+      ? [{ key: '__empty', disabled: true, label: <span className="text-body-sm text-text-tertiary">{emptyText}</span> }]
       : toMenuItems(visibleItems, selectedKey)
 
   const close = () => {
@@ -140,7 +141,7 @@ export function Dropdown({
                       footer.onClick?.()
                       close()
                     }}
-                    className="flex h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-body-sm text-text-secondary outline-none transition-colors duration-base ease-standard hover:bg-bg-surface-muted hover:text-text-primary focus-visible:focus-ring"
+                    className="flex h-10 w-full items-center gap-2 rounded-lg px-3 text-start text-body-sm text-text-secondary outline-none transition-colors duration-base ease-standard hover:bg-bg-surface-muted hover:text-text-primary focus-visible:focus-ring"
                   >
                     {footer.icon ? (
                       <span aria-hidden className="flex text-icon-sm">

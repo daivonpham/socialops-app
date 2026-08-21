@@ -26,6 +26,7 @@ RHF, Zod) own behavior; `shared/adapters/<kit>` supplies visuals.
 - `frontend-design-system` — tokens → primitives → composites → page patterns
 - `frontend-admin-security` — auth/session, RBAC boundaries, XSS, data exposure, upload
 - `frontend-admin-performance` — Query defaults, virtualization, re-render, bundle
+- `frontend-i18n` — localized copy, locale resources/formatting, Ant locale, RTL
 - `create-api-module` / `create-admin-feature` — scaffolding
 - `frontend-code-simplicity` — reuse-first
 - `migrate-admin-template` — template → this architecture
@@ -60,6 +61,7 @@ Server state:  TanStack Query; API quartet per feature
 Routes:        ONLY app/router
 Permissions:   catalog + engine in shared/permissions; feature only combines keys — UX only, server enforces
 Status:        one source for value/label/color/options
+I18n:          semantic message keys; resources owned by app/feature/shared layer
 Public API:    features/<name>/index.ts — no deep imports from outside
 ```
 

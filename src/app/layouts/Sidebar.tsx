@@ -1,4 +1,5 @@
 import { generatePath } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ROUTES } from '@/app/router/paths'
 import { BrandSwitcher } from '@/features/brands'
 import { getNavEntries, type NavEntry } from '@/app/router/routes'
@@ -28,6 +29,7 @@ export function Sidebar({
   onPreviewOpen?: () => void
   onPreviewClose?: () => void
 }) {
+  const { t } = useTranslation('app')
   const { granted, isLoading } = usePermissions()
   const canSee = (entry: NavEntry) => !entry.requires || allOf(granted, entry.requires)
 
@@ -38,8 +40,8 @@ export function Sidebar({
         (inDrawer
           ? 'w-full p-3'
           : collapsed
-            ? 'w-sidebar-collapsed border-r border-border-subtle p-2'
-            : 'w-sidebar border-r border-border-subtle p-3')
+            ? 'w-sidebar-collapsed border-e border-border-subtle p-2'
+            : 'w-sidebar border-e border-border-subtle p-3')
       }
       onMouseEnter={onPreviewOpen}
       onMouseLeave={onPreviewClose}
@@ -54,12 +56,16 @@ export function Sidebar({
         </>
       ) : null}
 
-      {collapsed ? null : <SectionLabel className="px-3 pb-1 pt-2">Summary</SectionLabel>}
-      {summaryNav.filter(canSee).map((entry) => renderEntry(entry, collapsed))}
+      {collapsed ? null : (
+        <SectionLabel className="px-3 pb-1 pt-2">{t('sections.summary')}</SectionLabel>
+      )}
+      {summaryNav.filter(canSee).map((entry) => renderEntry(entry, collapsed, t(entry.labelKey)))}
 
       <Divider className={collapsed ? 'my-1' : 'my-2'} />
 
-      {collapsed ? null : <SectionLabel className="px-3 pb-1 pt-2">Platforms</SectionLabel>}
+      {collapsed ? null : (
+        <SectionLabel className="px-3 pb-1 pt-2">{t('sections.platforms')}</SectionLabel>
+      )}
       <PlatformNavList
         collapsed={collapsed}
         getHref={(platform) => generatePath(ROUTES.PLATFORM, { platform })}
@@ -72,12 +78,12 @@ export function Sidebar({
           <Spin size="sm" />
         </div>
       ) : (
-        mainNav.filter(canSee).map((entry) => renderEntry(entry, collapsed))
+        mainNav.filter(canSee).map((entry) => renderEntry(entry, collapsed, t(entry.labelKey)))
       )}
     </aside>
   )
 }
 
-function renderEntry(entry: NavEntry, collapsed: boolean) {
-  return <NavItem key={entry.path} to={entry.path} icon={entry.icon} label={entry.label} collapsed={collapsed} />
+function renderEntry(entry: NavEntry, collapsed: boolean, label: string) {
+  return <NavItem key={entry.path} to={entry.path} icon={entry.icon} label={label} collapsed={collapsed} />
 }

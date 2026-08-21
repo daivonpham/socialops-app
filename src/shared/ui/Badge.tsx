@@ -8,7 +8,9 @@ import type { ComponentPropsWithRef } from 'react'
  * DOM props and ref are forwarded so the pill can be the child of a trigger
  * such as <Tooltip/>, which injects hover handlers into its child.
  */
-export type BadgeProps = Omit<ComponentPropsWithRef<'span'>, 'children'> & { count: number }
+export type BadgeProps = Omit<ComponentPropsWithRef<'span'>, 'children'> & {
+  count: number | string
+}
 
 export function Badge({ count, className, ...rest }: BadgeProps) {
   return (

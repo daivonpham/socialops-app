@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { RequireBrand, RouteAccessGuard } from '@/app/router/guards'
 import { motion } from '@/shared/styles/tokens'
 import {
@@ -13,6 +14,7 @@ import { TopBar } from './TopBar'
 
 /** Shell chrome: top bar + left sidebar + content. No data fetching here. */
 export default function AdminLayout() {
+  const { t } = useTranslation('app')
   const location = useLocation()
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true)
@@ -66,7 +68,7 @@ export default function AdminLayout() {
             {/* Outside the sidebar hover target so the control never fights preview open/close. */}
             <div
               className={
-                'shrink-0 border-r border-border-subtle bg-bg-surface transition-[width,padding] duration-drawer ease-standard ' +
+                'shrink-0 border-e border-border-subtle bg-bg-surface transition-[width,padding] duration-drawer ease-standard ' +
                 (desktopSidebarExpanded ? 'w-sidebar px-3 pb-3' : 'w-sidebar-collapsed px-2 pb-2')
               }
             >
@@ -75,7 +77,7 @@ export default function AdminLayout() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  aria-label={desktopSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+                  aria-label={desktopSidebarOpen ? t('sidebar.collapse') : t('sidebar.expand')}
                   onClick={() => {
                     if (hoverCloseTimer.current !== null) {
                       window.clearTimeout(hoverCloseTimer.current)

@@ -17,7 +17,8 @@ metadata:
 
 Scaffolds one business feature that matches `frontend-admin-architecture`.
 Uses `create-api-module` for the API layer, `frontend-shared-platform` for
-list/form engines, and `frontend-code-simplicity` for implementation style.
+list/form engines, `frontend-i18n` for user-visible copy, and
+`frontend-code-simplicity` for implementation style.
 
 ## When to Apply
 
@@ -37,7 +38,9 @@ list/form engines, and `frontend-code-simplicity` for implementation style.
    Import UI only from `@/shared/ui` (never `antd` / adapters).
 6. Register paths in `app/router/paths.ts` and routes in `app/router/routes.tsx`.
 7. Export public API from `features/<feature>/index.ts`.
-8. Run the checklist in `frontend-admin-architecture` references/checklists.md.
+8. If the feature has user-visible copy, add its locale resources and run the
+   `frontend-i18n` checklist.
+9. Run the checklist in `frontend-admin-architecture` references/checklists.md.
 
 ## Target Layout
 
@@ -65,6 +68,9 @@ features/<feature>/
 │   ├── <feature>-status.ts
 │   ├── <feature>.mapper.ts   # only if needed
 │   └── <feature>.types.ts
+├── i18n/                     # only when the feature owns visible copy
+│   ├── en-US.ts
+│   └── vi-VN.ts
 └── index.ts
 ```
 
