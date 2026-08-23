@@ -1,4 +1,5 @@
 # SocialOps Design System
+
 ## Untitled UI v8 Foundation + SocialOps Product Adaptation + Ant Design Implementation Guide
 
 > **Status:** Foundation specification / source of truth  
@@ -180,7 +181,7 @@ connection.permission-missing
 
 ```css
 --color-transparent: transparent;
---color-white: #FFFFFF;
+--color-white: #ffffff;
 --color-black: #000000;
 ```
 
@@ -188,9 +189,9 @@ connection.permission-missing
 
 **[FIGMA-EXTRACTED]**
 
-| Token | Value |
-|---|---|
-| Neutral/50 | `#FAFAFA` |
+| Token       | Value     |
+| ----------- | --------- |
+| Neutral/50  | `#FAFAFA` |
 | Neutral/100 | `#F5F5F5` |
 | Neutral/200 | `#E5E5E5` |
 | Neutral/300 | `#D4D4D4` |
@@ -206,9 +207,9 @@ connection.permission-missing
 
 **[OFFICIAL-v8 / FIGMA-EXTRACTED]**
 
-| Token | Value |
-|---|---|
-| Brand/50 | `#ECFDF5` |
+| Token     | Value     |
+| --------- | --------- |
+| Brand/50  | `#ECFDF5` |
 | Brand/100 | `#D1FAE5` |
 | Brand/200 | `#A7F3D0` |
 | Brand/300 | `#6EE7B7` |
@@ -256,33 +257,43 @@ Do not let feature code choose arbitrary raw utility colors.
 # 6. Extracted utility values
 
 ## Red
+
 `50 #FEF2F2` · `100 #FEE2E2` · `200 #FECACA` · `300 #FCA5A5` · `400 #F87171` · `500 #EF4444` · `600 #DC2626` · `700 #B91C1C` · `800 #991B1B` · `900 #7F1D1D` · `950 #450A0A`
 
 ## Orange
+
 `50 #FFF7ED` · `100 #FFEDD5` · `200 #FED7AA` · `300 #FDBA74` · `400 #FB923C` · `500 #F97316` · `600 #EA580C` · `700 #C2410C` · `800 #9A3412` · `900 #7C2D12` · `950 #431407`
 
 ## Yellow
+
 `50 #FEFCE8` · `100 #FEF9C3` · `200 #FEF08A` · `300 #FDE047` · `400 #FACC15` · `500 #EAB308` · `600 #CA8A04` · `700 #A16207` · `800 #854D0E` · `900 #713F12` · `950 #422006`
 
 ## Green
+
 `50 #F0FDF4` · `100 #DCFCE7` · `200 #BBF7D0` · `300 #86EFAC` · `400 #4ADE80` · `500 #22C55E` · `600 #16A34A` · `700 #15803D` · `800 #166534` · `900 #14532D` · `950 #052E16`
 
 ## Sky
+
 `50 #F0F9FF` · `100 #E0F2FE` · `200 #BAE6FD` · `300 #7DD3FC` · `400 #38BDF8` · `500 #0EA5E9` · `600 #0284C7` · `700 #0369A1` · `800 #075985` · `900 #0C4A6E` · `950 #082F49`
 
 ## Blue
+
 `50 #EFF6FF` · `100 #DBEAFE` · `200 #BFDBFE` · `300 #93C5FD` · `400 #60A5FA` · `500 #3B82F6` · `600 #2563EB` · `700 #1D4ED8` · `800 #1E40AF` · `900 #1E3A8A` · `950 #172554`
 
 ## Purple
+
 `50 #FAF5FF` · `100 #F3E8FF` · `200 #E9D5FF` · `300 #D8B4FE` · `400 #C084FC` · `500 #A855F7` · `600 #9333EA` · `700 #7E22CE` · `800 #6B21A8` · `900 #581C87` · `950 #3B0764`
 
 ## Pink
+
 `50 #FDF2F8` · `100 #FCE7F3` · `200 #FBCFE8` · `300 #F9A8D4` · `400 #F472B6` · `500 #EC4899` · `600 #DB2777` · `700 #BE185D` · `800 #9D174D` · `900 #831843` · `950 #500724`
 
 ## Rose
+
 `50 #FFF1F2` · `100 #FFE4E6` · `200 #FECDD3` · `300 #FDA4AF` · `400 #FB7185` · `500 #F43F5E` · `600 #E11D48` · `700 #BE123C` · `800 #9F1239` · `900 #881337` · `950 #4C0519`
 
 ## Slate
+
 `50 #F8FAFC` · `100 #F1F5F9` · `200 #E2E8F0` · `300 #CBD5E1` · `400 #94A3B8` · `500 #64748B` · `600 #475569` · `700 #334155` · `800 #1E293B` · `900 #0F172A` · `950 #020617`
 
 ---
@@ -294,28 +305,28 @@ Do not let feature code choose arbitrary raw utility colors.
 **[OFFICIAL-v8]**
 
 ```css
---color-text-primary:               var(--color-neutral-900);
---color-text-secondary:             var(--color-neutral-700);
---color-text-secondary_hover:       var(--color-neutral-800);
---color-text-tertiary:              var(--color-neutral-600);
---color-text-tertiary_hover:        var(--color-neutral-700);
---color-text-quaternary:            var(--color-neutral-500);
---color-text-placeholder:           var(--color-neutral-500);
+--color-text-primary: var(--color-neutral-900);
+--color-text-secondary: var(--color-neutral-700);
+--color-text-secondary_hover: var(--color-neutral-800);
+--color-text-tertiary: var(--color-neutral-600);
+--color-text-tertiary_hover: var(--color-neutral-700);
+--color-text-quaternary: var(--color-neutral-500);
+--color-text-placeholder: var(--color-neutral-500);
 
---color-text-brand-primary:         var(--color-brand-900);
---color-text-brand-secondary:       var(--color-brand-700);
+--color-text-brand-primary: var(--color-brand-900);
+--color-text-brand-secondary: var(--color-brand-700);
 --color-text-brand-secondary_hover: var(--color-brand-800);
---color-text-brand-tertiary:        var(--color-brand-600);
+--color-text-brand-tertiary: var(--color-brand-600);
 
---color-text-error-primary:         var(--color-red-600);
---color-text-warning-primary:       var(--color-yellow-600);
---color-text-success-primary:       var(--color-green-600);
+--color-text-error-primary: var(--color-red-600);
+--color-text-warning-primary: var(--color-yellow-600);
+--color-text-success-primary: var(--color-green-600);
 
---color-text-white:                 var(--color-white);
---color-text-primary_on-brand:      var(--color-white);
---color-text-secondary_on-brand:    var(--color-brand-200);
---color-text-tertiary_on-brand:     var(--color-brand-200);
---color-text-quaternary_on-brand:   var(--color-brand-300);
+--color-text-white: var(--color-white);
+--color-text-primary_on-brand: var(--color-white);
+--color-text-secondary_on-brand: var(--color-brand-200);
+--color-text-tertiary_on-brand: var(--color-brand-200);
+--color-text-quaternary_on-brand: var(--color-brand-300);
 ```
 
 ## 7.2 Borders
@@ -323,14 +334,14 @@ Do not let feature code choose arbitrary raw utility colors.
 **[OFFICIAL-v8]**
 
 ```css
---color-border-primary:       var(--color-neutral-300);
---color-border-secondary:     var(--color-neutral-200);
+--color-border-primary: var(--color-neutral-300);
+--color-border-secondary: var(--color-neutral-200);
 --color-border-secondary_alt: rgb(0 0 0 / 0.1);
---color-border-tertiary:      var(--color-neutral-100);
---color-border-brand:         var(--color-brand-500);
---color-border-brand_alt:     var(--color-brand-600);
---color-border-error:         var(--color-red-500);
---color-border-error_subtle:  var(--color-red-300);
+--color-border-tertiary: var(--color-neutral-100);
+--color-border-brand: var(--color-brand-500);
+--color-border-brand_alt: var(--color-brand-600);
+--color-border-error: var(--color-red-500);
+--color-border-error_subtle: var(--color-red-300);
 ```
 
 ## 7.3 Background roles
@@ -385,7 +396,7 @@ Rules:
 Preferred class convention can follow Untitled UI:
 
 ```html
-<html class="dark-mode">
+<html class="dark-mode"></html>
 ```
 
 ---
@@ -408,19 +419,19 @@ ui-monospace, "Roboto Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace
 
 ## 9.2 Scale
 
-| Token | Size | Line height | Letter spacing |
-|---|---:|---:|---:|
-| Text xs | 12px | 18px | 0 |
-| Text sm | 14px | 20px | 0 |
-| Text md | 16px | 24px | 0 |
-| Text lg | 18px | 28px | 0 |
-| Text xl | 20px | 30px | 0 |
-| Display xs | 24px | 32px | 0 |
-| Display sm | 30px | 38px | 0 |
-| Display md | 36px | 44px | -0.72px |
-| Display lg | 48px | 60px | -0.96px |
-| Display xl | 60px | 72px | -1.2px |
-| Display 2xl | 72px | 90px | -1.44px |
+| Token       | Size | Line height | Letter spacing |
+| ----------- | ---: | ----------: | -------------: |
+| Text xs     | 12px |        18px |              0 |
+| Text sm     | 14px |        20px |              0 |
+| Text md     | 16px |        24px |              0 |
+| Text lg     | 18px |        28px |              0 |
+| Text xl     | 20px |        30px |              0 |
+| Display xs  | 24px |        32px |              0 |
+| Display sm  | 30px |        38px |              0 |
+| Display md  | 36px |        44px |        -0.72px |
+| Display lg  | 48px |        60px |        -0.96px |
+| Display xl  | 60px |        72px |         -1.2px |
+| Display 2xl | 72px |        90px |        -1.44px |
 
 Weights:
 
@@ -493,18 +504,18 @@ Major section gap     32–48px
 
 **[OFFICIAL-v8]**
 
-| Token | Value |
-|---|---:|
-| none | 0px |
-| xs | 2px |
-| sm | 4px |
-| default | 4px |
-| md | 6px |
-| lg | 8px |
-| xl | 12px |
-| 2xl | 16px |
-| 3xl | 24px |
-| full | 9999px |
+| Token   |  Value |
+| ------- | -----: |
+| none    |    0px |
+| xs      |    2px |
+| sm      |    4px |
+| default |    4px |
+| md      |    6px |
+| lg      |    8px |
+| xl      |   12px |
+| 2xl     |   16px |
+| 3xl     |   24px |
+| full    | 9999px |
 
 SocialOps defaults:
 
@@ -523,34 +534,23 @@ avatar               full
 **[OFFICIAL-v8]**
 
 ```css
---shadow-xs:
-  0 1px 2px rgba(0,0,0,.05);
+--shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
 
---shadow-sm:
-  0 1px 3px rgba(0,0,0,.10),
-  0 1px 2px -1px rgba(0,0,0,.10);
+--shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
 
---shadow-md:
-  0 4px 6px -1px rgba(0,0,0,.10),
-  0 2px 4px -2px rgba(0,0,0,.06);
+--shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
 
 --shadow-lg:
-  0 12px 16px -4px rgba(0,0,0,.08),
-  0 4px 6px -2px rgba(0,0,0,.03),
-  0 2px 2px -1px rgba(0,0,0,.04);
+  0 12px 16px -4px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.03),
+  0 2px 2px -1px rgba(0, 0, 0, 0.04);
 
 --shadow-xl:
-  0 20px 24px -4px rgba(0,0,0,.08),
-  0 8px 8px -4px rgba(0,0,0,.03),
-  0 3px 3px -1.5px rgba(0,0,0,.04);
+  0 20px 24px -4px rgba(0, 0, 0, 0.08), 0 8px 8px -4px rgba(0, 0, 0, 0.03),
+  0 3px 3px -1.5px rgba(0, 0, 0, 0.04);
 
---shadow-2xl:
-  0 24px 48px -12px rgba(0,0,0,.18),
-  0 4px 4px -2px rgba(0,0,0,.04);
+--shadow-2xl: 0 24px 48px -12px rgba(0, 0, 0, 0.18), 0 4px 4px -2px rgba(0, 0, 0, 0.04);
 
---shadow-3xl:
-  0 32px 64px -12px rgba(0,0,0,.14),
-  0 5px 5px -2.5px rgba(0,0,0,.04);
+--shadow-3xl: 0 32px 64px -12px rgba(0, 0, 0, 0.14), 0 5px 5px -2.5px rgba(0, 0, 0, 0.04);
 ```
 
 Elevation:
@@ -629,7 +629,7 @@ Never remove keyboard focus without an accessible replacement.
 v8 standardizes disabled states around:
 
 ```css
-opacity: .5;
+opacity: 0.5;
 ```
 
 Do not invent different disabled colors for every component.
@@ -781,12 +781,15 @@ Account options should show:
 # 22. Checkbox / Radio / Toggle
 
 Checkbox:
+
 - independent multi-selection.
 
 Radio:
+
 - one-of-few visible options.
 
 Toggle:
+
 - immediate binary state.
 
 Do not use Toggle for changes that require a Save action.
@@ -1430,6 +1433,7 @@ Separate destructive settings visually at the end.
 # 55. Responsive behavior
 
 ## >=1280
+
 - persistent side nav;
 - split composer;
 - full calendar;
@@ -1437,17 +1441,20 @@ Separate destructive settings visually at the end.
 - full tables.
 
 ## 1024–1279
+
 - narrower nav;
 - hide low-priority columns;
 - reduce preview width.
 
 ## 768–1023
+
 - side nav compact/drawer;
 - analytics 2-column;
 - filters collapse;
 - composer preview may become tab.
 
 ## <768
+
 - side nav drawer;
 - one-column;
 - agenda/list calendar;
@@ -1552,8 +1559,7 @@ const socialOpsTheme = {
     colorSuccess: '#16A34A',
     colorInfo: '#2563EB',
 
-    fontFamily:
-      'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
+    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
 
     fontSize: 14,
 
@@ -1586,39 +1592,51 @@ Verify token names against the actual Ant Design version installed.
 # 61. Ant mapping
 
 ## Button
+
 `primary → primary`, `default → secondary`, `text → tertiary`, `danger → destructive`.
 
 ## Input/TextArea
+
 Preserve behavior, replace visual shell.
 
 ## Select
+
 Preserve search/keyboard/portal behavior, restyle.
 
 ## DatePicker/TimePicker
+
 Preserve interaction, restyle field and popup.
 
 ## Table
+
 Preserve sorting/filtering/selection/pagination; restyle strongly.
 
 ## Modal
+
 Preserve accessibility/portal, map surface/radius/shadow.
 
 ## Drawer
+
 Use for SocialOps slideouts.
 
 ## Form
+
 Behavior can come from Ant; visual anatomy follows this file.
 
 ## Tag
+
 No arbitrary Ant preset colors.
 
 ## Menu
+
 Do not keep default Ant blue selection.
 
 ## Tabs
+
 Map to Untitled minimal/border patterns.
 
 ## Calendar
+
 Treat as primitive only; SocialOps calendar is a signature component.
 
 ---
@@ -1891,6 +1909,7 @@ AI MUST NOT:
 # 76. Visual review checklist
 
 ## Foundation
+
 - [ ] semantic colors
 - [ ] correct type scale
 - [ ] correct spacing
@@ -1900,6 +1919,7 @@ AI MUST NOT:
 - [ ] no unapproved gradients
 
 ## Interaction
+
 - [ ] hover
 - [ ] focus-visible
 - [ ] pressed/selected
@@ -1909,6 +1929,7 @@ AI MUST NOT:
 - [ ] empty
 
 ## Responsive
+
 - [ ] desktop
 - [ ] small desktop
 - [ ] tablet
@@ -1917,6 +1938,7 @@ AI MUST NOT:
 - [ ] touch targets
 
 ## Accessibility
+
 - [ ] contrast
 - [ ] keyboard
 - [ ] focus
@@ -1925,6 +1947,7 @@ AI MUST NOT:
 - [ ] status not color-only
 
 ## Domain
+
 - [ ] workspace context
 - [ ] brand context
 - [ ] platform context

@@ -5,4 +5,3 @@ export const WORKSPACES_I18N = {
   'en-US': workspacesEnUS,
   'vi-VN': workspacesViVN,
 } as const
-

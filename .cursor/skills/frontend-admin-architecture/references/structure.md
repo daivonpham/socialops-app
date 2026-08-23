@@ -60,14 +60,14 @@ Optional later: `shared/adapters/custom/` for a second design skin.
 
 ## Layers
 
-| Layer | Owns |
-| --- | --- |
-| `app/` | Layouts, providers (incl. injecting the current user's permissions), router, global store |
-| `features/` | Business domains — **must not** import UI kits or adapters |
-| `shared/ui/` | Platform component **public API** (stable props for features) |
-| `shared/permissions/` | Permission **catalog** (key + label) + `hasPermission`/`Can` **engine** — single source, importable by both `app` and `features` |
-| `shared/adapters/<kit>/` | Map kit widgets → used only by `shared/ui` |
-| `shared/api|hooks|validation|…` | Kit-agnostic infrastructure |
+| Layer                    | Owns                                                                                                                             |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `app/`                   | Layouts, providers (incl. injecting the current user's permissions), router, global store                                        |
+| `features/`              | Business domains — **must not** import UI kits or adapters                                                                       |
+| `shared/ui/`             | Platform component **public API** (stable props for features)                                                                    |
+| `shared/permissions/`    | Permission **catalog** (key + label) + `hasPermission`/`Can` **engine** — single source, importable by both `app` and `features` |
+| `shared/adapters/<kit>/` | Map kit widgets → used only by `shared/ui`                                                                                       |
+| `shared/api              | hooks                                                                                                                            | validation | …`  | Kit-agnostic infrastructure |
 
 ## Dependency direction
 
@@ -87,8 +87,8 @@ More precisely:
 ### Valid
 
 ```ts
-import { DataTable } from '@/shared/ui/DataTable'
-import { Button } from '@/shared/ui/Button'
+import { DataTable } from '@/shared/ui'
+import { Button } from '@/shared/ui'
 import { apiClient } from '@/shared/api/client'
 import { useUrlFilters } from '@/shared/hooks/useUrlFilters'
 import { PERMISSIONS, Can, hasPermission } from '@/shared/permissions'
@@ -108,11 +108,11 @@ import { appStore } from '@/app/store' // from a feature
 
 ## Why adapters exist
 
-| Approach | Result |
-| --- | --- |
-| Features import `antd` | Locked to Ant; multi-design fails |
-| Features import thin Ant re-exports as public API forever | Import firewall only; still Ant-shaped props |
-| Features import `shared/ui`; adapters behind UI | **Swap/skin by changing adapters + ui wiring** |
+| Approach                                                  | Result                                         |
+| --------------------------------------------------------- | ---------------------------------------------- |
+| Features import `antd`                                    | Locked to Ant; multi-design fails              |
+| Features import thin Ant re-exports as public API forever | Import firewall only; still Ant-shaped props   |
+| Features import `shared/ui`; adapters behind UI           | **Swap/skin by changing adapters + ui wiring** |
 
 Bootstrap may use thin Ant wraps **inside adapters**. Target is platform-owned props on `shared/ui`.
 
@@ -153,8 +153,8 @@ shared/permissions/
 └── index.ts
 ```
 
-`app/providers/PermissionProvider` supplies the *data* (which keys the current
-user has); `shared/permissions` supplies the *logic* (how to check them). Feature
+`app/providers/PermissionProvider` supplies the _data_ (which keys the current
+user has); `shared/permissions` supplies the _logic_ (how to check them). Feature
 policy — which keys combine for a given action — lives in the feature's own
 `config/<feature>-access.ts` (see `frontend-admin-security` for the full model).
 
@@ -173,13 +173,13 @@ Public API via root `index.ts`. Outside code imports `@/features/orders`, not de
 
 ## Template mapping
 
-| Template | Target |
-| --- | --- |
-| Layout / providers / router / store | `app/` |
-| HTTP client / hooks / validation / config | `shared/` |
-| Permission constants + role/menu logic | `shared/permissions/` (catalog + engine), `app/providers` (data source) |
-| Ant (or kit) raw usage | `shared/adapters/<kit>/` then expose via `shared/ui` |
-| Business pages/components/services | `features/<feature>/` |
-| Demo / unused mocks | Delete |
+| Template                                  | Target                                                                  |
+| ----------------------------------------- | ----------------------------------------------------------------------- |
+| Layout / providers / router / store       | `app/`                                                                  |
+| HTTP client / hooks / validation / config | `shared/`                                                               |
+| Permission constants + role/menu logic    | `shared/permissions/` (catalog + engine), `app/providers` (data source) |
+| Ant (or kit) raw usage                    | `shared/adapters/<kit>/` then expose via `shared/ui`                    |
+| Business pages/components/services        | `features/<feature>/`                                                   |
+| Demo / unused mocks                       | Delete                                                                  |
 
 Do not keep a permanent dual `template/` + `app/features/shared` architecture.

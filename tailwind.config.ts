@@ -2,6 +2,7 @@ import type { Config } from 'tailwindcss'
 import {
   breakpoint,
   color,
+  componentToken,
   layout,
   motion,
   radius,
@@ -33,9 +34,10 @@ const fontSize = Object.fromEntries(
       {
         lineHeight: px(def.lineHeight),
         fontWeight: `${def.weight}`,
-        letterSpacing: name.startsWith('heading') || name.startsWith('display')
-          ? typography.letterSpacing.heading
-          : typography.letterSpacing.body,
+        letterSpacing:
+          name.startsWith('heading') || name.startsWith('display')
+            ? typography.letterSpacing.heading
+            : typography.letterSpacing.body,
       },
     ],
   ]),
@@ -95,7 +97,10 @@ export default {
       width: {
         sidebar: px(layout.sidebarWidth),
         'sidebar-collapsed': px(layout.sidebarCollapsedWidth),
+        'table-settings': px(componentToken.table.settingsPanelWidth),
       },
+      maxHeight: { 'table-settings': px(componentToken.table.settingsPanelMaxHeight) },
+      height: { chart: px(componentToken.chart.height) },
       maxWidth: { narrow: px(layout.containerNarrow) },
     },
   },

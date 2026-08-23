@@ -5,7 +5,8 @@ export const brandsEnUS = {
   },
   picker: {
     title: 'Choose a brand',
-    description: 'Accounts, content and permissions in SocialOps are scoped to one brand at a time.',
+    description:
+      'Accounts, content and permissions in SocialOps are scoped to one brand at a time.',
     workspaceSection: 'Workspace',
     brandSection: 'Brand',
     pickWorkspaceFirst: 'Pick a workspace first.',
@@ -13,4 +14,3 @@ export const brandsEnUS = {
     openBrand: 'Open brand',
   },
 } as const
-

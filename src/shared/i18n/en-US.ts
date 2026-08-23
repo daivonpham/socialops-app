@@ -2,9 +2,30 @@ export const commonEnUS = {
   dropdown: {
     noMatches: 'No matches.',
   },
+  dataTable: {
+    selectAllRows: 'Select all rows on this page',
+    selectRow: 'Select row',
+    selectionColumn: 'Row selection',
+    sortColumn: 'Sort by {{column}}',
+    sortAscending: 'Sort ascending',
+    sortDescending: 'Sort descending',
+    clearSorting: 'Clear sorting',
+    reorderColumn: 'Reorder {{column}}',
+    reorderHint: 'Drag to reorder.',
+    resizeColumn: 'Resize {{column}}',
+    columnSettings: 'Column settings',
+    resetColumns: 'Reset columns',
+    columnSettingsDescription: 'Show, hide, and drag columns into your preferred order.',
+    toggleColumn: 'Show or hide {{column}}',
+    noRows: 'No rows to display.',
+    pageSummary: 'Page {{page}} of {{pageCount}} · {{rowCount}} rows',
+    rowsPerPage: 'Rows per page',
+    rowsCount: '{{count}} rows',
+    previousPage: 'Previous',
+    nextPage: 'Next',
+  },
   locales: {
     enUS: 'English (US)',
     viVN: 'Tiếng Việt',
   },
 } as const
-

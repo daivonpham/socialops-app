@@ -5,7 +5,7 @@
 ```text
 React Hook Form          → form state
 shared/validation        → schema + messages
-shared/ui/Input|Select…  → field widgets (adapter-backed)
+@/shared/ui Input|Select… → field widgets (adapter-backed)
 ```
 
 ## Rules
@@ -20,7 +20,7 @@ shared/ui/Input|Select…  → field widgets (adapter-backed)
 ```tsx
 // ✗ in features
 import { Form } from 'antd'
-<Form.Item rules={[{ required: true }]} />
+;<Form.Item rules={[{ required: true }]} />
 ```
 
 Keeping the uncontrolled/`useWatch` benefit, validation mode, and large selects:

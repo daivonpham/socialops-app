@@ -45,4 +45,3 @@ Search changed UI files for remaining natural-language literals. Ignore code
 identifiers, class names, route paths, test data, comments and user/domain data.
 Run the project's type check, lint, translation-key parity check, and relevant UI
 tests before completion.
-

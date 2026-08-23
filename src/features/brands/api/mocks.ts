@@ -13,6 +13,9 @@ export const MOCK_BRANDS: BrandDetailDto[] = [
     workspaceId: 'ws-north',
     name: 'Aurora Coffee',
     permissions: [
+      PERMISSIONS.CHANNELS_MANAGE.key,
+      PERMISSIONS.PUBLISHING_PUBLISH.key,
+      PERMISSIONS.ANALYTICS_VIEW.key,
       PERMISSIONS.REPORTS_VIEW.key,
       PERMISSIONS.MEMBERS_VIEW.key,
       PERMISSIONS.SETTINGS_VIEW.key,
@@ -22,13 +25,24 @@ export const MOCK_BRANDS: BrandDetailDto[] = [
     id: 'br-nimbus',
     workspaceId: 'ws-north',
     name: 'Nimbus Wear',
-    permissions: [PERMISSIONS.REPORTS_VIEW.key, PERMISSIONS.SETTINGS_VIEW.key],
+    permissions: [
+      PERMISSIONS.CHANNELS_MANAGE.key,
+      PERMISSIONS.PUBLISHING_PUBLISH.key,
+      PERMISSIONS.ANALYTICS_VIEW.key,
+      PERMISSIONS.REPORTS_VIEW.key,
+      PERMISSIONS.SETTINGS_VIEW.key,
+    ],
   },
   {
     id: 'br-solstice',
     workspaceId: 'ws-south',
     name: 'Solstice Spa',
-    permissions: [PERMISSIONS.MEMBERS_VIEW.key, PERMISSIONS.SETTINGS_VIEW.key],
+    permissions: [
+      PERMISSIONS.CHANNELS_MANAGE.key,
+      PERMISSIONS.ANALYTICS_VIEW.key,
+      PERMISSIONS.MEMBERS_VIEW.key,
+      PERMISSIONS.SETTINGS_VIEW.key,
+    ],
   },
 ]
 

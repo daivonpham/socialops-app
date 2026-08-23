@@ -7,12 +7,7 @@ Every page repeats loading/error/empty branches.
 ## API (conceptual)
 
 ```tsx
-<AsyncState
-  loading={isLoading}
-  error={error}
-  empty={!orders.length}
-  emptyTitle="Chưa có đơn hàng"
->
+<AsyncState loading={isLoading} error={error} empty={!orders.length} emptyTitle="Chưa có đơn hàng">
   <OrderTable />
 </AsyncState>
 ```

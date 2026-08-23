@@ -5,7 +5,7 @@ export type DrawerProps = {
   onClose: () => void
   title?: ReactNode
   placement?: 'left' | 'right'
-  width?: number
+  width?: 'navigation' | 'compact' | 'normal' | 'wide'
   children: ReactNode
 }
 

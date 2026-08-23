@@ -9,7 +9,7 @@ shared/adapters/ant/Button.tsx
 shared/adapters/ant/Input.tsx
 shared/adapters/ant/Card.tsx
 …
-shared/ui/Button → uses adapter (or re-exports mapped component)
+shared/ui/primitives/Button → uses adapter (or re-exports mapped component)
 ```
 
 ## Phase 1 — import firewall (allowed)
@@ -25,7 +25,7 @@ export default Card
 ## Phase 2 — platform props (target)
 
 ```tsx
-// shared/ui/Card — public
+// shared/ui/primitives/Card — public contract
 export type CardProps = { title?: React.ReactNode; children?: React.ReactNode; padded?: boolean }
 
 // shared/adapters/ant/Card — private mapping into Ant
@@ -33,7 +33,8 @@ export type CardProps = { title?: React.ReactNode; children?: React.ReactNode; p
 
 ## Rules
 
-- Features import `@/shared/ui/Card`, never adapters or `antd`.
+- Features import `{ Card }` from `@/shared/ui`, never primitives by deep path,
+  adapters, or `antd`.
 - ESLint-ban `antd` in `features/**`.
 - Swapping kit = new `adapters/<other>` + point `shared/ui` at it — features unchanged if props are platform-owned.
 - Passthrough exporting Ant types as the **forever** public API is insufficient for multi-design; treat as temporary.

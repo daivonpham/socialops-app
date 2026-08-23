@@ -6,16 +6,16 @@ a login, so a meaningful part of that skill does not apply.
 
 ## Section relevance
 
-| Section | Applies to a client-rendered admin? |
-| --- | --- |
-| 1. Eliminating waterfalls | Partly — the `Promise.all` and defer-await ideas apply to any async code; the Server Component and API-route examples do not |
-| 2. Bundle size | **Yes**, fully — see [bundle.md](bundle.md) for the barrel caveat |
-| 3. Server-side performance | **No** — RSC, `React.cache`, `after()`, server actions, RSC serialization |
-| 4. Client-side data fetching | Partly — concepts apply, but this project uses **TanStack Query, not SWR** |
-| 5. Re-render optimization | **Yes**, the most useful section here |
-| 6. Rendering performance | Mostly — skip the hydration rules if there is no SSR |
-| 7. JavaScript performance | Yes, but last priority; only with a measurement |
-| 8. Advanced patterns | Yes, occasionally |
+| Section                      | Applies to a client-rendered admin?                                                                                          |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| 1. Eliminating waterfalls    | Partly — the `Promise.all` and defer-await ideas apply to any async code; the Server Component and API-route examples do not |
+| 2. Bundle size               | **Yes**, fully — see [bundle.md](bundle.md) for the barrel caveat                                                            |
+| 3. Server-side performance   | **No** — RSC, `React.cache`, `after()`, server actions, RSC serialization                                                    |
+| 4. Client-side data fetching | Partly — concepts apply, but this project uses **TanStack Query, not SWR**                                                   |
+| 5. Re-render optimization    | **Yes**, the most useful section here                                                                                        |
+| 6. Rendering performance     | Mostly — skip the hydration rules if there is no SSR                                                                         |
+| 7. JavaScript performance    | Yes, but last priority; only with a measurement                                                                              |
+| 8. Advanced patterns         | Yes, occasionally                                                                                                            |
 
 ## Translation notes
 
@@ -28,7 +28,7 @@ a login, so a meaningful part of that skill does not apply.
   `frontend-admin-security/references/data-exposure.md` first: in an admin app the
   question is usually whether the value should be in storage at all.
 
-## If the project *is* Next.js
+## If the project _is_ Next.js
 
 Then sections 1 and 3 apply in full, and the security rule
 `server-auth-actions` becomes important — it is the server-side counterpart of the

@@ -4,11 +4,11 @@ Client-side validation in `FileUploader` is **UX**. The server must validate aga
 
 ## What the client can check (and its limits)
 
-| Check | Limit |
-| --- | --- |
-| Extension | Renaming `shell.php` to `photo.png` passes |
-| `file.type` (MIME) | Reported by the browser, easy to spoof |
-| `file.size` | Real, but the request can be crafted without the UI |
+| Check              | Limit                                               |
+| ------------------ | --------------------------------------------------- |
+| Extension          | Renaming `shell.php` to `photo.png` passes          |
+| `file.type` (MIME) | Reported by the browser, easy to spoof              |
+| `file.size`        | Real, but the request can be crafted without the UI |
 
 So: check them for fast feedback, and never describe them as protection.
 

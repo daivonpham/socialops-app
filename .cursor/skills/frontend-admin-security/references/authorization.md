@@ -2,12 +2,12 @@
 
 ## What the frontend can and cannot do
 
-| Layer | Purpose | Security value |
-| --- | --- | --- |
-| Menu filtering | Reduce noise | None |
-| Route guard | Avoid dead-end screens | None |
-| `Can()` around a button | Prevent confusing failures | None |
-| Backend authorization on each endpoint | Actual enforcement | All of it |
+| Layer                                  | Purpose                    | Security value |
+| -------------------------------------- | -------------------------- | -------------- |
+| Menu filtering                         | Reduce noise               | None           |
+| Route guard                            | Avoid dead-end screens     | None           |
+| `Can()` around a button                | Prevent confusing failures | None           |
+| Backend authorization on each endpoint | Actual enforcement         | All of it      |
 
 Everything the frontend does is a **usability** feature. An attacker skips the UI
 and calls the endpoint. Write it down this way in PRs so nobody assumes otherwise.
@@ -39,7 +39,7 @@ a role/permission-matrix screen (key + human label). It cannot live under
 `app/permissions`, because features need to import keys to build their access
 policy, and `features → app` is not an allowed import direction. `shared/` is
 importable by both `features` and `app`, so the catalog and the check functions
-(the reusable *engine*) belong there. `app/` only supplies the *data* — which
+(the reusable _engine_) belong there. `app/` only supplies the _data_ — which
 keys the logged-in user actually has — via a provider.
 
 Keys are string constants shared with the backend contract. Keep them identical to

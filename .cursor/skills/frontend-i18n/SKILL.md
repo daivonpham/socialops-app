@@ -8,7 +8,7 @@ description: >-
 license: MIT
 metadata:
   author: local
-  version: "1.0.0"
+  version: '1.0.0'
 ---
 
 # Frontend i18n
@@ -69,4 +69,3 @@ Translation timing:          during render or an explicit runtime operation
 - `frontend-design-system` — layout expansion and logical CSS properties
 - `frontend-admin-performance` — namespace and bundle loading decisions
 - `frontend-code-simplicity` — avoid speculative localization infrastructure
-

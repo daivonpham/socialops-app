@@ -10,7 +10,7 @@ description: >-
 license: MIT
 metadata:
   author: local
-  version: "1.0.0"
+  version: '1.0.0'
 ---
 
 # Frontend Admin Security
@@ -26,7 +26,7 @@ Every action must be authorized again on the server.
 ```
 
 Hiding a Delete button, guarding a route, and filtering a menu only shape what a
-user *sees*. Anyone can call the API directly. If the backend does not re-check,
+user _sees_. Anyone can call the API directly. If the backend does not re-check,
 the feature is unprotected regardless of how correct the frontend looks.
 
 ## When to Apply
@@ -39,8 +39,6 @@ the feature is unprotected regardless of how correct the frontend looks.
 - Building upload flows
 - Connecting a third-party account (Facebook, TikTok, Google, Slack, …) via OAuth
 
-
-
 ## How It Works
 
 1. Classify the change: auth/session, authorization, rendering, data exposure, upload.
@@ -48,10 +46,7 @@ the feature is unprotected regardless of how correct the frontend looks.
 3. Apply the rule; if it needs backend support, say so explicitly in the PR.
 4. Run the checklist before finishing.
 
-
-
 ## References
-
 
 | Area                                        | Reference                                                          |
 | ------------------------------------------- | ------------------------------------------------------------------ |
@@ -62,9 +57,6 @@ the feature is unprotected regardless of how correct the frontend looks.
 | File upload safety                          | [references/upload-security.md](references/upload-security.md)     |
 | Third-party OAuth (Facebook/TikTok/etc.)    | [references/third-party-oauth.md](references/third-party-oauth.md) |
 | Pre-merge checklist                         | [references/checklist.md](references/checklist.md)                 |
-
-
-
 
 ## Hard bans
 
@@ -78,8 +70,6 @@ the feature is unprotected regardless of how correct the frontend looks.
 ✗ Trusting file extension or client-reported MIME type
 ✗ A third-party (Facebook/TikTok/…) access or refresh token ever reaching the browser
 ```
-
-
 
 ## Output
 

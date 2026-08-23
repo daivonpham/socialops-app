@@ -3,12 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { RequireBrand, RouteAccessGuard } from '@/app/router/guards'
 import { motion } from '@/shared/styles/tokens'
-import {
-  Button,
-  Drawer,
-  IconSidebarCollapse,
-  IconSidebarExpand,
-} from '@/shared/ui'
+import { Button, Drawer, IconSidebarCollapse, IconSidebarExpand } from '@/shared/ui'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
 
@@ -51,7 +46,7 @@ export default function AdminLayout() {
 
   return (
     <RequireBrand>
-      <div className="flex h-screen flex-col bg-bg-page text-text-primary">
+      <div className="flex h-screen flex-col bg-bg-surface text-text-primary">
         <TopBar
           onOpenSidebar={() => setMobileNavOpen(true)}
           desktopSidebarExpanded={desktopSidebarExpanded}
@@ -94,7 +89,7 @@ export default function AdminLayout() {
               </div>
             </div>
           </div>
-          <main className="min-w-0 flex-1 overflow-y-auto p-4 md:p-6 xl:p-8">
+          <main className="min-w-0 flex-1 overflow-y-auto p-4 md:p-5 xl:p-6">
             <RouteAccessGuard>
               <Outlet />
             </RouteAccessGuard>

@@ -1,7 +1,14 @@
 import { Dropdown as AntDropdown, Input } from 'antd'
 import type { MenuProps } from 'antd'
-import { cloneElement, isValidElement, useState, type CSSProperties, type ReactElement } from 'react'
-import type { DropdownMenuItem, DropdownProps } from '@/shared/ui/Dropdown'
+import {
+  cloneElement,
+  isValidElement,
+  useState,
+  type CSSProperties,
+  type ReactElement,
+  type ReactNode,
+} from 'react'
+import type { DropdownMenuItem, DropdownProps } from '@/shared/ui/primitives/Dropdown'
 import { IconCheck, IconSearch } from './icons'
 
 function matchesQuery(item: DropdownMenuItem, query: string): boolean {
@@ -10,7 +17,10 @@ function matchesQuery(item: DropdownMenuItem, query: string): boolean {
   return typeof item.label === 'string' && item.label.toLowerCase().includes(query.toLowerCase())
 }
 
-function toMenuItems(items: DropdownMenuItem[], selectedKey?: string): NonNullable<MenuProps['items']> {
+function toMenuItems(
+  items: DropdownMenuItem[],
+  selectedKey?: string,
+): NonNullable<MenuProps['items']> {
   return items.map((item, index) => {
     if ('type' in item) return { type: 'divider' as const, key: `divider-${index}` }
 
@@ -21,7 +31,9 @@ function toMenuItems(items: DropdownMenuItem[], selectedKey?: string): NonNullab
       danger: item.danger,
       icon: item.icon,
       label: <span className="text-body-sm">{item.label}</span>,
-      extra: selected ? <IconCheck aria-hidden className="text-icon-sm text-text-tertiary" /> : undefined,
+      extra: selected ? (
+        <IconCheck aria-hidden className="text-icon-sm text-text-tertiary" />
+      ) : undefined,
     }
   })
 }
@@ -48,8 +60,28 @@ function DropdownCaret({ placement }: { placement: NonNullable<DropdownProps['pl
   )
 }
 
+function DropdownSurface({
+  placement,
+  className = '',
+  children,
+}: {
+  placement: NonNullable<DropdownProps['placement']>
+  className?: string
+  children: ReactNode
+}) {
+  return (
+    <div className="pt-2">
+      <div className={`${className} relative rounded-lg border border-border-subtle bg-bg-surface`}>
+        <DropdownCaret placement={placement} />
+        {children}
+      </div>
+    </div>
+  )
+}
+
 export function Dropdown({
   items,
+  content,
   selectedKey,
   onSelect,
   placement = 'bottom',
@@ -60,12 +92,18 @@ export function Dropdown({
 }: DropdownProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
-  const hasChrome = Boolean(searchPlaceholder || footer)
+  const hasChrome = !content && Boolean(searchPlaceholder || footer)
 
-  const visibleItems = items.filter((item) => matchesQuery(item, query))
+  const visibleItems = (items ?? []).filter((item) => matchesQuery(item, query))
   const menuItems: MenuProps['items'] =
     visibleItems.length === 0
-      ? [{ key: '__empty', disabled: true, label: <span className="text-body-sm text-text-tertiary">{emptyText}</span> }]
+      ? [
+          {
+            key: '__empty',
+            disabled: true,
+            label: <span className="text-body-sm text-text-tertiary">{emptyText}</span>,
+          },
+        ]
       : toMenuItems(visibleItems, selectedKey)
 
   const close = () => {
@@ -82,79 +120,83 @@ export function Dropdown({
         setOpen(next)
         if (!next) setQuery('')
       }}
-      menu={{
-        items: menuItems,
-        selectable: Boolean(selectedKey),
-        selectedKeys: selectedKey ? [selectedKey] : [],
-        onClick: ({ key }) => {
-          if (key === '__empty') return
-          onSelect?.(key)
-        },
-      }}
-      popupRender={(menu) => (
-        <div className="pt-2">
-          <div
-            className={
-              (hasChrome ? 'w-sidebar ' : '') +
-              'relative rounded-lg border border-border-subtle bg-bg-surface'
+      menu={
+        content
+          ? undefined
+          : {
+              items: menuItems,
+              selectable: Boolean(selectedKey),
+              selectedKeys: selectedKey ? [selectedKey] : [],
+              onClick: ({ key }) => {
+                if (key === '__empty') return
+                onSelect?.(key)
+              },
             }
-          >
-            <DropdownCaret placement={placement} />
+      }
+      popupRender={(menu) => (
+        <DropdownSurface
+          placement={placement}
+          className={content ? '' : hasChrome ? 'w-sidebar' : ''}
+        >
+          {content ?? (
+            <>
+              {searchPlaceholder ? (
+                <>
+                  <div className="px-1 py-1">
+                    <Input
+                      allowClear
+                      variant="borderless"
+                      size="small"
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                      placeholder={searchPlaceholder}
+                      autoComplete="off"
+                      spellCheck={false}
+                      prefix={
+                        <IconSearch aria-hidden className="text-icon-sm text-text-tertiary" />
+                      }
+                      className="text-body-sm"
+                      onClick={(event) => event.stopPropagation()}
+                      onKeyDown={(event) => event.stopPropagation()}
+                    />
+                  </div>
+                  <div className="h-px bg-border-subtle" />
+                </>
+              ) : null}
 
-            {searchPlaceholder ? (
-              <>
-                <div className="px-1 py-1">
-                  <Input
-                    allowClear
-                    variant="borderless"
-                    size="small"
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder={searchPlaceholder}
-                    autoComplete="off"
-                    spellCheck={false}
-                    prefix={<IconSearch aria-hidden className="text-icon-sm text-text-tertiary" />}
-                    className="text-body-sm"
-                    onClick={(event) => event.stopPropagation()}
-                    onKeyDown={(event) => event.stopPropagation()}
-                  />
-                </div>
-                <div className="h-px bg-border-subtle" />
-              </>
-            ) : null}
+              <div className={hasChrome ? 'max-h-64 overflow-y-auto' : undefined}>
+                {isValidElement(menu)
+                  ? cloneElement(menu as ReactElement<{ style?: CSSProperties }>, {
+                      style: { boxShadow: 'none', background: 'transparent' },
+                    })
+                  : menu}
+              </div>
 
-            <div className={hasChrome ? 'max-h-64 overflow-y-auto' : undefined}>
-              {isValidElement(menu)
-                ? cloneElement(menu as ReactElement<{ style?: CSSProperties }>, {
-                    style: { boxShadow: 'none', background: 'transparent' },
-                  })
-                : menu}
-            </div>
-
-            {footer ? (
-              <>
-                <div className="h-px bg-border-subtle" />
-                <div className="p-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      footer.onClick?.()
-                      close()
-                    }}
-                    className="flex h-10 w-full items-center gap-2 rounded-lg px-3 text-start text-body-sm text-text-secondary outline-none transition-colors duration-base ease-standard hover:bg-bg-surface-muted hover:text-text-primary focus-visible:focus-ring"
-                  >
-                    {footer.icon ? (
-                      <span aria-hidden className="flex text-icon-sm">
-                        {footer.icon}
-                      </span>
-                    ) : null}
-                    <span className="min-w-0 truncate">{footer.label}</span>
-                  </button>
-                </div>
-              </>
-            ) : null}
-          </div>
-        </div>
+              {footer ? (
+                <>
+                  <div className="h-px bg-border-subtle" />
+                  <div className="p-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        footer.onClick?.()
+                        close()
+                      }}
+                      className="flex h-10 w-full items-center gap-2 rounded-lg px-3 text-start text-body-sm text-text-secondary outline-none transition-colors duration-base ease-standard hover:bg-bg-surface-muted hover:text-text-primary focus-visible:focus-ring"
+                    >
+                      {footer.icon ? (
+                        <span aria-hidden className="flex text-icon-sm">
+                          {footer.icon}
+                        </span>
+                      ) : null}
+                      <span className="min-w-0 truncate">{footer.label}</span>
+                    </button>
+                  </div>
+                </>
+              ) : null}
+            </>
+          )}
+        </DropdownSurface>
       )}
     >
       {children}

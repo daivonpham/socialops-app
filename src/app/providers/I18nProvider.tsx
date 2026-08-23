@@ -18,4 +18,3 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   return <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
 }
-

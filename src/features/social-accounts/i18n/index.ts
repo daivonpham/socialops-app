@@ -5,4 +5,3 @@ export const SOCIAL_ACCOUNTS_I18N = {
   'en-US': socialAccountsEnUS,
   'vi-VN': socialAccountsViVN,
 } as const
-

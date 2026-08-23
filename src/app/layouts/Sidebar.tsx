@@ -38,10 +38,10 @@ export function Sidebar({
       className={
         'flex min-h-0 flex-1 shrink-0 flex-col gap-1 overflow-x-hidden overflow-y-auto bg-bg-surface transition-[width,padding] duration-drawer ease-standard ' +
         (inDrawer
-          ? 'w-full p-3'
+          ? 'w-full p-2'
           : collapsed
             ? 'w-sidebar-collapsed border-e border-border-subtle p-2'
-            : 'w-sidebar border-e border-border-subtle p-3')
+            : 'w-sidebar border-e border-border-subtle p-2')
       }
       onMouseEnter={onPreviewOpen}
       onMouseLeave={onPreviewClose}
@@ -85,5 +85,13 @@ export function Sidebar({
 }
 
 function renderEntry(entry: NavEntry, collapsed: boolean, label: string) {
-  return <NavItem key={entry.path} to={entry.path} icon={entry.icon} label={label} collapsed={collapsed} />
+  return (
+    <NavItem
+      key={entry.path}
+      to={entry.path}
+      icon={entry.icon}
+      label={label}
+      collapsed={collapsed}
+    />
+  )
 }

@@ -1,5 +1,5 @@
 import { Tooltip as AntTooltip } from 'antd'
-import type { TooltipProps } from '@/shared/ui/Tooltip'
+import type { TooltipProps } from '@/shared/ui/primitives/Tooltip'
 
 export function Tooltip({ title, placement = 'top', children }: TooltipProps) {
   return (

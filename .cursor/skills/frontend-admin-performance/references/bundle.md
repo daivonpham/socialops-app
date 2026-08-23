@@ -16,13 +16,13 @@ Suspense fallback in the layout so navigation shows a skeleton, not a blank fram
 
 ## Heavy dependencies load on demand
 
-| Library type | Typical cost | Load when |
-| --- | --- | --- |
-| Rich text editor | 200–500 KB | The editor screen opens |
-| Charting | 100–300 KB | The dashboard/widget renders |
-| PDF / Excel | 300 KB+ | The user clicks export |
-| Map | 200 KB+ | The map panel opens |
-| Code editor (Monaco) | 300 KB+ | The code panel opens |
+| Library type         | Typical cost | Load when                    |
+| -------------------- | ------------ | ---------------------------- |
+| Rich text editor     | 200–500 KB   | The editor screen opens      |
+| Charting             | 100–300 KB   | The dashboard/widget renders |
+| PDF / Excel          | 300 KB+      | The user clicks export       |
+| Map                  | 200 KB+      | The map panel opens          |
+| Code editor (Monaco) | 300 KB+      | The code panel opens         |
 
 Import them with `import()` inside the component that needs them, not at module
 top level of a shared file — a static import in `shared/ui/index.ts` pulls the
@@ -34,10 +34,10 @@ library into every route.
 while this architecture requires `features/<name>/index.ts` and `shared/ui`
 barrels. Both are correct, because they describe different things:
 
-| Barrel | Verdict |
-| --- | --- |
-| Your own `features/orders/index.ts`, `shared/ui/index.ts` | **Keep.** Small, app-local, tree-shaken by the bundler. This is an architecture boundary. |
-| Third-party barrels: `lucide-react`, `@mui/material`, `@ant-design/icons`, `lodash`, `date-fns` | **Avoid.** Thousands of re-exports; import the specific path or configure the bundler. |
+| Barrel                                                                                          | Verdict                                                                                   |
+| ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Your own `features/orders/index.ts`, `shared/ui/index.ts`                                       | **Keep.** Small, app-local, tree-shaken by the bundler. This is an architecture boundary. |
+| Third-party barrels: `lucide-react`, `@mui/material`, `@ant-design/icons`, `lodash`, `date-fns` | **Avoid.** Thousands of re-exports; import the specific path or configure the bundler.    |
 
 So the rule in practice: **barrel your own modules, never import a UI kit or icon
 pack through its root barrel.**

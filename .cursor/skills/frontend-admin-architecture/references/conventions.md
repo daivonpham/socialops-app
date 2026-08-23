@@ -111,30 +111,30 @@ Full model and why the catalog cannot live in `app/permissions`: see
 and `frontend-admin-security/references/authorization.md`.
 
 If the app has a nested scope (Workspace → Brand, org → project, …), the
-*granted keys* `PermissionProvider` holds are scoped to the active Brand and
+_granted keys_ `PermissionProvider` holds are scoped to the active Brand and
 come from the backend that way — the catalog/engine above do not change. See
 `frontend-admin-security/references/authorization.md#scoped-permissions-per-brand--tenant`.
 
 ## Naming
 
-| Kind | Style |
-| --- | --- |
-| Components | PascalCase, specific (`CancelOrderModal`) |
-| Hooks | `use*` |
-| Booleans | `is` / `has` / `can` / `should` |
-| Constants | UPPER_SNAKE |
+| Kind         | Style                                                     |
+| ------------ | --------------------------------------------------------- |
+| Components   | PascalCase, specific (`CancelOrderModal`)                 |
+| Hooks        | `use*`                                                    |
+| Booleans     | `is` / `has` / `can` / `should`                           |
+| Constants    | UPPER_SNAKE                                               |
 | Config files | kebab + namespace (`order-access.ts`, `order.filters.ts`) |
 
 ## Forms
 
 - Engine: **React Hook Form** in features/pages
 - Schema/messages: **`shared/validation`** (Zod or equivalent) — kit-agnostic
-- Inputs: `@/shared/ui/Input` etc. (not `antd` Input in features)
+- Inputs: import from `@/shared/ui` (not deep primitive paths or `antd` in features)
 - Do not use Ant Design `Form` / `Form.Item` as the form engine in new code
 
 ## Tables
 
-- Engine: **TanStack Table** inside `@/shared/ui/DataTable`
+- Table engine stays internal to `DataTable`, imported publicly from `@/shared/ui`.
 - Features define columns + pass data; do not import Ant `Table`
 - Pagination/sort/selection state prefer URL sync via `useUrlFilters` where list pages need shareable URLs
 
@@ -142,9 +142,9 @@ come from the backend that way — the catalog/engine above do not change. See
 
 Two different things share the word "filter" — keep them separate:
 
-| Concern | Lives in | Contains |
-| --- | --- | --- |
-| **UI filter schema** (what the FilterBar renders) | `features/<f>/config/<f>.filters.ts` | Field defs, labels, options, defaults — feature-specific |
+| Concern                                              | Lives in                                | Contains                                                                                       |
+| ---------------------------------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| **UI filter schema** (what the FilterBar renders)    | `features/<f>/config/<f>.filters.ts`    | Field defs, labels, options, defaults — feature-specific                                       |
 | **API list query shape** (what the endpoint accepts) | `shared/api/types.ts` (`ListQueryBase`) | `page`, `pageSize`, `keyword`, `fromDate`, `toDate` — same shape on almost every list endpoint |
 
 ```ts
@@ -187,8 +187,8 @@ export const orderMapper = {
 
 ## Errors
 
-1. `shared/api` — auth, refresh, normalize  
-2. Feature/page — business toasts, form errors, redirects  
+1. `shared/api` — auth, refresh, normalize
+2. Feature/page — business toasts, form errors, redirects
 
 No triple-handling the same error.
 

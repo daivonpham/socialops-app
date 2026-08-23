@@ -14,7 +14,10 @@ export type DropdownFooter = {
 }
 
 export type DropdownProps = {
-  items: DropdownMenuItem[]
+  /** Menu entries for simple selection dropdowns. */
+  items?: DropdownMenuItem[]
+  /** Arbitrary, domain-agnostic panel content such as a column-settings list. */
+  content?: ReactNode
   /** Marks the current choice (workspace/brand switchers). */
   selectedKey?: string
   onSelect?: (key: string) => void

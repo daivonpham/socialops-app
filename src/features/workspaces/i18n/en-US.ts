@@ -6,4 +6,3 @@ export const workspacesEnUS = {
     selectPlaceholder: 'Select workspace',
   },
 } as const
-

@@ -9,7 +9,7 @@ description: >-
 license: MIT
 metadata:
   author: local
-  version: "1.0.0"
+  version: '1.0.0'
 ---
 
 # Create API Module
@@ -84,12 +84,7 @@ of `pageSize`), map them in `service.ts`, not by changing `GetOrdersParams`.
 ```ts
 import { apiClient } from '@/shared/api/client'
 import type { CommonApiResponse } from '@/shared/api/types'
-import type {
-  CreateOrderPayload,
-  GetOrdersParams,
-  OrderDto,
-  UpdateOrderPayload,
-} from './types'
+import type { CreateOrderPayload, GetOrdersParams, OrderDto, UpdateOrderPayload } from './types'
 
 const ORDER_ENDPOINT = '/orders'
 
@@ -105,28 +100,20 @@ export const createOrder = (payload: CreateOrderPayload) =>
 export const updateOrder = (id: number, payload: UpdateOrderPayload) =>
   apiClient.patch<CommonApiResponse<OrderDto>>(`${ORDER_ENDPOINT}/${id}`, payload)
 
-export const deleteOrder = (id: number) =>
-  apiClient.delete(`${ORDER_ENDPOINT}/${id}`)
+export const deleteOrder = (id: number) => apiClient.delete(`${ORDER_ENDPOINT}/${id}`)
 ```
 
 ### hooks.ts
 
 ```ts
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  createOrder,
-  deleteOrder,
-  getOrderById,
-  getOrders,
-  updateOrder,
-} from './service'
+import { createOrder, deleteOrder, getOrderById, getOrders, updateOrder } from './service'
 import type { GetOrdersParams, UpdateOrderPayload } from './types'
 
 export const ORDER_QUERY_KEYS = {
   all: ['orders'] as const,
   lists: () => [...ORDER_QUERY_KEYS.all, 'list'] as const,
-  list: (params: GetOrdersParams) =>
-    [...ORDER_QUERY_KEYS.lists(), params] as const,
+  list: (params: GetOrdersParams) => [...ORDER_QUERY_KEYS.lists(), params] as const,
   details: () => [...ORDER_QUERY_KEYS.all, 'detail'] as const,
   detail: (id: number) => [...ORDER_QUERY_KEYS.details(), id] as const,
 }

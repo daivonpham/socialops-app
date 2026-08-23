@@ -48,9 +48,7 @@ export function RouteAccessGuard({ children }: { children: ReactNode }) {
     return (
       <section className="max-w-narrow">
         <h1 className="text-heading-2 text-text-primary">{t('accessDenied.title')}</h1>
-        <p className="mt-2 text-body-md text-text-secondary">
-          {t('accessDenied.description')}
-        </p>
+        <p className="mt-2 text-body-md text-text-secondary">{t('accessDenied.description')}</p>
         <Link
           to={ROUTES.ALL_PLATFORMS}
           className="mt-6 inline-block rounded-sm text-label-md text-link outline-none hover:text-link-hover focus-visible:focus-ring"

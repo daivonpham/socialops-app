@@ -5,14 +5,23 @@ import { getNavEntries } from '@/app/router/routes'
 import { BrandSwitcher } from '@/features/brands'
 import { WorkspaceSwitcher } from '@/features/workspaces'
 import { normalizeLocale, resolveLocale, SUPPORTED_LOCALES, type AppLocale } from '@/shared/i18n'
-import { Avatar, Button, Dropdown, IconMenu, IconProfile, IconSignOut, Logo, NavItem } from '@/shared/ui'
+import {
+  Avatar,
+  Button,
+  Dropdown,
+  IconMenu,
+  IconProfile,
+  IconSignOut,
+  Logo,
+  NavItem,
+} from '@/shared/ui'
 
 const topNav = getNavEntries('top')
 
 /**
  * Chrome only — zero API calls. Data-driven parts (workspace/brand switchers)
- * are feature components composed in. Height derives from tokens: 40px
- * controls + 12px vertical padding (design.md defines no explicit top bar height);
+ * are feature components composed in. Height derives from compact tokens: 32px
+ * controls + 8px vertical padding (design.md defines no explicit top bar height);
  * horizontal padding follows the page gutters of §6.1.
  */
 export function TopBar({
@@ -32,7 +41,7 @@ export function TopBar({
       {/* Same width + right border as the sidebar so the rail reads as one column. */}
       <div
         className={
-          'flex min-w-0 items-center gap-2 px-3 py-3 md:shrink-0 md:border-e md:border-border-subtle md:transition-[width] md:duration-drawer md:ease-standard ' +
+          'flex min-w-0 items-center gap-2 px-3 py-2 md:shrink-0 md:border-e md:border-border-subtle md:transition-[width] md:duration-drawer md:ease-standard ' +
           (desktopSidebarExpanded ? 'md:w-sidebar' : 'md:w-sidebar-collapsed md:justify-center')
         }
         onMouseEnter={onPreviewOpen}
@@ -63,12 +72,15 @@ export function TopBar({
         </div>
       </div>
 
-      <div className="flex min-w-0 flex-1 items-center gap-2 px-4 py-3 md:gap-3 md:px-6">
+      <div className="flex min-w-0 flex-1 items-center gap-2 px-4 py-2 md:gap-3 md:px-5">
         <div className="hidden min-w-0 md:block">
           <BrandSwitcher />
         </div>
         <div className="flex-1" />
-        <nav aria-label={t('topbar.primaryNavigation')} className="hidden items-center gap-1 lg:flex">
+        <nav
+          aria-label={t('topbar.primaryNavigation')}
+          className="hidden items-center gap-1 lg:flex"
+        >
           {topNav.map((entry) => (
             <NavItem key={entry.path} to={entry.path} label={t(entry.labelKey)} />
           ))}

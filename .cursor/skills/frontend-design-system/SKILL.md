@@ -9,7 +9,7 @@ description: >-
 license: MIT
 metadata:
   author: local
-  version: "1.0.0"
+  version: '1.0.0'
 ---
 
 # Frontend Design System
@@ -34,8 +34,6 @@ Read:
 - [references/composites.md](references/composites.md)
 - [references/patterns.md](references/patterns.md)
 
-
-
 ## Rules
 
 1. Features consume `shared/ui` — never hard-code hex colors for brand UI when tokens exist.
@@ -43,8 +41,6 @@ Read:
 3. Composites compose primitives; they do not reimplement kit internals.
 4. Page patterns are layout recipes, not dump yards for business logic.
 5. Kit swap changes adapters + optionally token mapping — not feature JSX.
-
-
 
 ## Anti-patterns
 
@@ -54,4 +50,3 @@ Read:
 ✗ Putting domain copy/business rules inside shared composites
 ✗ Growing Ant Form/Table "theme overrides" instead of platform tokens + DataTable shell
 ```
-

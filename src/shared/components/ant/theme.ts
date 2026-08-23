@@ -163,5 +163,83 @@ export const antTheme: ThemeConfig = {
       // §8: dividers are the subtle 1px hairline, not a container border
       colorSplit: semanticColor.border.subtle,
     },
+    Input: {
+      activeBorderColor: semanticColor.border.focus,
+      hoverBorderColor: semanticColor.border.strong,
+      activeShadow: `0 0 0 ${focusRing.width}px ${focusRing.color}`,
+      colorBgContainer: semanticColor.bg.surface,
+      colorBorder: semanticColor.border.DEFAULT,
+      colorText: semanticColor.text.primary,
+      colorTextPlaceholder: semanticColor.text.disabled,
+    },
+    Select: {
+      activeBorderColor: semanticColor.border.focus,
+      hoverBorderColor: semanticColor.border.strong,
+      activeOutlineColor: focusRing.color,
+      optionActiveBg: semanticColor.bg['surface-muted'],
+      optionSelectedBg: semanticColor.bg['surface-muted'],
+      optionSelectedColor: semanticColor.text.primary,
+    },
+    Checkbox: {
+      colorPrimary: semanticColor.action.primary,
+      colorPrimaryHover: semanticColor.action['primary-hover'],
+      borderRadiusSM: radius.sm,
+    },
+    Tabs: {
+      itemColor: semanticColor.text.tertiary,
+      itemHoverColor: semanticColor.text.primary,
+      itemSelectedColor: semanticColor.text.primary,
+      inkBarColor: semanticColor.border.strong,
+      titleFontSize: typography.size['body-sm'].size,
+    },
+    Segmented: {
+      trackBg: semanticColor.bg['surface-muted'],
+      // Solid tabs sit flush in a 36px track; selected state must not add an
+      // extra 4px inset around every item.
+      trackPadding: space[0],
+      itemColor: color.neutral[500],
+      itemActiveBg: semanticColor.bg.surface,
+      itemSelectedBg: semanticColor.bg.surface,
+      itemSelectedColor: color.neutral[700],
+      // Ant applies this token to the selected thumb/item, so active white
+      // tabs retain a visible neutral edge without changing their 36px height.
+      boxShadowTertiary: componentToken.tabs.solidActiveOutline,
+    },
+    Card: {
+      colorBgContainer: semanticColor.bg.surface,
+      colorBorderSecondary: semanticColor.border.subtle,
+      borderRadiusLG: radius.xl,
+      bodyPadding: space[4],
+      headerFontSize: typography.size['heading-4'].size,
+    },
+    Statistic: {
+      titleFontSize: typography.size['body-sm'].size,
+      contentFontSize: typography.size['heading-1'].size,
+      colorTextDescription: semanticColor.text.tertiary,
+    },
+    Progress: {
+      defaultColor: semanticColor.action.primary,
+      remainingColor: semanticColor.bg['surface-muted'],
+      lineBorderRadius: radius.pill,
+    },
+    Tag: {
+      defaultBg: semanticColor.bg['surface-muted'],
+      defaultColor: semanticColor.text.secondary,
+      borderRadiusSM: radius.pill,
+    },
+    Modal: {
+      contentBg: semanticColor.bg.surface,
+      headerBg: semanticColor.bg.surface,
+      titleColor: semanticColor.text.primary,
+      titleFontSize: typography.size['heading-4'].size,
+      borderRadiusLG: radius['2xl'],
+    },
+    Drawer: {
+      colorBgElevated: semanticColor.bg.surface,
+    },
+    Skeleton: {
+      gradientFromColor: semanticColor.bg['surface-muted'],
+      gradientToColor: color.neutral[200],
+    },
   },
 }

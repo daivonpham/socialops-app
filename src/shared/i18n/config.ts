@@ -19,4 +19,3 @@ export async function initializeI18n(resources: Resource) {
   }
   return i18n
 }
-

@@ -16,7 +16,13 @@ are. Keep the two declarations separate even though they merge at the call site:
 
 ```ts
 // shared/api/types.ts — same on almost every list
-export type ListQueryBase = { page?: number; pageSize?: number; keyword?: string; fromDate?: string; toDate?: string }
+export type ListQueryBase = {
+  page?: number
+  pageSize?: number
+  keyword?: string
+  fromDate?: string
+  toDate?: string
+}
 
 // features/orders/config/order.filters.ts — only this feature's fields
 export type OrderFilterFields = { status?: OrderStatus }

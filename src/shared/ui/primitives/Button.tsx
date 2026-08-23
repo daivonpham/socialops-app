@@ -1,4 +1,4 @@
-import type { MouseEventHandler, ReactNode } from 'react'
+import type { DragEventHandler, KeyboardEventHandler, MouseEventHandler, ReactNode } from 'react'
 
 /** Platform-owned button API (design.md §12) — implemented by the active adapter. */
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive' | 'link'
@@ -14,6 +14,13 @@ export type ButtonProps = {
   className?: string
   children?: ReactNode
   onClick?: MouseEventHandler<HTMLElement>
+  draggable?: boolean
+  title?: string
+  onDragStart?: DragEventHandler<HTMLElement>
+  onDragOver?: DragEventHandler<HTMLElement>
+  onDrop?: DragEventHandler<HTMLElement>
+  onDragEnd?: DragEventHandler<HTMLElement>
+  onKeyDown?: KeyboardEventHandler<HTMLElement>
   'aria-label'?: string
 }
 

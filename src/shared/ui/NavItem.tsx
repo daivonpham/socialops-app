@@ -22,7 +22,16 @@ export type NavItemProps = {
  * radius — is simpler as a styled NavLink than as a
  * restyled antd Menu.
  */
-export function NavItem({ to, label, icon, activeIcon, activeClassName, collapsed = false, badge, end }: NavItemProps) {
+export function NavItem({
+  to,
+  label,
+  icon,
+  activeIcon,
+  activeClassName,
+  collapsed = false,
+  badge,
+  end,
+}: NavItemProps) {
   return (
     <NavLink
       to={to}

@@ -35,7 +35,7 @@ Do not let features call `dangerouslySetInnerHTML` directly.
 
 ```tsx
 // ✗ user-controlled
-<a href={row.website}>…</a>
+;<a href={row.website}>…</a>
 
 // ✓ validate scheme first
 const safeHref = isHttpUrl(row.website) ? row.website : undefined
@@ -54,9 +54,8 @@ authenticate.
 
 ```ts
 // ✓ allow only same-origin, path-only targets
-const target = returnUrl?.startsWith('/') && !returnUrl.startsWith('//')
-  ? returnUrl
-  : ROUTES.DASHBOARD
+const target =
+  returnUrl?.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : ROUTES.DASHBOARD
 ```
 
 Apply the same rule to any "continue to", "next", or post-action redirect param.

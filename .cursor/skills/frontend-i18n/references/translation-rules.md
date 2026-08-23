@@ -18,7 +18,6 @@ Translate a complete thought so translators can change word order:
 ```ts
 // Correct
 t('connectedAccounts', { count, platform })
-
 // Incorrect
 `${count} ${t('connected')} ${platform} ${t('accounts')}`
 ```
@@ -85,4 +84,3 @@ the original diagnostic outside the visible UI.
 Validation schemas should produce stable error codes/keys or obtain the active
 translator at schema creation time. Do not create a module-level schema whose
 messages were translated once and then fail to update after a language change.
-

@@ -39,7 +39,14 @@ export const color = {
   },
   success: { 50: '#F0FDF4', 100: '#DCFCE7', 500: '#22C55E', 700: '#15803D', 900: '#14532D' },
   warning: { 50: '#FEFCE8', 100: '#FEF9C3', 500: '#EAB308', 700: '#A16207', 900: '#713F12' },
-  error: { 50: '#FEF2F2', 100: '#FEE2E2', 500: '#EF4444', 600: '#DC2626', 700: '#B91C1C', 900: '#7F1D1D' },
+  error: {
+    50: '#FEF2F2',
+    100: '#FEE2E2',
+    500: '#EF4444',
+    600: '#DC2626',
+    700: '#B91C1C',
+    900: '#7F1D1D',
+  },
   info: { 50: '#EFF6FF', 100: '#DBEAFE', 500: '#3B82F6', 700: '#1D4ED8', 900: '#1E3A8A' },
   approval: { 50: '#FAF5FF', 100: '#F3E8FF', 500: '#A855F7', 700: '#7E22CE', 900: '#581C87' },
   /** Contextual identifiers only — never product-brand surfaces (design.md §3.6). */
@@ -103,7 +110,8 @@ export const radius = {
   sm: 4,
   md: 6,
   lg: 8,
-  xl: 12,
+  /** Standard product radius. Larger radii are reserved for exceptional surfaces only. */
+  xl: 8,
   '2xl': 16,
   '3xl': 24,
   pill: 9999,
@@ -154,7 +162,14 @@ export const motion = {
 } as const
 
 /** Control heights — SocialOps keeps sm compact filters, md default, lg onboarding. */
-export const control = { heightXs: 32, heightSm: 36, height: 40, heightLg: 44, heightXl: 48 } as const
+/** Compact operational controls: 32px icon/small, 36px default, 40px large. */
+export const control = {
+  heightXs: 28,
+  heightSm: 32,
+  height: 36,
+  heightLg: 40,
+  heightXl: 44,
+} as const
 
 /** Z-index scale — design.md §10. Nothing may invent a value outside this scale. */
 export const zIndex = {
@@ -182,6 +197,9 @@ export const layout = {
   sidebarWidth: 232,
   sidebarCollapsedWidth: 72,
   sidebarDrawerWidth: 280,
+  drawerCompactWidth: 440,
+  drawerNormalWidth: 600,
+  drawerWideWidth: 760,
   containerNarrow: 720,
 } as const
 
@@ -231,5 +249,36 @@ export const componentToken = {
   /** design.md §20 — dropdown menu item metrics. */
   dropdown: {
     itemPaddingBlock: space[2],
+  },
+  tabs: {
+    /** Border treatment for the compact solid-tab track without changing its height. */
+    solidTrackOutline: `inset 0 0 0 1px ${semanticColor.border.subtle}`,
+    solidActiveOutline: `inset 0 0 0 1px ${semanticColor.border.DEFAULT}`,
+  },
+  /** Shared dashboard chart geometry. */
+  chart: {
+    height: space[20] * 3,
+    lineWidth: 2,
+    pointRadius: radius.sm,
+    barRadius: radius.lg,
+    gridDash: `${space[1]} ${space[1]}`,
+    margin: { top: space[2], right: space[2], bottom: 0, left: -space[4] },
+  },
+  /** design.md §27, §30, §68 — compact operational table geometry. */
+  table: {
+    columnWidth: space[5] * 10,
+    columnMinWidth: space[10] * 2,
+    columnMaxWidth: space[10] * 12,
+    selectionColumnWidth: space[12],
+    keyboardResizeStep: space[4],
+    settingsPanelWidth: space[10] * 8,
+    settingsPanelMaxHeight: space[10] * 12,
+    columnPreset: {
+      actions: space[24],
+      compact: space[10] * 3,
+      default: space[5] * 10,
+      wide: space[10] * 6,
+      content: space[10] * 8,
+    },
   },
 } as const

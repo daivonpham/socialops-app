@@ -43,6 +43,9 @@ export const appViVN = {
     signOut: 'Đăng xuất',
   },
   permissions: {
+    manageChannels: 'Quản lý kênh',
+    publishContent: 'Xuất bản nội dung',
+    viewAnalytics: 'Xem phân tích',
     viewReports: 'Xem báo cáo',
     viewMembers: 'Xem thành viên',
     viewSettings: 'Xem cài đặt',

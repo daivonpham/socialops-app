@@ -11,7 +11,7 @@ description: >-
 license: MIT
 metadata:
   author: local
-  version: "2.0.0"
+  version: '2.0.0'
 ---
 
 # Migrate Admin Template
@@ -46,17 +46,17 @@ src/shared/
 
 ### Step 3 — Move infrastructure
 
-| From template | To |
-| --- | --- |
-| Layout | `app/layouts/` |
-| Global providers (incl. `PermissionProvider`) | `app/providers/` |
-| Routes | `app/router/` (`paths.ts` + `routes.tsx`) |
-| Permission catalog + check engine | `shared/permissions/` — **not** `app/`; see `frontend-admin-architecture/references/structure.md#why-permissions-live-in-shared` |
-| Global store | `app/store/` |
-| HTTP client + response envelope + list query base | `shared/api/` (`CommonApiResponse`, `ListQueryBase`) |
-| Kit widgets (antd, …) | `shared/adapters/<kit>/` then re-export via `shared/ui/` |
-| Generic UI / shells | `shared/ui/` (DataTable, AsyncState, …) |
-| Generic hooks/helpers/types/config | `shared/hooks|lib|types|config|validation/` |
+| From template                                     | To                                                                                                                               |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Layout                                            | `app/layouts/`                                                                                                                   |
+| Global providers (incl. `PermissionProvider`)     | `app/providers/`                                                                                                                 |
+| Routes                                            | `app/router/` (`paths.ts` + `routes.tsx`)                                                                                        |
+| Permission catalog + check engine                 | `shared/permissions/` — **not** `app/`; see `frontend-admin-architecture/references/structure.md#why-permissions-live-in-shared` |
+| Global store                                      | `app/store/`                                                                                                                     |
+| HTTP client + response envelope + list query base | `shared/api/` (`CommonApiResponse`, `ListQueryBase`)                                                                             |
+| Kit widgets (antd, …)                             | `shared/adapters/<kit>/` then re-export via `shared/ui/`                                                                         |
+| Generic UI / shells                               | `shared/ui/` (DataTable, AsyncState, …)                                                                                          |
+| Generic hooks/helpers/types/config                | `shared/hooks                                                                                                                    | lib | types | config | validation/` |
 
 ### Step 4 — Move one business feature at a time
 

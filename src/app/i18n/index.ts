@@ -12,4 +12,3 @@ export function applyDocumentLocale() {
   document.documentElement.dir = LOCALE_META[locale].direction
   document.title = i18n.t('document.title', { ns: 'app' })
 }
-

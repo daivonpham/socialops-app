@@ -32,12 +32,12 @@ If the file is huge because of a second business domain, create a **new feature*
 
 ## Types boundary
 
-| Location | Content |
-| --- | --- |
-| `shared/api/types.ts` | Cross-feature contracts: `CommonApiResponse<T>`, `PaginationMeta`, `ListQueryBase`, `ListQuery<T>` |
-| `api/types.ts` | Feature wire shapes only: DTOs, payloads, `GetXParams = ListQuery<{...}>` — extends shared, never redeclares it |
-| `model/*.types.ts` | UI / form / domain shapes that differ from API |
-| Component `*.types.ts` | Props-only types colocated with complex components |
+| Location               | Content                                                                                                         |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `shared/api/types.ts`  | Cross-feature contracts: `CommonApiResponse<T>`, `PaginationMeta`, `ListQueryBase`, `ListQuery<T>`              |
+| `api/types.ts`         | Feature wire shapes only: DTOs, payloads, `GetXParams = ListQuery<{...}>` — extends shared, never redeclares it |
+| `model/*.types.ts`     | UI / form / domain shapes that differ from API                                                                  |
+| Component `*.types.ts` | Props-only types colocated with complex components                                                              |
 
 Do not create a feature-local response wrapper (`OrderListResponse`,
 `OrderDetailResponse`, …) when `CommonApiResponse<T>` already covers it — that is

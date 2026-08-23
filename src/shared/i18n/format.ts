@@ -7,4 +7,3 @@ export function formatNumber(
 ): string {
   return new Intl.NumberFormat(locale, options).format(value)
 }
-

@@ -51,9 +51,7 @@ export function PlatformNavList({
     // design.md §21.5 — say what failed and offer a way out, not just a dead message.
     return (
       <div className="px-3 py-2">
-        <p className="text-body-sm text-text-secondary">
-          {t('navigation.loadError')}
-        </p>
+        <p className="text-body-sm text-text-secondary">{t('navigation.loadError')}</p>
         <Button variant="link" size="sm" loading={isFetching} onClick={() => void refetch()}>
           {t('navigation.retry')}
         </Button>

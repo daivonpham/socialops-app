@@ -3,6 +3,7 @@ export const ROUTES = {
   ROOT: '/',
   SELECT_BRAND: '/select-brand',
   ALL_PLATFORMS: '/all-platforms',
+  FACEBOOK: '/platforms/facebook',
   PLATFORM: '/platforms/:platform',
   OVERVIEW: '/overview',
   PLANNING: '/planning',

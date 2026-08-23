@@ -2,11 +2,11 @@
 
 ## Token storage
 
-| Storage | XSS risk | CSRF risk | Use for |
-| --- | --- | --- | --- |
-| `httpOnly` + `Secure` + `SameSite` cookie | Not readable by JS | Needs CSRF defense | Refresh token / session (preferred) |
-| In-memory (module variable, not persisted) | Lost on XSS only while running | None | Short-lived access token |
-| `localStorage` / `sessionStorage` | Readable by any XSS | None | Non-sensitive UI prefs only |
+| Storage                                    | XSS risk                       | CSRF risk          | Use for                             |
+| ------------------------------------------ | ------------------------------ | ------------------ | ----------------------------------- |
+| `httpOnly` + `Secure` + `SameSite` cookie  | Not readable by JS             | Needs CSRF defense | Refresh token / session (preferred) |
+| In-memory (module variable, not persisted) | Lost on XSS only while running | None               | Short-lived access token            |
+| `localStorage` / `sessionStorage`          | Readable by any XSS            | None               | Non-sensitive UI prefs only         |
 
 Default for admin: **refresh token in `httpOnly` cookie, access token in memory**.
 

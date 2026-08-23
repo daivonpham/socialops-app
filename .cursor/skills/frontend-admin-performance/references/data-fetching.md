@@ -42,7 +42,7 @@ This belongs in the shared list-query helper so no feature forgets it.
 Debounce the value that enters the query key, not the input itself:
 
 ```ts
-const [keyword, setKeyword] = useState('')      // instant, controlled input
+const [keyword, setKeyword] = useState('') // instant, controlled input
 const debounced = useDebouncedValue(keyword, 300) // enters filters → query key
 ```
 
@@ -77,10 +77,11 @@ loading flags.
 For row → detail navigation, prefetch on hover or focus:
 
 ```ts
-const prefetch = () => queryClient.prefetchQuery({
-  queryKey: KEYS.detail(row.id),
-  queryFn: () => getOrderById(row.id),
-})
+const prefetch = () =>
+  queryClient.prefetchQuery({
+    queryKey: KEYS.detail(row.id),
+    queryFn: () => getOrderById(row.id),
+  })
 ```
 
 Cheap, and makes the detail drawer feel instant. Do not prefetch every row on

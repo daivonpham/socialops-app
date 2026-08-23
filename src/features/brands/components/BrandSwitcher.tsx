@@ -24,7 +24,12 @@ export function BrandSwitcher() {
         if (workspaceId !== null && key !== brandId) selectBrand(workspaceId, key)
       }}
     >
-      <Button variant="ghost" size="sm" aria-label={t('switcher.ariaLabel')} className="min-w-0 px-1.5">
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-label={t('switcher.ariaLabel')}
+        className="min-w-0 px-1.5"
+      >
         <span className="flex min-w-0 items-center gap-2">
           {current ? <Avatar name={current.name} size="xs" /> : null}
           <span className="truncate text-body-sm text-text-secondary">

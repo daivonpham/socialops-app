@@ -14,7 +14,7 @@ const KIT_IMPORT_PATTERNS = [
       "UI kit imports live behind the adapter layer. Import from '@/shared/ui' instead (antd is allowed only in src/shared/adapters/** and app/providers/ThemeProvider).",
   },
 ]
-
+// 
 export default tseslint.config(
   { ignores: ['dist/**', 'node_modules/**', 'public/**'] },
   ...tseslint.configs.recommended,
@@ -28,7 +28,22 @@ export default tseslint.config(
   {
     files: ['src/app/**/*.{ts,tsx}'],
     rules: {
-      'no-restricted-imports': ['error', { patterns: KIT_IMPORT_PATTERNS }],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            ...KIT_IMPORT_PATTERNS,
+            {
+              group: ['@/shared/components/ant', '@/shared/components/ant/*'],
+              message: "Ant adapters are internal — import from '@/shared/ui'.",
+            },
+            {
+              group: ['@/shared/ui/*'],
+              message: "Use the public '@/shared/ui' entry point instead of a deep UI import.",
+            },
+          ],
+        },
+      ],
     },
   },
   {
@@ -40,9 +55,16 @@ export default tseslint.config(
           patterns: [
             ...KIT_IMPORT_PATTERNS,
             {
-              group: ['@/shared/adapters/*'],
-              message:
-                "Adapters are internal to shared/ui — features import '@/shared/ui'.",
+              group: [
+                '@/shared/adapters/*',
+                '@/shared/components/ant',
+                '@/shared/components/ant/*',
+              ],
+              message: "Adapters are internal to shared/ui — features import '@/shared/ui'.",
+            },
+            {
+              group: ['@/shared/ui/*'],
+              message: "Use the public '@/shared/ui' entry point instead of a deep UI import.",
             },
             {
               group: ['@/features/*/*'],

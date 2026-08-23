@@ -41,6 +41,12 @@ const layoutChildren: RouteObject[] = [
     }),
   },
   // Platform pages are reached from the data-driven <PlatformNavList/>, not from route nav metadata.
+  {
+    path: ROUTES.FACEBOOK,
+    lazy: async () => ({
+      Component: (await import('@/features/facebook/pages/FacebookPage')).default,
+    }),
+  },
   { path: ROUTES.PLATFORM, lazy: placeholderPage },
   {
     path: ROUTES.OVERVIEW,

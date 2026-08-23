@@ -17,7 +17,10 @@ export default function PlaceholderPage() {
   const title =
     (nav?.labelKey ? t(nav.labelKey, { ns: 'app' }) : undefined) ??
     (platform
-      ? t(PLATFORM_LABEL_KEY[platform as Platform], { ns: 'socialAccounts', defaultValue: platform })
+      ? t(PLATFORM_LABEL_KEY[platform as Platform], {
+          ns: 'socialAccounts',
+          defaultValue: platform,
+        })
       : t('placeholder.comingSoon', { ns: 'app' }))
 
   return (

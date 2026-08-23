@@ -1,6 +1,6 @@
 import { Avatar as AntAvatar } from 'antd'
 import { avatarSize } from '@/shared/styles/tokens'
-import type { AvatarProps } from '@/shared/ui/Avatar'
+import type { AvatarProps } from '@/shared/ui/primitives/Avatar'
 
 function initialsOf(name: string): string {
   return name

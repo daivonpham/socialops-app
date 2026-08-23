@@ -10,7 +10,7 @@ description: >-
 license: MIT
 metadata:
   author: local
-  version: "1.0.0"
+  version: '1.0.0'
 ---
 
 # Frontend Shared Platform
@@ -33,22 +33,22 @@ Aligns with `frontend-admin-architecture` (adapters behind `shared/ui`).
 
 ## Platform catalog
 
-| Concern | Use | Reference |
-| --- | --- | --- |
-| HTTP + response envelope + list query base | `shared/api` (`CommonApiResponse`, `ListQueryBase`) | [references/api-layer.md](references/api-layer.md) |
-| Server state | TanStack Query in feature `api/hooks.ts` | [references/query.md](references/query.md) |
-| Authorization | `shared/permissions` (catalog + engine); feature `config/*-access.ts` for policy | `frontend-admin-security/references/authorization.md` |
-| Approval/publish lifecycle | Status = rendering, transitions = allowed moves + guards | [references/workflow-transitions.md](references/workflow-transitions.md) |
-| Table | `shared/ui/DataTable` (TanStack Table) | [references/data-table.md](references/data-table.md) |
-| Form | RHF + `shared/ui` fields | [references/forms.md](references/forms.md) |
-| Validation | `shared/validation` | [references/validation.md](references/validation.md) |
-| URL filters | `useUrlFilters` | [references/url-filters.md](references/url-filters.md) |
-| Drawer/modal entity UI | `useEntityDrawer` | [references/entity-drawer.md](references/entity-drawer.md) |
-| Loading/empty/error | `AsyncState` | [references/async-state.md](references/async-state.md) |
-| Upload | `FileUploader` / variants | [references/upload.md](references/upload.md) |
-| DTO mapping | feature `model/*.mapper.ts` | [references/mappers.md](references/mappers.md) |
-| API mock | MSW handlers per feature | [references/msw.md](references/msw.md) |
-| UI kit wiring | `shared/adapters/<kit>` behind `shared/ui` | [references/adapters.md](references/adapters.md) |
+| Concern                                    | Use                                                                              | Reference                                                                |
+| ------------------------------------------ | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| HTTP + response envelope + list query base | `shared/api` (`CommonApiResponse`, `ListQueryBase`)                              | [references/api-layer.md](references/api-layer.md)                       |
+| Server state                               | TanStack Query in feature `api/hooks.ts`                                         | [references/query.md](references/query.md)                               |
+| Authorization                              | `shared/permissions` (catalog + engine); feature `config/*-access.ts` for policy | `frontend-admin-security/references/authorization.md`                    |
+| Approval/publish lifecycle                 | Status = rendering, transitions = allowed moves + guards                         | [references/workflow-transitions.md](references/workflow-transitions.md) |
+| Table                                      | `shared/ui/DataTable` (TanStack Table)                                           | [references/data-table.md](references/data-table.md)                     |
+| Form                                       | RHF + `shared/ui` fields                                                         | [references/forms.md](references/forms.md)                               |
+| Validation                                 | `shared/validation`                                                              | [references/validation.md](references/validation.md)                     |
+| URL filters                                | `useUrlFilters`                                                                  | [references/url-filters.md](references/url-filters.md)                   |
+| Drawer/modal entity UI                     | `useEntityDrawer`                                                                | [references/entity-drawer.md](references/entity-drawer.md)               |
+| Loading/empty/error                        | `AsyncState`                                                                     | [references/async-state.md](references/async-state.md)                   |
+| Upload                                     | `FileUploader` / variants                                                        | [references/upload.md](references/upload.md)                             |
+| DTO mapping                                | feature `model/*.mapper.ts`                                                      | [references/mappers.md](references/mappers.md)                           |
+| API mock                                   | MSW handlers per feature                                                         | [references/msw.md](references/msw.md)                                   |
+| UI kit wiring                              | `shared/adapters/<kit>` behind `shared/ui`                                       | [references/adapters.md](references/adapters.md)                         |
 
 ## Hard bans
 

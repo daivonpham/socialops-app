@@ -1,13 +1,13 @@
 import { Drawer as AntDrawer } from 'antd'
 import { layout } from '@/shared/styles/tokens'
-import type { DrawerProps } from '@/shared/ui/Drawer'
+import type { DrawerProps } from '@/shared/ui/primitives/Drawer'
 
 export function Drawer({
   open,
   onClose,
   title,
   placement = 'left',
-  width = layout.sidebarDrawerWidth,
+  width = 'navigation',
   children,
 }: DrawerProps) {
   return (
@@ -16,7 +16,14 @@ export function Drawer({
       onClose={onClose}
       placement={placement}
       title={title}
-      width={width}
+      width={
+        {
+          navigation: layout.sidebarDrawerWidth,
+          compact: layout.drawerCompactWidth,
+          normal: layout.drawerNormalWidth,
+          wide: layout.drawerWideWidth,
+        }[width]
+      }
       closable={false}
       styles={{ body: { padding: 0 } }}
     >

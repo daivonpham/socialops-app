@@ -11,7 +11,7 @@ description: >-
 license: MIT
 metadata:
   author: local
-  version: "1.0.0"
+  version: '1.0.0'
 ---
 
 # Frontend Admin Performance
@@ -38,13 +38,13 @@ charts**.
 
 ## References
 
-| Symptom | Reference |
-| --- | --- |
-| Refetch storms, pagination flicker, slow search | [references/data-fetching.md](references/data-fetching.md) |
-| Big tables, scroll jank, slow column render | [references/tables.md](references/tables.md) |
-| Laggy typing, whole-form re-render | [references/forms-and-render.md](references/forms-and-render.md) |
-| Large bundle, slow first load | [references/bundle.md](references/bundle.md) |
-| Which `react-best-practices` rules apply here | [references/scope.md](references/scope.md) |
+| Symptom                                         | Reference                                                        |
+| ----------------------------------------------- | ---------------------------------------------------------------- |
+| Refetch storms, pagination flicker, slow search | [references/data-fetching.md](references/data-fetching.md)       |
+| Big tables, scroll jank, slow column render     | [references/tables.md](references/tables.md)                     |
+| Laggy typing, whole-form re-render              | [references/forms-and-render.md](references/forms-and-render.md) |
+| Large bundle, slow first load                   | [references/bundle.md](references/bundle.md)                     |
+| Which `react-best-practices` rules apply here   | [references/scope.md](references/scope.md)                       |
 
 ## Defaults worth setting once
 

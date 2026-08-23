@@ -30,15 +30,15 @@ Do not create empty resource folders for features with no user-visible copy.
 
 ## Ownership
 
-| Concern | Owner |
-| --- | --- |
-| Locale type, allow-list, normalization, direction, format helpers | `shared/i18n` |
-| Shell, navigation, route guard and account-menu messages | `app/i18n` |
-| Domain page/component/status/filter messages | `features/<feature>/i18n` |
-| i18next instance, preference bootstrap, resource composition | `app/providers/I18nProvider.tsx` + `app/i18n` |
-| Ant locale and direction mapping | `app/providers/ThemeProvider.tsx` |
-| Generic platform-component defaults | `shared/ui`, backed by the common namespace |
-| Kit rendering only | `shared/components/ant` |
+| Concern                                                           | Owner                                         |
+| ----------------------------------------------------------------- | --------------------------------------------- |
+| Locale type, allow-list, normalization, direction, format helpers | `shared/i18n`                                 |
+| Shell, navigation, route guard and account-menu messages          | `app/i18n`                                    |
+| Domain page/component/status/filter messages                      | `features/<feature>/i18n`                     |
+| i18next instance, preference bootstrap, resource composition      | `app/providers/I18nProvider.tsx` + `app/i18n` |
+| Ant locale and direction mapping                                  | `app/providers/ThemeProvider.tsx`             |
+| Generic platform-component defaults                               | `shared/ui`, backed by the common namespace   |
+| Kit rendering only                                                | `shared/components/ant`                       |
 
 Feature resources stay inside their feature. If app-level composition needs a
 feature bundle or loader, expose the intended i18n surface from the feature's
@@ -92,4 +92,3 @@ Do not mix locale into Workspace/Brand scope storage. Store only the locale, not
 the user object or other profile data. Private admin route paths remain stable;
 do not introduce a locale URL segment unless public/SEO requirements explicitly
 need one.
-

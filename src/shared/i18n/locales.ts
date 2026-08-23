@@ -4,10 +4,7 @@ export type TextDirection = 'ltr' | 'rtl'
 
 export const DEFAULT_LOCALE: AppLocale = 'en-US'
 
-export const LOCALE_META: Record<
-  AppLocale,
-  { direction: TextDirection; dayjsLocale: string }
-> = {
+export const LOCALE_META: Record<AppLocale, { direction: TextDirection; dayjsLocale: string }> = {
   'en-US': { direction: 'ltr', dayjsLocale: 'en' },
   'vi-VN': { direction: 'ltr', dayjsLocale: 'vi' },
 }
@@ -16,9 +13,7 @@ const PREFERENCES_STORAGE_KEY = 'socialops.preferences:v1'
 
 export function normalizeLocale(value: string | null | undefined): AppLocale | null {
   if (!value) return null
-  const exact = SUPPORTED_LOCALES.find(
-    (locale) => locale.toLowerCase() === value.toLowerCase(),
-  )
+  const exact = SUPPORTED_LOCALES.find((locale) => locale.toLowerCase() === value.toLowerCase())
   if (exact) return exact
 
   const language = value.split('-')[0]?.toLowerCase()
@@ -55,4 +50,3 @@ export function persistLocale(locale: AppLocale): void {
     // Locale remains active for this session when storage is unavailable.
   }
 }
-

@@ -31,6 +31,6 @@ type EntityDrawerState<T> =
 
 ## Rules
 
-- Hook is kit-agnostic; render with `shared/ui/Modal` or `Drawer`.
+- Hook is kit-agnostic; render `Modal` or `Drawer` imported from `@/shared/ui`.
 - Keep state local to the page/feature that owns the flow — not global store by default.
 - Name UI `CancelOrderModal` etc.; hook only manages open/mode/data.

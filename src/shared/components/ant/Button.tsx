@@ -1,6 +1,6 @@
 import { Button as AntButton } from 'antd'
 import { forwardRef } from 'react'
-import type { ButtonProps } from '@/shared/ui/Button'
+import type { ButtonProps } from '@/shared/ui/primitives/Button'
 
 // design.md §40.1 mapping: primary→Ant primary, secondary→default, ghost→text,
 // destructive→primary+danger, link→link. Sizes ride on controlHeight tokens (32/40/48).

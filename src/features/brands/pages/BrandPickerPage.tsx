@@ -36,9 +36,7 @@ export default function BrandPickerPage() {
     <main className="flex min-h-screen items-center justify-center bg-bg-page p-4 md:p-6">
       <section className="w-full max-w-narrow rounded-xl border border-border bg-bg-surface p-6 shadow-xs">
         <h1 className="text-heading-2 text-text-primary">{t('picker.title')}</h1>
-        <p className="mt-2 text-body-md text-text-secondary">
-          {t('picker.description')}
-        </p>
+        <p className="mt-2 text-body-md text-text-secondary">{t('picker.description')}</p>
 
         <SectionLabel as="h2" className="mt-8 block">
           {t('picker.workspaceSection')}
@@ -85,9 +83,7 @@ export default function BrandPickerPage() {
           </div>
         ) : (
           // design.md §34 — the empty branch is part of the state matrix, not an afterthought.
-          <p className="mt-3 text-body-sm text-text-secondary">
-            {t('picker.noBrands')}
-          </p>
+          <p className="mt-3 text-body-sm text-text-secondary">{t('picker.noBrands')}</p>
         )}
 
         <Button

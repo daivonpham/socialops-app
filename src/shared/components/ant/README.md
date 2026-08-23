@@ -6,7 +6,7 @@ import from here; they import `@/shared/ui`, which re-exports these adapters.
 
 ## Adding the next component — 3-step recipe
 
-1. **Declare platform props in `src/shared/ui/<Component>.tsx`.**
+1. **Declare primitive props in `src/shared/ui/primitives/<Component>.tsx`.**
    Define `<Component>Props` with platform-owned names (`variant`, `size`,
    `items`…), never re-export antd prop types. Type-only imports of this file
    from the adapter are fine (no runtime cycle).
@@ -21,7 +21,8 @@ import from here; they import `@/shared/ui`, which re-exports these adapters.
 
 3. **Re-export from `shared/ui` and consume via `@/shared/ui`.**
    Add `export { Component } from '@/shared/components/ant/<Component>'` inside
-   the `shared/ui` file from step 1, and re-export the file in
+   the primitive file from step 1, export it through
+   `src/shared/ui/primitives/index.ts`, then expose that group through
    `src/shared/ui/index.ts`. Features/app import `@/shared/ui` only — run
    `npm run lint` to confirm no boundary is crossed.
 

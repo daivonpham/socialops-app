@@ -40,6 +40,9 @@ export const appEnUS = {
     signOut: 'Sign out',
   },
   permissions: {
+    manageChannels: 'Manage channels',
+    publishContent: 'Publish content',
+    viewAnalytics: 'View analytics',
     viewReports: 'View reports',
     viewMembers: 'View members',
     viewSettings: 'View settings',
@@ -47,4 +50,3 @@ export const appEnUS = {
 } as const
 
 export type AppNavigationKey = `navigation.${keyof typeof appEnUS.navigation}`
-

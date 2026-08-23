@@ -1,0 +1,24 @@
+/**
+ * Low-level, domain-agnostic UI building blocks.
+ * Consumers should keep importing them from the public `@/shared/ui` entry point.
+ */
+export * from './Alert'
+export * from './Avatar'
+export * from './Badge'
+export * from './Button'
+export * from './Card'
+export * from './Checkbox'
+export * from './Divider'
+export * from './Drawer'
+export * from './Dropdown'
+export * from './Input'
+export * from './Modal'
+export * from './Popover'
+export * from './Progress'
+export * from './Select'
+export * from './Spin'
+export * from './Statistic'
+export * from './Tabs'
+export * from './Textarea'
+export * from './Tooltip'
+export * from './icons'
