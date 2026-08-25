@@ -71,7 +71,9 @@ function DropdownSurface({
 }) {
   return (
     <div className="pt-2">
-      <div className={`${className} relative rounded-lg border border-border-subtle bg-bg-surface`}>
+      <div
+        className={`${className} relative rounded-lg border border-border-subtle bg-bg-surface shadow-lg`}
+      >
         <DropdownCaret placement={placement} />
         {children}
       </div>
@@ -85,13 +87,16 @@ export function Dropdown({
   selectedKey,
   onSelect,
   placement = 'bottom',
+  open: controlledOpen,
+  onOpenChange,
   searchPlaceholder,
   emptyText,
   footer,
   children,
 }: DropdownProps) {
-  const [open, setOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const open = controlledOpen ?? internalOpen
   const hasChrome = !content && Boolean(searchPlaceholder || footer)
 
   const visibleItems = (items ?? []).filter((item) => matchesQuery(item, query))
@@ -106,20 +111,20 @@ export function Dropdown({
         ]
       : toMenuItems(visibleItems, selectedKey)
 
-  const close = () => {
-    setOpen(false)
-    setQuery('')
+  const setOpen = (next: boolean) => {
+    setInternalOpen(next)
+    onOpenChange?.(next)
+    if (!next) setQuery('')
   }
+
+  const close = () => setOpen(false)
 
   return (
     <AntDropdown
       trigger={['click']}
       placement={placement}
       open={open}
-      onOpenChange={(next) => {
-        setOpen(next)
-        if (!next) setQuery('')
-      }}
+      onOpenChange={setOpen}
       menu={
         content
           ? undefined

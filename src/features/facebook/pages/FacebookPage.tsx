@@ -15,7 +15,6 @@ import {
 import {
   useFacebookIntegration,
   type DateRange,
-  type FacebookPostQuery,
   type FacebookQuery,
   type FacebookTab,
 } from '../api'
@@ -24,16 +23,12 @@ import { FacebookDisconnected, FacebookPagePicker } from '../components/Facebook
 import { FacebookFilters } from '../components/FacebookFilters'
 import { FacebookPageManager } from '../components/FacebookPageManager'
 import { OverviewTab } from '../components/OverviewTab'
-import { PostsTab } from '../components/PostsTab'
 
 const DEFAULT_FILTERS = {
   tab: 'overview',
   pageId: 'all',
   range: '30d',
   compare: 'previous',
-  status: 'all',
-  keyword: '',
-  postPage: '1',
 }
 
 export default function FacebookPage() {
@@ -72,42 +67,25 @@ export default function FacebookPage() {
   const data = integration.data
   const unhealthy = data.pages.filter((page) => page.health !== 'connected')
   const tab = (
-    ['overview', 'posts', 'analytics'].includes(filters.tab) ? filters.tab : 'overview'
+    ['overview', 'analytics'].includes(filters.tab) ? filters.tab : 'overview'
   ) as FacebookTab
   const query: FacebookQuery = {
     pageId: filters.pageId,
     range: filters.range as DateRange,
     compare: filters.compare,
   }
-  const postQuery: FacebookPostQuery = {
-    ...query,
-    status: filters.status,
-    keyword: filters.keyword,
-    page: Number(filters.postPage) || 1,
-  }
-  const updatePostFilters = (
-    patch: Partial<Record<'pageId' | 'status' | 'keyword' | 'page', string>>,
-  ) => {
-    const next: Partial<typeof DEFAULT_FILTERS> = {}
-    if (patch.pageId !== undefined) next.pageId = patch.pageId
-    if (patch.status !== undefined) next.status = patch.status
-    if (patch.keyword !== undefined) next.keyword = patch.keyword
-    if (patch.page !== undefined) next.postPage = patch.page
-    setFilters(next)
-  }
 
   return (
-    <div className="grid gap-5">
-      <header className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex items-start gap-3">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-info-50 text-icon-lg text-platform-facebook">
+    <div className="grid gap-6">
+      <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-info-50 text-xl text-platform-facebook">
             <IconFacebook />
-          </span>
+          </div>
           <div>
-            <h1 className="text-heading-1 text-text-primary">{t('title')}</h1>
-            <p className="mt-1 text-body-sm text-text-tertiary">{t('subtitle')}</p>
-            <p className="mt-2 text-label-sm text-text-secondary">
-              {t('connection.connectedCount', { count: data.pages.length })}
+            <h1 className="text-heading-2 font-semibold text-text-primary">{t('title')}</h1>
+            <p className="mt-1 text-body-sm text-text-secondary">
+              {t('connection.connectedCount', { count: data.pages.length })} · {t('subtitle')}
             </p>
           </div>
         </div>
@@ -131,16 +109,17 @@ export default function FacebookPage() {
           }
         />
       ) : null}
-      <Tabs
-        value={tab}
-        ariaLabel={t('tabs.label')}
-        onChange={(value) => setFilters({ tab: value })}
-        options={[
-          { value: 'overview', label: t('tabs.overview') },
-          { value: 'posts', label: t('tabs.posts') },
-          { value: 'analytics', label: t('tabs.analytics') },
-        ]}
-      />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <Tabs
+          value={tab}
+          ariaLabel={t('tabs.label')}
+          onChange={(value) => setFilters({ tab: value })}
+          options={[
+            { value: 'overview', label: t('tabs.overview') },
+            { value: 'analytics', label: t('tabs.analytics') },
+          ]}
+        />
+      </div>
       <FacebookFilters
         pages={data.pages}
         pageId={query.pageId}
@@ -149,14 +128,6 @@ export default function FacebookPage() {
         onChange={setFilters}
       />
       {tab === 'overview' ? <OverviewTab brandId={brandId} query={query} /> : null}
-      {tab === 'posts' ? (
-        <PostsTab
-          brandId={brandId}
-          integration={data}
-          query={postQuery}
-          onChange={updatePostFilters}
-        />
-      ) : null}
       {tab === 'analytics' ? <AnalyticsTab brandId={brandId} query={query} /> : null}
       <FacebookPageManager
         brandId={brandId}

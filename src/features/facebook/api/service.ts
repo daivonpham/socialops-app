@@ -97,7 +97,7 @@ export async function getFacebookAnalytics(brandId: string, query: FacebookQuery
 export async function createFacebookPost(input: CreateFacebookPostInput) {
   const { brandId, ...body } = input
   return (
-    await apiClient.post<CommonApiResponse<FacebookPostDto>>(
+    await apiClient.post<CommonApiResponse<FacebookPostDto[]>>(
       `/brands/${brandId}/facebook/posts`,
       body,
     )

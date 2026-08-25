@@ -2,20 +2,20 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatNumber, type AppLocale } from '@/shared/i18n'
 import {
+  Card,
   DataTable,
   EmptyState,
   IconFacebook,
   IconImage,
   SectionError,
   SectionSkeleton,
-  StatusTag,
   type DataTableColumn,
 } from '@/shared/ui'
 import {
   useFacebookOverview,
+  type FacebookOverviewDto,
   type FacebookPostDto,
   type FacebookQuery,
-  type FacebookOverviewDto,
 } from '../api'
 import { MetricCards, TrendChart } from './FacebookVisuals'
 
@@ -35,64 +35,25 @@ export function OverviewTab({ brandId, query }: { brandId: string; query: Facebo
         sortable: true,
         render: (_, row) => (
           <span className="flex min-w-0 items-center gap-3">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill bg-info-50 text-platform-facebook">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-info-50 text-platform-facebook">
               <IconFacebook />
             </span>
-            <strong className="truncate text-label-md text-text-primary">{row.pageName}</strong>
+            <span className="truncate text-label-md text-text-primary">{row.pageName}</span>
           </span>
         ),
       },
-      {
-        key: 'reach',
-        dataIndex: 'reach',
-        title: t('overview.reach'),
-        width: 'default',
-        align: 'end',
-        sortable: true,
-        render: (value) => (
-          <span className="tabular-nums">{formatNumber(Number(value), locale)}</span>
-        ),
-      },
-      {
-        key: 'engagement',
-        dataIndex: 'engagement',
-        title: t('overview.engagement'),
-        width: 'default',
-        align: 'end',
-        sortable: true,
-        render: (value) => (
-          <span className="tabular-nums">{formatNumber(Number(value), locale)}</span>
-        ),
-      },
-      {
-        key: 'followers',
-        dataIndex: 'followers',
-        title: t('overview.followers'),
-        width: 'default',
-        align: 'end',
-        sortable: true,
-        render: (value) => (
-          <span className="tabular-nums">{formatNumber(Number(value), locale)}</span>
-        ),
-      },
-      {
-        key: 'posts',
-        dataIndex: 'posts',
-        title: t('overview.posts'),
-        width: 'default',
-        align: 'end',
-        sortable: true,
-        render: (value) => (
-          <span className="tabular-nums">{formatNumber(Number(value), locale)}</span>
-        ),
-      },
+      numberColumn('mediaViews', t('overview.mediaViews'), locale),
+      numberColumn('uniqueViewers', t('overview.uniqueViewers'), locale),
+      numberColumn('contentInteractions', t('overview.contentInteractions'), locale),
+      numberColumn('followersCount', t('overview.followers'), locale),
+      numberColumn('publishedPosts', t('overview.posts'), locale),
     ],
     [locale, t],
   )
 
   if (overview.isPending)
     return (
-      <div className="grid gap-5">
+      <div className="grid gap-6">
         <SectionSkeleton rows={3} />
         <SectionSkeleton rows={6} />
       </div>
@@ -105,6 +66,7 @@ export function OverviewTab({ brandId, query }: { brandId: string; query: Facebo
         onRetry={() => void overview.refetch()}
       />
     )
+
   const data = overview.data
   if (!data) return null
   if (!data.metrics.length)
@@ -113,113 +75,101 @@ export function OverviewTab({ brandId, query }: { brandId: string; query: Facebo
     )
 
   return (
-    <div className="grid gap-5">
+    <div className="grid gap-6">
       <MetricCards metrics={data.metrics} />
-      <section className="rounded-xl border border-border-subtle bg-bg-surface p-4 shadow-xs">
-        <SectionHeading
-          title={t('overview.trendTitle')}
-          description={t('overview.trendDescription')}
-        />
-        <div className="mt-4">
+
+      <Card title={t('overview.trendTitle')}>
+        <div className="p-5">
           <TrendChart
-            points={data.trend}
+            ariaLabel={t('overview.trendTitle')}
+            points={data.mediaViewsTrend}
             currentLabel={t('overview.current')}
             comparisonLabel={query.compare === 'previous' ? t('overview.comparison') : undefined}
           />
         </div>
-      </section>
-      <section>
-        <SectionHeading
-          title={t('overview.pagePerformance')}
-          description={t('overview.pagePerformanceDescription')}
-        />
-        <div className="mt-4">
-          <DataTable data={data.pagePerformance} columns={columns} getRowId={(row) => row.pageId} />
+      </Card>
+
+      <Card title={t('overview.pagePerformance')} background="white">
+        <DataTable data={data.pagePerformance} columns={columns} getRowId={(row) => row.pageId} />
+      </Card>
+
+      <Card title={t('overview.topPosts')}>
+        <div className="divide-y divide-border-subtle">
+          {data.topPosts.map((post, index) => (
+            <TopPost key={post.id} post={post} rank={index + 1} locale={locale} />
+          ))}
         </div>
-      </section>
-      <div className="grid gap-5 xl:grid-cols-3">
-        <section className="xl:col-span-2">
-          <SectionHeading
-            title={t('overview.topPosts')}
-            description={t('overview.topPostsDescription')}
-          />
-          <div className="mt-4 grid gap-3">
-            {data.topPosts.map((post) => (
-              <TopPost key={post.id} post={post} locale={locale} />
-            ))}
-          </div>
-        </section>
-        <section className="rounded-xl border border-border-subtle bg-bg-surface p-4">
-          <SectionHeading
-            title={t('overview.publishingHealth')}
-            description={t('overview.publishingDescription')}
-          />
-          <div className="mt-4 grid gap-4">
-            <HealthRow
-              label={t('overview.published')}
-              value={data.publishingHealth.published}
-              tone="success"
-            />
-            <HealthRow
-              label={t('overview.scheduled')}
-              value={data.publishingHealth.scheduled}
-              tone="info"
-            />
-            <HealthRow
-              label={t('overview.failed')}
-              value={data.publishingHealth.failed}
-              tone="error"
-            />
-          </div>
-        </section>
-      </div>
+      </Card>
     </div>
   )
 }
 
-function SectionHeading({ title, description }: { title: string; description: string }) {
-  return (
-    <div>
-      <h2 className="text-heading-3 text-text-primary">{title}</h2>
-      <p className="mt-1 text-body-sm text-text-tertiary">{description}</p>
-    </div>
-  )
+function numberColumn(
+  key: keyof PageRow,
+  title: string,
+  locale: AppLocale,
+): DataTableColumn<PageRow> {
+  return {
+    key: String(key),
+    dataIndex: key,
+    title,
+    width: 'default',
+    align: 'end',
+    sortable: true,
+    render: (value) => (
+      <span className="text-body-sm tabular-nums text-text-primary">
+        {formatNumber(Number(value), locale)}
+      </span>
+    ),
+  }
 }
 
-function TopPost({ post, locale }: { post: FacebookPostDto; locale: AppLocale }) {
+function TopPost({
+  post,
+  rank,
+  locale,
+}: {
+  post: FacebookPostDto
+  rank: number
+  locale: AppLocale
+}) {
   const { t } = useTranslation('facebook')
   return (
-    <article className="flex items-center gap-4 rounded-xl border border-border-subtle bg-bg-surface p-4">
-      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-bg-surface-muted text-icon-lg text-text-tertiary">
-        <IconImage />
+    <article className="grid gap-4 px-5 py-4 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center">
+      <div className="flex items-center gap-3">
+        <span className="w-5 text-center text-label-sm tabular-nums text-text-tertiary">
+          {rank}
+        </span>
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-bg-surface-muted text-text-tertiary">
+          <IconImage />
+        </span>
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 text-label-md text-text-primary">{post.caption}</p>
-        <p className="mt-1 text-caption text-text-tertiary">{post.pageName}</p>
+      <div className="min-w-0">
+        <p className="line-clamp-2 text-body-sm text-text-primary">{post.message}</p>
+        <p className="mt-1 flex items-center gap-2 text-caption text-text-tertiary">
+          <IconFacebook className="text-platform-facebook" />
+          {post.pageName}
+        </p>
       </div>
-      <div className="hidden text-end sm:block">
-        <strong className="block text-heading-4 tabular-nums">
-          {formatNumber(post.reach, locale)}
-        </strong>
-        <span className="text-caption text-text-tertiary">{t('overview.reach')}</span>
+      <div className="flex gap-6 ps-8 sm:ps-0">
+        <MetricValue
+          label={t('overview.mediaViews')}
+          value={formatNumber(post.mediaViews, locale)}
+        />
+        <MetricValue
+          label={t('overview.contentInteractions')}
+          value={formatNumber(post.contentInteractions, locale)}
+        />
       </div>
     </article>
   )
 }
 
-function HealthRow({
-  label,
-  value,
-  tone,
-}: {
-  label: string
-  value: number
-  tone: 'success' | 'info' | 'error'
-}) {
+function MetricValue({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between border-b border-border-subtle pb-3 last:border-0 last:pb-0">
-      <StatusTag tone={tone}>{label}</StatusTag>
-      <strong className="text-heading-4 tabular-nums text-text-primary">{value}</strong>
+    <div className="text-end">
+      <strong className="block text-label-md tabular-nums text-text-primary">{value}</strong>
+      <span className="text-caption text-text-tertiary">{label}</span>
     </div>
   )
 }

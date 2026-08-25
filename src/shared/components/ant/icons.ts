@@ -29,12 +29,12 @@ export {
   ArrowUpOutlined as IconArrowUp,
   ArrowDownOutlined as IconArrowDown,
   InfoCircleOutlined as IconInfo,
-  FilterOutlined as IconFilter,
   CloseOutlined as IconClose,
   HolderOutlined as IconDrag,
 } from '@ant-design/icons'
 
 export { PiCaretUpDownLight as IconCaretUpDown } from 'react-icons/pi'
+export { IoFilter as IconFilter } from 'react-icons/io5'
 export { MdFacebook as IconFacebook } from 'react-icons/md'
 export { FaTiktok as IconTikTok } from 'react-icons/fa6'
 export {

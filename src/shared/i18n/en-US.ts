@@ -2,6 +2,11 @@ export const commonEnUS = {
   dropdown: {
     noMatches: 'No matches.',
   },
+  filters: {
+    trigger: 'Filters',
+    reset: 'Reset',
+    apply: 'Apply',
+  },
   dataTable: {
     selectAllRows: 'Select all rows on this page',
     selectRow: 'Select row',

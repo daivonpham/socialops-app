@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Select } from '@/shared/ui'
+import { FilterDropdown, Select } from '@/shared/ui'
 import type { DateRange, FacebookPageDto } from '../api'
 
 export function FacebookFilters({
@@ -16,17 +17,11 @@ export function FacebookFilters({
   onChange: (patch: { pageId?: string; range?: string; compare?: string }) => void
 }) {
   const { t } = useTranslation('facebook')
+  const [draftPageId, setDraftPageId] = useState(pageId)
+  const [draftCompare, setDraftCompare] = useState(compare)
+
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-border-subtle bg-bg-surface p-3 sm:flex-row sm:flex-wrap sm:items-center">
-      <Select
-        aria-label={t('common.page')}
-        value={pageId}
-        onChange={(event) => onChange({ pageId: event.target.value })}
-        options={[
-          { value: 'all', label: t('common.allPages') },
-          ...pages.map((page) => ({ value: page.id, label: page.name })),
-        ]}
-      />
+    <div className="flex flex-wrap items-center justify-between gap-3">
       <Select
         aria-label={t('common.dateRange')}
         value={range}
@@ -37,15 +32,37 @@ export function FacebookFilters({
           { value: '90d', label: t('common.last90Days') },
         ]}
       />
-      <Select
-        aria-label={t('common.compare')}
-        value={compare}
-        onChange={(event) => onChange({ compare: event.target.value })}
-        options={[
-          { value: 'none', label: t('common.noCompare') },
-          { value: 'previous', label: t('common.previousPeriod') },
-        ]}
-      />
+      <FilterDropdown
+        onOpenChange={(open) => {
+          if (!open) return
+          setDraftPageId(pageId)
+          setDraftCompare(compare)
+        }}
+        onReset={() => {
+          setDraftPageId('all')
+          setDraftCompare('previous')
+        }}
+        onApply={() => onChange({ pageId: draftPageId, compare: draftCompare })}
+      >
+        <Select
+          label={t('common.page')}
+          value={draftPageId}
+          onChange={(event) => setDraftPageId(event.target.value)}
+          options={[
+            { value: 'all', label: t('common.allPages') },
+            ...pages.map((page) => ({ value: page.id, label: page.name })),
+          ]}
+        />
+        <Select
+          label={t('common.compare')}
+          value={draftCompare}
+          onChange={(event) => setDraftCompare(event.target.value)}
+          options={[
+            { value: 'none', label: t('common.noCompare') },
+            { value: 'previous', label: t('common.previousPeriod') },
+          ]}
+        />
+      </FilterDropdown>
     </div>
   )
 }

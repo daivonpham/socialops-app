@@ -22,6 +22,8 @@ export type DropdownProps = {
   selectedKey?: string
   onSelect?: (key: string) => void
   placement?: 'bottom' | 'bottomLeft' | 'bottomRight'
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
   /** When set, a search field is shown at the top of the panel. */
   searchPlaceholder?: string
   /** Generic empty-search copy; shared/ui supplies the localized default. */

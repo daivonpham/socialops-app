@@ -82,7 +82,7 @@ export function FacebookPagePicker({
   const filtered = useMemo(
     () =>
       pages.filter((page) =>
-        `${page.name} ${page.handle}`.toLowerCase().includes(query.toLowerCase()),
+        `${page.name} ${page.username}`.toLowerCase().includes(query.toLowerCase()),
       ),
     [pages, query],
   )
@@ -117,7 +117,7 @@ export function FacebookPagePicker({
       {pages.length ? (
         <>
           <div className="relative">
-            <span className="pointer-events-none absolute start-3 top-3 text-text-tertiary">
+            <span className="pointer-events-none absolute inset-s-3 top-3 text-text-tertiary">
               <IconSearch />
             </span>
             <Input
@@ -151,7 +151,7 @@ export function FacebookPagePicker({
                     {page.name}
                   </strong>
                   <span className="text-caption text-text-tertiary">
-                    {page.handle} · {page.category}
+                    @{page.username} · {page.category}
                   </span>
                 </span>
               </label>

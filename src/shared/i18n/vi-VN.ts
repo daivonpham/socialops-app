@@ -5,6 +5,11 @@ export const commonViVN = {
   dropdown: {
     noMatches: 'Không có kết quả.',
   },
+  filters: {
+    trigger: 'Bộ lọc',
+    reset: 'Đặt lại',
+    apply: 'Áp dụng',
+  },
   dataTable: {
     selectAllRows: 'Chọn tất cả hàng trên trang này',
     selectRow: 'Chọn hàng',

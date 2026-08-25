@@ -75,7 +75,7 @@ export function FacebookPageManager({
                         </StatusTag>
                       </div>
                       <p className="mt-1 text-caption text-text-tertiary">
-                        {page.handle} · {formatNumber(page.followers, locale)}{' '}
+                        @{page.username} · {formatNumber(page.followersCount, locale)}{' '}
                         {t('metrics.followers').toLowerCase()}
                       </p>
                     </div>

@@ -1,15 +1,15 @@
 export type FacebookConnectionState = 'disconnected' | 'connected' | 'needs_page_selection'
 export type FacebookPageHealth =
   'connected' | 'token_expiring' | 'permission_missing' | 'disconnected'
-export type FacebookTab = 'overview' | 'posts' | 'analytics'
+export type FacebookTab = 'overview' | 'analytics'
 export type DateRange = '7d' | '30d' | '90d'
 
 export type FacebookPageDto = {
   id: string
   name: string
-  handle: string
+  username: string
   category: string
-  followers: number
+  followersCount: number
   health: FacebookPageHealth
   lastSyncedAt: string
 }
@@ -23,27 +23,31 @@ export type FacebookIntegrationDto = {
 
 export type ManageableFacebookPageDto = FacebookPageDto & { selected: boolean }
 
+export type MetricKey =
+  'mediaViews' | 'uniqueViewers' | 'contentInteractions' | 'followers' | 'published'
+
 export type MetricDto = {
-  key: 'reach' | 'impressions' | 'engagement' | 'followers' | 'published'
+  key: MetricKey
   value: number
   change: number
+  estimated?: boolean
 }
 
 export type TrendPointDto = { label: string; primary: number; comparison: number }
 
 export type FacebookOverviewDto = {
   metrics: MetricDto[]
-  trend: TrendPointDto[]
+  mediaViewsTrend: TrendPointDto[]
   pagePerformance: Array<{
     pageId: string
     pageName: string
-    reach: number
-    engagement: number
-    followers: number
-    posts: number
+    mediaViews: number
+    uniqueViewers: number
+    contentInteractions: number
+    followersCount: number
+    publishedPosts: number
   }>
   topPosts: FacebookPostDto[]
-  publishingHealth: { published: number; scheduled: number; failed: number }
 }
 
 export type PostStatus = 'draft' | 'scheduled' | 'publishing' | 'published' | 'failed'
@@ -51,12 +55,14 @@ export type FacebookPostDto = {
   id: string
   pageId: string
   pageName: string
-  caption: string
+  message: string
   mediaType: 'image' | 'video' | 'text'
   status: PostStatus
-  publishedAt: string
-  reach: number
-  engagement: number
+  createdAt: string
+  scheduledAt?: string
+  publishedAt?: string
+  mediaViews: number
+  contentInteractions: number
   clicks: number
 }
 
@@ -69,22 +75,17 @@ export type FacebookPostsDto = {
 
 export type FacebookAnalyticsDto = {
   metrics: MetricDto[]
-  reachTrend: TrendPointDto[]
-  engagementTrend: TrendPointDto[]
+  mediaViewsTrend: TrendPointDto[]
+  contentInteractionsTrend: TrendPointDto[]
   audience: Array<{ label: string; value: number }>
   contentBreakdown: Array<{ label: 'images' | 'videos' | 'text'; value: number }>
   rows: Array<{
     pageId: string
     pageName: string
-    reach: number
-    impressions: number
-    engagementRate: number
-    followers: number
-  }>
-  availability: Array<{
-    metric: 'reach' | 'impressions' | 'videoRetention' | 'audienceCity'
-    available: boolean
-    reason?: 'advancedPermission' | 'smallAudience'
+    mediaViews: number
+    uniqueViewers: number
+    contentInteractions: number
+    followersCount: number
   }>
 }
 
@@ -94,7 +95,8 @@ export type FacebookQuery = {
   compare: string
 }
 
-export type FacebookPostQuery = FacebookQuery & {
+export type FacebookPostQuery = {
+  pageId: string
   status: string
   keyword: string
   page: number
@@ -106,6 +108,7 @@ export type FacebookPageActionInput = { brandId: string; pageId: string }
 export type CreateFacebookPostInput = {
   brandId: string
   pageIds: string[]
-  caption: string
+  message: string
   publishNow: boolean
+  scheduledAt?: string
 }

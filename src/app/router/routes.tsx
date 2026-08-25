@@ -55,7 +55,7 @@ const layoutChildren: RouteObject[] = [
   },
   {
     path: ROUTES.PLANNING,
-    lazy: placeholderPage,
+    lazy: async () => ({ Component: (await import('@/features/planning')).PlanningPage }),
     handle: handle({ nav: { labelKey: 'navigation.planning', section: 'top', order: 20 } }),
   },
   {

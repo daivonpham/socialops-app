@@ -5,6 +5,7 @@
 export * from './primitives'
 export * from './StatusTag'
 export * from './AsyncState'
+export * from './FilterDropdown'
 export * from './DataTable'
 export * from './charts'
 export * from './Logo'
