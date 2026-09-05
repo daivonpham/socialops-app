@@ -1,14 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatNumber, type AppLocale } from '@/shared/i18n'
 import { hasPermission, usePermissions } from '@/shared/permissions'
 import {
-  Alert,
-  Button,
   Card,
   DataTable,
   EmptyState,
-  IconDownload,
   IconFacebook,
   IconInfo,
   SectionError,
@@ -26,8 +23,8 @@ export function AnalyticsTab({ brandId, query }: { brandId: string; query: Faceb
   const { granted } = usePermissions()
   const locale = i18n.resolvedLanguage as AppLocale
   const analytics = useFacebookAnalytics(brandId, query)
-  const [exported, setExported] = useState(false)
-  const allowed = hasPermission(granted, FACEBOOK_ACCESS.analytics[0])
+
+  const canViewAnalytics = hasPermission(granted, FACEBOOK_ACCESS.analytics[0])
 
   const columns = useMemo<DataTableColumn<AnalyticsRow>[]>(
     () => [
@@ -54,7 +51,7 @@ export function AnalyticsTab({ brandId, query }: { brandId: string; query: Faceb
     [locale, t],
   )
 
-  if (!allowed)
+  if (!canViewAnalytics)
     return (
       <EmptyState
         icon={<IconInfo />}
@@ -81,28 +78,6 @@ export function AnalyticsTab({ brandId, query }: { brandId: string; query: Faceb
   const data = analytics.data
   if (!data) return null
 
-  const exportCsv = () => {
-    const csv = [
-      ['Page', 'Media views', 'Unique viewers', 'Content interactions', 'Followers'],
-      ...data.rows.map((row) => [
-        row.pageName,
-        row.mediaViews,
-        row.uniqueViewers,
-        row.contentInteractions,
-        row.followersCount,
-      ]),
-    ]
-      .map((row) => row.map(toCsvCell).join(','))
-      .join('\n')
-    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
-    const link = document.createElement('a')
-    link.href = url
-    link.download = 'facebook-analytics.csv'
-    link.click()
-    URL.revokeObjectURL(url)
-    setExported(true)
-  }
-
   const contentBreakdown = data.contentBreakdown.map((item) => ({
     ...item,
     label: t(`analytics.contentTypes.${item.label}`),
@@ -110,25 +85,6 @@ export function AnalyticsTab({ brandId, query }: { brandId: string; query: Faceb
 
   return (
     <div className="grid gap-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-heading-3 text-text-primary">{t('analytics.title')}</h2>
-          <p className="mt-1 text-body-sm text-text-tertiary">{t('analytics.description')}</p>
-        </div>
-        <Button icon={<IconDownload />} onClick={exportCsv}>
-          {t('common.export')}
-        </Button>
-      </div>
-
-      {exported ? (
-        <Alert
-          tone="success"
-          title={t('analytics.exportStarted')}
-          closable
-          onClose={() => setExported(false)}
-        />
-      ) : null}
-
       <MetricCards metrics={data.metrics} />
 
       <div className="grid gap-6 xl:grid-cols-2">
@@ -187,10 +143,4 @@ function numberColumn(
       <span className="tabular-nums text-text-primary">{formatNumber(Number(value), locale)}</span>
     ),
   }
-}
-
-function toCsvCell(value: string | number) {
-  const text = String(value)
-  const safe = /^[=+@-]/.test(text) ? `'${text}` : text
-  return `"${safe.replaceAll('"', '""')}"`
 }

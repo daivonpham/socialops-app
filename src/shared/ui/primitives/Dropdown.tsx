@@ -5,7 +5,14 @@ import { Dropdown as AntDropdownAdapter } from '@/shared/components/ant/Dropdown
 /** Platform-owned dropdown menu API — implemented by the active adapter. */
 export type DropdownMenuItem =
   | { type: 'divider' }
-  | { key: string; label: ReactNode; icon?: ReactNode; disabled?: boolean; danger?: boolean }
+  | {
+      key: string
+      label: ReactNode
+      searchText?: string
+      icon?: ReactNode
+      disabled?: boolean
+      danger?: boolean
+    }
 
 export type DropdownFooter = {
   label: ReactNode

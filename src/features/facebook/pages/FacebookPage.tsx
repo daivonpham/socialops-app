@@ -1,28 +1,31 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useUrlFilters } from '@/shared/hooks'
+import { hasPermission, usePermissions } from '@/shared/permissions'
 import { useActiveBrand } from '@/shared/scope'
 import {
-  Alert,
+  Badge,
   Button,
   IconFacebook,
-  IconPlus,
   IconSettings,
   SectionError,
   SectionSkeleton,
   Tabs,
 } from '@/shared/ui'
 import {
+  useConnectFacebook,
   useFacebookIntegration,
   type DateRange,
   type FacebookQuery,
   type FacebookTab,
 } from '../api'
 import { AnalyticsTab } from '../components/AnalyticsTab'
-import { FacebookDisconnected, FacebookPagePicker } from '../components/FacebookConnection'
+import { FacebookDisconnected } from '../components/FacebookDisconnected'
 import { FacebookFilters } from '../components/FacebookFilters'
-import { FacebookPageManager } from '../components/FacebookPageManager'
+import { ManageFacebookPagesDrawer } from '../components/ManageFacebookPagesDrawer'
+import { FacebookPageSwitcher } from '../components/FacebookPageSwitcher'
 import { OverviewTab } from '../components/OverviewTab'
+import { FACEBOOK_ACCESS } from '../config/facebook-access'
 
 const DEFAULT_FILTERS = {
   tab: 'overview',
@@ -35,9 +38,11 @@ export default function FacebookPage() {
   const { t } = useTranslation('facebook')
   const { brandId } = useActiveBrand()
   const integration = useFacebookIntegration(brandId)
+  const connect = useConnectFacebook(brandId)
+  const { granted } = usePermissions()
   const [filters, setFilters] = useUrlFilters(DEFAULT_FILTERS)
-  const [managerOpen, setManagerOpen] = useState(false)
-  const [addingPages, setAddingPages] = useState(false)
+  const [isPageManagerOpen, setIsPageManagerOpen] = useState(false)
+  const canManageConnection = hasPermission(granted, FACEBOOK_ACCESS.manageConnection[0])
 
   if (!brandId) return null
   if (integration.isPending)
@@ -56,21 +61,18 @@ export default function FacebookPage() {
     )
   if (!integration.data || integration.data.state === 'disconnected')
     return <FacebookDisconnected brandId={brandId} />
-  if (integration.data.state === 'needs_page_selection' || addingPages)
-    return (
-      <FacebookPagePicker
-        brandId={brandId}
-        onCancel={addingPages ? () => setAddingPages(false) : undefined}
-      />
-    )
 
   const data = integration.data
-  const unhealthy = data.pages.filter((page) => page.health !== 'connected')
+  const unhealthyPages = data.pages.filter((page) => page.health !== 'connected')
   const tab = (
     ['overview', 'analytics'].includes(filters.tab) ? filters.tab : 'overview'
   ) as FacebookTab
+  const selectedPageId =
+    filters.pageId === 'all' || data.pages.some((page) => page.id === filters.pageId)
+      ? filters.pageId
+      : 'all'
   const query: FacebookQuery = {
-    pageId: filters.pageId,
+    pageId: selectedPageId,
     range: filters.range as DateRange,
     compare: filters.compare,
   }
@@ -79,9 +81,7 @@ export default function FacebookPage() {
     <div className="grid gap-6">
       <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-info-50 text-xl text-platform-facebook">
-            <IconFacebook />
-          </div>
+          <IconFacebook className="h-12 w-12 shrink-0 text-platform-facebook" />
           <div>
             <h1 className="text-heading-2 font-semibold text-text-primary">{t('title')}</h1>
             <p className="mt-1 text-body-sm text-text-secondary">
@@ -89,26 +89,32 @@ export default function FacebookPage() {
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button icon={<IconSettings />} onClick={() => setManagerOpen(true)}>
-            {t('connection.manage')}
-          </Button>
-          <Button variant="primary" icon={<IconPlus />} onClick={() => setAddingPages(true)}>
-            {t('connection.addPage')}
-          </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <FacebookPageSwitcher
+            pages={data.pages}
+            selectedPageId={selectedPageId}
+            onPageChange={(pageId) => setFilters({ pageId })}
+            onAddPage={() => connect.mutate({ brandId })}
+            canManagePages={canManageConnection}
+          />
+          <span className="relative inline-flex">
+            <Button
+              icon={<IconSettings />}
+              aria-label={
+                unhealthyPages.length
+                  ? t('connection.manageWithIssues', { count: unhealthyPages.length })
+                  : t('connection.manage')
+              }
+              title={t('connection.manage')}
+              onClick={() => setIsPageManagerOpen(true)}
+            />
+            {unhealthyPages.length ? (
+              <Badge count={unhealthyPages.length} tone="danger" placement="corner" aria-hidden />
+            ) : null}
+          </span>
         </div>
       </header>
-      {unhealthy.length ? (
-        <Alert
-          tone="warning"
-          title={t('connection.issueBanner', { count: unhealthy.length })}
-          action={
-            <Button size="sm" onClick={() => setManagerOpen(true)}>
-              {t('connection.reviewIssue')}
-            </Button>
-          }
-        />
-      ) : null}
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Tabs
           value={tab}
@@ -119,25 +125,17 @@ export default function FacebookPage() {
             { value: 'analytics', label: t('tabs.analytics') },
           ]}
         />
+        <FacebookFilters range={query.range} compare={query.compare} onChange={setFilters} />
       </div>
-      <FacebookFilters
-        pages={data.pages}
-        pageId={query.pageId}
-        range={query.range}
-        compare={query.compare}
-        onChange={setFilters}
-      />
       {tab === 'overview' ? <OverviewTab brandId={brandId} query={query} /> : null}
       {tab === 'analytics' ? <AnalyticsTab brandId={brandId} query={query} /> : null}
-      <FacebookPageManager
+      <ManageFacebookPagesDrawer
         brandId={brandId}
         integration={data}
-        open={managerOpen}
-        onClose={() => setManagerOpen(false)}
-        onAdd={() => {
-          setManagerOpen(false)
-          setAddingPages(true)
-        }}
+        isOpen={isPageManagerOpen}
+        onClose={() => setIsPageManagerOpen(false)}
+        onAddPage={() => connect.mutate({ brandId })}
+        isAddingPage={connect.isPending}
       />
     </div>
   )

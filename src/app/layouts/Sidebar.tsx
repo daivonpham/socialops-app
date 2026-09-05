@@ -1,4 +1,4 @@
-import { generatePath } from 'react-router-dom'
+import { generatePath, useMatch } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ROUTES } from '@/app/router/paths'
 import { BrandSwitcher } from '@/features/brands'
@@ -31,12 +31,14 @@ export function Sidebar({
 }) {
   const { t } = useTranslation('app')
   const { granted, isLoading } = usePermissions()
+  const isPlanning = Boolean(useMatch(ROUTES.PLATFORM_PLANNING))
+  const platformPath = isPlanning ? ROUTES.PLATFORM_PLANNING : ROUTES.PLATFORM_OVERVIEW
   const canSee = (entry: NavEntry) => !entry.requires || allOf(granted, entry.requires)
 
   return (
     <aside
       className={
-        'flex min-h-0 flex-1 shrink-0 flex-col gap-1 overflow-x-hidden overflow-y-auto bg-bg-surface transition-[width,padding] duration-drawer ease-standard ' +
+        'app-scrollbar flex min-h-0 flex-1 shrink-0 flex-col gap-1 overflow-x-hidden overflow-y-auto bg-bg-surface transition-[width,padding] duration-drawer ease-standard ' +
         (inDrawer
           ? 'w-full p-2'
           : collapsed
@@ -68,7 +70,7 @@ export function Sidebar({
       )}
       <PlatformNavList
         collapsed={collapsed}
-        getHref={(platform) => generatePath(ROUTES.PLATFORM, { platform })}
+        getHref={(platform) => generatePath(platformPath, { platform })}
       />
 
       <Divider className={collapsed ? 'my-1' : 'my-2'} />

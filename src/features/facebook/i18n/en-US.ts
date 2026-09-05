@@ -32,7 +32,7 @@ export const facebookEnUS = {
     previous: 'Previous',
     next: 'Next',
     updated: 'Updated {{date}}',
-    export: 'Export CSV',
+
     columns: 'Columns',
     selectAll: 'Select all',
     notAvailable: 'Not available',
@@ -57,17 +57,14 @@ export const facebookEnUS = {
     planningDescription: 'Create, review, and schedule Page posts from one shared workflow.',
     scheduled: 'Scheduled',
     draft: 'Draft',
-    pickerTitle: 'Choose Facebook Pages',
-    pickerDescription:
-      'Select the Pages you want to manage for this brand. You can change this later.',
+    pageSwitcherLabel: 'Select Facebook Page',
     searchPages: 'Search Pages',
-    connectSelected: 'Connect {{count}} Pages',
-    noPagesTitle: 'No manageable Pages found',
-    noPagesDescription: 'Ask a Facebook Page admin to grant your account access, then try again.',
     connectedCount_one: '{{count}} Page connected',
     connectedCount_other: '{{count}} Pages connected',
     manage: 'Manage Pages',
-    addPage: 'Connect Page',
+    manageWithIssues_one: 'Manage Pages, {{count}} issue',
+    manageWithIssues_other: 'Manage Pages, {{count}} issues',
+    addPage: 'Connect another Page',
     drawerTitle: 'Facebook Pages',
     drawerDescription: 'Review connection health and the Pages included in this brand.',
     reconnect: 'Reconnect',
@@ -80,12 +77,7 @@ export const facebookEnUS = {
     disconnectAllTitle: 'Disconnect Facebook?',
     disconnectAllDescription:
       'All Pages will stop syncing and scheduled Facebook publications may fail.',
-    choosePages: 'Choose Pages',
-    connectedBy: 'Connected by {{name}}',
-    connectedAt: 'Connected {{date}}',
-    reviewIssue: 'Review issue',
-    issueBanner: '{{count}} Page needs attention. Reconnect it to restore insights and publishing.',
-    setupBanner: 'Facebook is authorized, but no Pages are selected for this brand.',
+
     permissionReason: 'Your role cannot manage Facebook connections.',
   },
   health: {
@@ -123,15 +115,13 @@ export const facebookEnUS = {
   },
 
   analytics: {
-    title: 'Facebook analytics',
-    description: 'Explore supported Meta Page metrics and audience insights.',
     mediaViewsTrend: 'Media views trend',
     contentInteractionsTrend: 'Content interactions trend',
     audience: 'Audience by age',
 
     contentMix: 'Content mix',
     pageBreakdown: 'Page breakdown',
-    exportStarted: 'Your analytics CSV is ready.',
+
     accessDeniedTitle: 'Analytics access required',
     accessDeniedDescription: 'Ask a brand admin for analytics permission to view this section.',
     contentTypes: { images: 'Images', videos: 'Videos', text: 'Text' },

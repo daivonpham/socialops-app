@@ -6,7 +6,6 @@ import type {
   FacebookOverviewDto,
   FacebookPageDto,
   FacebookPostDto,
-  ManageableFacebookPageDto,
   MetricDto,
 } from './types'
 
@@ -79,13 +78,13 @@ const ALL_PAGES: FacebookPageDto[] = [
 const PAGE_IDS: Record<string, string[]> = {
   'br-aurora': ['fb-aurora-main', 'fb-aurora-roastery', 'fb-aurora-community'],
   'br-nimbus': [],
-  'br-solstice': [],
+  'br-solstice': ['fb-solstice-main', 'fb-solstice-wellness'],
 }
 
 const INTEGRATION_STATE: Record<string, FacebookIntegrationDto['state']> = {
   'br-aurora': 'connected',
   'br-nimbus': 'disconnected',
-  'br-solstice': 'needs_page_selection',
+  'br-solstice': 'connected',
 }
 
 const manageableFor = (brandId: string) =>
@@ -285,28 +284,13 @@ export const facebookHandlers = [
   http.post('/api/brands/:brandId/facebook/connect', async ({ params }) => {
     await delay(650)
     const brandId = String(params.brandId)
-    INTEGRATION_STATE[brandId] = 'needs_page_selection'
+    PAGE_IDS[brandId] = manageableFor(brandId).map((page) => page.id)
+    INTEGRATION_STATE[brandId] = 'connected'
     return HttpResponse.json(
       envelope(integrationFor(brandId), `/brands/${brandId}/facebook/connect`),
     )
   }),
-  http.get('/api/brands/:brandId/facebook/manageable-pages', async ({ params }) => {
-    await ok()
-    const brandId = String(params.brandId)
-    const pages: ManageableFacebookPageDto[] = manageableFor(brandId).map((page) => ({
-      ...page,
-      selected: PAGE_IDS[brandId]?.includes(page.id) ?? false,
-    }))
-    return HttpResponse.json(envelope(pages, `/brands/${brandId}/facebook/manageable-pages`))
-  }),
-  http.post('/api/brands/:brandId/facebook/pages', async ({ params, request }) => {
-    await ok()
-    const brandId = String(params.brandId)
-    const body = (await request.json()) as { pageIds: string[] }
-    PAGE_IDS[brandId] = body.pageIds
-    INTEGRATION_STATE[brandId] = body.pageIds.length ? 'connected' : 'needs_page_selection'
-    return HttpResponse.json(envelope(integrationFor(brandId), `/brands/${brandId}/facebook/pages`))
-  }),
+
   http.post('/api/brands/:brandId/facebook/pages/:pageId/reconnect', async ({ params }) => {
     await delay(550)
     const page = ALL_PAGES.find((item) => item.id === params.pageId)
@@ -322,7 +306,7 @@ export const facebookHandlers = [
     await ok()
     const brandId = String(params.brandId)
     PAGE_IDS[brandId] = (PAGE_IDS[brandId] ?? []).filter((id) => id !== params.pageId)
-    INTEGRATION_STATE[brandId] = PAGE_IDS[brandId].length ? 'connected' : 'needs_page_selection'
+    INTEGRATION_STATE[brandId] = PAGE_IDS[brandId].length ? 'connected' : 'disconnected'
     return HttpResponse.json(
       envelope(
         integrationFor(brandId),

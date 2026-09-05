@@ -6,6 +6,8 @@ export {
   AppstoreOutlined as IconAllPlatforms,
   BarChartOutlined as IconReports,
   DownOutlined as IconChevronDown,
+  LeftOutlined as IconChevronLeft,
+  RightOutlined as IconChevronRight,
   MenuOutlined as IconMenu,
   LogoutOutlined as IconSignOut,
   SettingOutlined as IconSettings,

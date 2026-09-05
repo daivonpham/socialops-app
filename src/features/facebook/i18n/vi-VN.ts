@@ -35,7 +35,7 @@ export const facebookViVN = {
     previous: 'Trước',
     next: 'Tiếp',
     updated: 'Cập nhật {{date}}',
-    export: 'Xuất CSV',
+
     columns: 'Cột',
     selectAll: 'Chọn tất cả',
     notAvailable: 'Không khả dụng',
@@ -60,16 +60,14 @@ export const facebookViVN = {
     planningDescription: 'Tạo, duyệt và lên lịch bài đăng Trang trong một quy trình chung.',
     scheduled: 'Đã lên lịch',
     draft: 'Bản nháp',
-    pickerTitle: 'Chọn Trang Facebook',
-    pickerDescription: 'Chọn các Trang muốn quản lý cho thương hiệu này. Bạn có thể thay đổi sau.',
-    searchPages: 'Tìm Trang',
-    connectSelected: 'Kết nối {{count}} Trang',
-    noPagesTitle: 'Không tìm thấy Trang có thể quản lý',
-    noPagesDescription: 'Hãy nhờ quản trị viên Trang Facebook cấp quyền rồi thử lại.',
+    pageSwitcherLabel: 'Chọn fanpage Facebook',
+    searchPages: 'Tìm fanpage',
     connectedCount_one: 'Đã kết nối {{count}} Trang',
     connectedCount_other: 'Đã kết nối {{count}} Trang',
     manage: 'Quản lý Trang',
-    addPage: 'Kết nối Trang',
+    manageWithIssues_one: 'Quản lý Trang, {{count}} sự cố',
+    manageWithIssues_other: 'Quản lý Trang, {{count}} sự cố',
+    addPage: 'Kết nối thêm fanpage',
     drawerTitle: 'Trang Facebook',
     drawerDescription: 'Kiểm tra sức khỏe kết nối và các Trang thuộc thương hiệu này.',
     reconnect: 'Kết nối lại',
@@ -82,12 +80,7 @@ export const facebookViVN = {
     disconnectAllTitle: 'Ngắt kết nối Facebook?',
     disconnectAllDescription:
       'Tất cả Trang sẽ dừng đồng bộ và các bài Facebook đã lên lịch có thể thất bại.',
-    choosePages: 'Chọn Trang',
-    connectedBy: 'Được kết nối bởi {{name}}',
-    connectedAt: 'Đã kết nối {{date}}',
-    reviewIssue: 'Xem sự cố',
-    issueBanner: '{{count}} Trang cần chú ý. Kết nối lại để khôi phục insight và xuất bản.',
-    setupBanner: 'Facebook đã được cấp quyền nhưng chưa chọn Trang cho thương hiệu này.',
+
     permissionReason: 'Vai trò của bạn không thể quản lý kết nối Facebook.',
   },
   health: {
@@ -125,15 +118,13 @@ export const facebookViVN = {
   },
 
   analytics: {
-    title: 'Phân tích Facebook',
-    description: 'Khám phá các chỉ số Trang và thông tin đối tượng được Meta hỗ trợ.',
     mediaViewsTrend: 'Xu hướng lượt xem nội dung',
     contentInteractionsTrend: 'Xu hướng tương tác nội dung',
     audience: 'Đối tượng theo độ tuổi',
 
     contentMix: 'Tỷ trọng nội dung',
     pageBreakdown: 'Phân tích theo Trang',
-    exportStarted: 'Tệp CSV phân tích đã sẵn sàng.',
+
     accessDeniedTitle: 'Cần quyền xem phân tích',
     accessDeniedDescription:
       'Hãy nhờ quản trị viên thương hiệu cấp quyền phân tích để xem mục này.',

@@ -1,0 +1,135 @@
+@reference '../../../shared/styles/index.css';
+
+@layer components {
+  .planning-calendar .fc {
+    min-width: 48rem;
+    @apply text-body-sm text-text-secondary;
+  }
+
+  .planning-calendar .fc-theme-standard .fc-scrollgrid,
+  .planning-calendar .fc-theme-standard td,
+  .planning-calendar .fc-theme-standard th {
+    @apply border-border-subtle;
+  }
+
+  .planning-calendar .fc-theme-standard .fc-scrollgrid {
+    border-width: 0;
+  }
+
+  .planning-calendar .fc .fc-col-header-cell {
+    padding-top: 3px;
+    padding-bottom: 3px;
+    @apply bg-bg-surface;
+  }
+
+  .planning-calendar .fc .fc-col-header-cell-cushion {
+    @apply block px-2 py-4 text-label-sm font-medium text-text-tertiary;
+  }
+
+  .planning-calendar .fc .fc-daygrid-day-frame {
+    min-height: 9rem;
+  }
+
+  .planning-calendar .fc .fc-daygrid-day-number {
+    @apply m-1 flex h-8 min-w-8 items-center justify-center rounded-pill px-1 text-label-sm tabular-nums text-text-secondary;
+  }
+
+  .planning-calendar .fc .fc-day-today .fc-daygrid-day-number {
+    @apply bg-platform-facebook text-text-inverse;
+  }
+
+  .planning-calendar .fc .fc-day-other {
+    @apply bg-bg-surface-subtle/50;
+  }
+
+  .planning-calendar .fc .fc-day-other .fc-daygrid-day-number {
+    @apply text-text-disabled;
+  }
+
+  .planning-calendar .fc .fc-daygrid-event,
+  .planning-calendar .fc .fc-timegrid-event {
+    @apply cursor-pointer whitespace-normal border-0 bg-transparent text-inherit shadow-none;
+  }
+
+  .planning-calendar .fc .fc-daygrid-event-harness {
+    @apply mx-1 mb-1;
+  }
+
+  .planning-calendar .fc .fc-timegrid-event-harness-inset .fc-timegrid-event {
+    @apply shadow-none;
+  }
+
+  .planning-calendar .fc .fc-timegrid-event-harness:hover {
+    z-index: 5 !important;
+  }
+
+  .planning-calendar .fc .fc-timegrid-event .planning-calendar-event {
+    @apply h-full overflow-hidden;
+  }
+
+  .planning-calendar .fc .fc-timegrid-event .planning-calendar-event__primary {
+    @apply gap-1;
+  }
+
+  .planning-calendar .fc .fc-event-main {
+    @apply text-inherit;
+  }
+
+  .planning-calendar .fc .fc-event:focus-visible {
+    @apply focus-ring rounded-md;
+  }
+
+  .planning-calendar .fc .fc-daygrid-more-link,
+  .planning-calendar .fc .fc-timegrid-more-link {
+    @apply ms-2 rounded-md px-2 py-1 text-caption font-medium text-text-secondary hover:bg-bg-surface-muted hover:text-text-primary;
+  }
+
+  .planning-calendar .fc .fc-popover {
+    @apply overflow-hidden rounded-xl border border-border-subtle bg-bg-surface shadow-lg;
+  }
+
+  .planning-calendar .fc .fc-popover-header {
+    @apply bg-bg-surface-subtle px-3 py-2 text-label-sm text-text-primary;
+  }
+
+  .planning-calendar .fc .fc-popover-body {
+    @apply p-2;
+  }
+
+  .planning-calendar .fc .fc-timegrid-slot-label-cushion,
+  .planning-calendar .fc .fc-timegrid-axis-cushion {
+    @apply px-2 text-caption tabular-nums text-text-tertiary;
+  }
+
+  .planning-calendar .fc .fc-timegrid-now-indicator-line {
+    @apply border-error-600;
+  }
+
+  .planning-calendar .fc .fc-timegrid-now-indicator-arrow {
+    @apply border-e-error-600;
+  }
+}
+
+/* FullCalendar injects an unlayered `.fc th { padding: 0 }` rule at runtime. */
+.planning-calendar .fc th.fc-col-header-cell {
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+/* FullCalendar event chrome is injected without a cascade layer at runtime. */
+.planning-calendar .fc a.fc-event,
+.planning-calendar .fc a.fc-event:hover,
+.planning-calendar .fc a.fc-event:focus {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+}
+
+.planning-calendar .fc .fc-timegrid-event-harness-inset .fc-timegrid-event {
+  box-shadow: none;
+}
+
+.planning-calendar .fc .fc-event-selected::after {
+  background: transparent;
+}

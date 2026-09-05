@@ -43,7 +43,9 @@ export function FilterDropdown({
       placement={placement}
       content={
         <div className="w-table-settings">
-          <div className="grid max-h-table-settings gap-4 overflow-y-auto p-4">{children}</div>
+          <div className="app-scrollbar grid max-h-table-settings gap-4 overflow-y-auto p-4">
+            {children}
+          </div>
           <div className="flex gap-3 border-t border-border-subtle p-4">
             <Button className="flex-1" size="md" variant="secondary" onClick={onReset}>
               {resetLabel ?? t('filters.reset')}

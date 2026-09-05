@@ -1,8 +1,9 @@
-import { Link } from 'react-router-dom'
+import { generatePath, Link, useMatch } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ROUTES } from '@/app/router/paths'
 import { getNavEntries } from '@/app/router/routes'
 import { BrandSwitcher } from '@/features/brands'
+import { PLATFORMS } from '@/features/social-accounts'
 import { WorkspaceSwitcher } from '@/features/workspaces'
 import { normalizeLocale, resolveLocale, SUPPORTED_LOCALES, type AppLocale } from '@/shared/i18n'
 import {
@@ -36,6 +37,11 @@ export function TopBar({
   onPreviewClose?: () => void
 }) {
   const { t } = useTranslation('app')
+  const overviewMatch = useMatch(ROUTES.PLATFORM_OVERVIEW)
+  const planningMatch = useMatch(ROUTES.PLATFORM_PLANNING)
+  const platformParam = overviewMatch?.params.platform ?? planningMatch?.params.platform
+  const activePlatform = PLATFORMS.find((platform) => platform === platformParam)
+
   return (
     <header className="flex shrink-0 items-stretch border-b border-border-subtle bg-bg-surface">
       {/* Same width + right border as the sidebar so the rail reads as one column. */}
@@ -81,9 +87,23 @@ export function TopBar({
           aria-label={t('topbar.primaryNavigation')}
           className="hidden items-center gap-1 lg:flex"
         >
-          {topNav.map((entry) => (
-            <NavItem key={entry.path} to={entry.path} label={t(entry.labelKey)} />
-          ))}
+          {topNav.map((entry) =>
+            activePlatform ? (
+              <NavItem
+                key={entry.path}
+                to={generatePath(entry.path, { platform: activePlatform })}
+                label={t(entry.labelKey)}
+              />
+            ) : (
+              <span
+                key={entry.path}
+                aria-disabled="true"
+                className="flex h-10 cursor-not-allowed items-center rounded-lg px-3 text-label-md text-text-disabled"
+              >
+                {t(entry.labelKey)}
+              </span>
+            ),
+          )}
         </nav>
         <AccountMenu />
       </div>

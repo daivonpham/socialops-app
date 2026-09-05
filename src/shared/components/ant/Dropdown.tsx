@@ -14,7 +14,8 @@ import { IconCheck, IconSearch } from './icons'
 function matchesQuery(item: DropdownMenuItem, query: string): boolean {
   if ('type' in item) return query.length === 0
   if (query.length === 0) return true
-  return typeof item.label === 'string' && item.label.toLowerCase().includes(query.toLowerCase())
+  const searchableText = item.searchText ?? (typeof item.label === 'string' ? item.label : '')
+  return searchableText.toLowerCase().includes(query.toLowerCase())
 }
 
 function toMenuItems(
@@ -169,7 +170,7 @@ export function Dropdown({
                 </>
               ) : null}
 
-              <div className={hasChrome ? 'max-h-64 overflow-y-auto' : undefined}>
+              <div className={hasChrome ? 'app-scrollbar max-h-64 overflow-y-auto' : undefined}>
                 {isValidElement(menu)
                   ? cloneElement(menu as ReactElement<{ style?: CSSProperties }>, {
                       style: { boxShadow: 'none', background: 'transparent' },

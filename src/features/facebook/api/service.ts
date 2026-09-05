@@ -11,8 +11,6 @@ import type {
   FacebookPostDto,
   FacebookPostsDto,
   FacebookQuery,
-  ManageableFacebookPageDto,
-  SelectFacebookPagesInput,
 } from './types'
 
 export async function getFacebookIntegration(brandId: string) {
@@ -25,23 +23,6 @@ export async function startFacebookConnect({ brandId }: ConnectFacebookInput) {
   return (
     await apiClient.post<CommonApiResponse<FacebookIntegrationDto>>(
       `/brands/${brandId}/facebook/connect`,
-    )
-  ).data
-}
-
-export async function getManageableFacebookPages(brandId: string) {
-  return (
-    await apiClient.get<CommonApiResponse<ManageableFacebookPageDto[]>>(
-      `/brands/${brandId}/facebook/manageable-pages`,
-    )
-  ).data
-}
-
-export async function selectFacebookPages({ brandId, pageIds }: SelectFacebookPagesInput) {
-  return (
-    await apiClient.post<CommonApiResponse<FacebookIntegrationDto>>(
-      `/brands/${brandId}/facebook/pages`,
-      { pageIds },
     )
   ).data
 }

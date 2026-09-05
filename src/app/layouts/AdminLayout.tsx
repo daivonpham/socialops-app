@@ -89,7 +89,7 @@ export default function AdminLayout() {
               </div>
             </div>
           </div>
-          <main className="min-w-0 flex-1 overflow-y-auto p-4 md:p-5 xl:p-6">
+          <main className="app-scrollbar min-w-0 flex-1 overflow-y-auto p-4 md:p-5 xl:p-6">
             <RouteAccessGuard>
               <Outlet />
             </RouteAccessGuard>

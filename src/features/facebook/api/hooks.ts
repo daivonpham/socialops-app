@@ -9,9 +9,7 @@ import {
   getFacebookIntegration,
   getFacebookOverview,
   getFacebookPosts,
-  getManageableFacebookPages,
   reconnectFacebookPage,
-  selectFacebookPages,
   startFacebookConnect,
 } from './service'
 import type { FacebookPostQuery, FacebookQuery } from './types'
@@ -19,7 +17,7 @@ import type { FacebookPostQuery, FacebookQuery } from './types'
 export const FACEBOOK_QUERY_KEYS = {
   root: (brandId: string | null) => ['facebook', brandId] as const,
   integration: (brandId: string | null) => ['facebook', brandId, 'integration'] as const,
-  manageable: (brandId: string | null) => ['facebook', brandId, 'manageable-pages'] as const,
+
   overview: (brandId: string | null, query: FacebookQuery) =>
     ['facebook', brandId, 'overview', query] as const,
   posts: (brandId: string | null, query: FacebookPostQuery) =>
@@ -33,15 +31,6 @@ export function useFacebookIntegration(brandId: string | null) {
     queryKey: FACEBOOK_QUERY_KEYS.integration(brandId),
     queryFn: () => getFacebookIntegration(brandId!),
     enabled: brandId !== null,
-    select: (response) => response.data,
-  })
-}
-
-export function useManageableFacebookPages(brandId: string | null, enabled: boolean) {
-  return useQuery({
-    queryKey: FACEBOOK_QUERY_KEYS.manageable(brandId),
-    queryFn: () => getManageableFacebookPages(brandId!),
-    enabled: enabled && brandId !== null,
     select: (response) => response.data,
   })
 }
@@ -100,9 +89,7 @@ function useFacebookMutation<TVariables>(
 export function useConnectFacebook(brandId: string | null) {
   return useFacebookMutation(startFacebookConnect, brandId)
 }
-export function useSelectFacebookPages(brandId: string | null) {
-  return useFacebookMutation(selectFacebookPages, brandId)
-}
+
 export function useReconnectFacebookPage(brandId: string | null) {
   return useFacebookMutation(reconnectFacebookPage, brandId)
 }

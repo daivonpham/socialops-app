@@ -1,4 +1,4 @@
-export type FacebookConnectionState = 'disconnected' | 'connected' | 'needs_page_selection'
+export type FacebookConnectionState = 'disconnected' | 'connected'
 export type FacebookPageHealth =
   'connected' | 'token_expiring' | 'permission_missing' | 'disconnected'
 export type FacebookTab = 'overview' | 'analytics'
@@ -7,6 +7,7 @@ export type DateRange = '7d' | '30d' | '90d'
 export type FacebookPageDto = {
   id: string
   name: string
+  avatarUrl?: string
   username: string
   category: string
   followersCount: number
@@ -20,8 +21,6 @@ export type FacebookIntegrationDto = {
   connectedAt?: string
   pages: FacebookPageDto[]
 }
-
-export type ManageableFacebookPageDto = FacebookPageDto & { selected: boolean }
 
 export type MetricKey =
   'mediaViews' | 'uniqueViewers' | 'contentInteractions' | 'followers' | 'published'
@@ -103,7 +102,7 @@ export type FacebookPostQuery = {
 }
 
 export type ConnectFacebookInput = { brandId: string }
-export type SelectFacebookPagesInput = { brandId: string; pageIds: string[] }
+
 export type FacebookPageActionInput = { brandId: string; pageId: string }
 export type CreateFacebookPostInput = {
   brandId: string

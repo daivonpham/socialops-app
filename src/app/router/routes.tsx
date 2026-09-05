@@ -1,6 +1,13 @@
 import type { ReactNode } from 'react'
-import { createBrowserRouter, Navigate, type RouteObject } from 'react-router-dom'
+import {
+  createBrowserRouter,
+  generatePath,
+  Navigate,
+  useParams,
+  type RouteObject,
+} from 'react-router-dom'
 import type { AppNavigationKey } from '@/app/i18n/en-US'
+import { PLATFORMS } from '@/features/social-accounts'
 import { PERMISSIONS } from '@/shared/permissions'
 import { IconAllPlatforms, IconMembers, IconReports, IconSettings, Spin } from '@/shared/ui'
 import { ROUTES } from './paths'
@@ -40,21 +47,23 @@ const layoutChildren: RouteObject[] = [
       },
     }),
   },
-  // Platform pages are reached from the data-driven <PlatformNavList/>, not from route nav metadata.
+  // A platform and a function are two independent navigation dimensions. Their
+  // combined URL is the single source of truth for both Sidebar and TopBar.
+  { path: ROUTES.PLATFORM, element: <PlatformDefaultRedirect /> },
   {
-    path: ROUTES.FACEBOOK,
+    path: ROUTES.FACEBOOK_OVERVIEW,
     lazy: async () => ({
       Component: (await import('@/features/facebook/pages/FacebookPage')).default,
     }),
   },
-  { path: ROUTES.PLATFORM, lazy: placeholderPage },
+
   {
-    path: ROUTES.OVERVIEW,
+    path: ROUTES.PLATFORM_OVERVIEW,
     lazy: placeholderPage,
     handle: handle({ nav: { labelKey: 'navigation.overview', section: 'top', order: 10 } }),
   },
   {
-    path: ROUTES.PLANNING,
+    path: ROUTES.PLATFORM_PLANNING,
     lazy: async () => ({ Component: (await import('@/features/planning')).PlanningPage }),
     handle: handle({ nav: { labelKey: 'navigation.planning', section: 'top', order: 20 } }),
   },
@@ -84,6 +93,22 @@ const layoutChildren: RouteObject[] = [
   },
   { path: '*', element: <Navigate to={ROUTES.ALL_PLATFORMS} replace /> },
 ]
+
+function PlatformDefaultRedirect() {
+  const { platform } = useParams<{ platform: string }>()
+  const activePlatform = PLATFORMS.find((item) => item === platform)
+
+  return (
+    <Navigate
+      to={
+        activePlatform
+          ? generatePath(ROUTES.PLATFORM_OVERVIEW, { platform: activePlatform })
+          : ROUTES.ALL_PLATFORMS
+      }
+      replace
+    />
+  )
+}
 
 export type NavEntry = {
   path: string

@@ -445,7 +445,7 @@ export function DataTable<T extends object>({
           </Dropdown>
         </div>
       ) : null}
-      <div className="min-w-0 max-w-full overflow-x-auto overscroll-x-contain">
+      <div className="app-scrollbar min-w-0 max-w-full overflow-x-auto overscroll-x-contain">
         <table
           aria-label={ariaLabel}
           className="min-w-full table-fixed border-collapse text-body-sm text-text-secondary"
@@ -672,7 +672,7 @@ function DataTableColumnSettings<T extends object>({
           onClick={resetColumnOrder}
         />
       </div>
-      <div className="max-h-table-settings overflow-y-auto p-2">
+      <div className="app-scrollbar max-h-table-settings overflow-y-auto p-2">
         {columns.map((column) => {
           const meta = column.columnDef.meta
           const canReorder = enableColumnReordering && meta?.reorderable !== false

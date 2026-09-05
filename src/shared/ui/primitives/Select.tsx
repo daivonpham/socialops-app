@@ -1,4 +1,11 @@
-export type SelectOption = { value: string; label: string; disabled?: boolean }
+import type { ReactNode } from 'react'
+
+export type SelectOption = {
+  value: string
+  label: ReactNode
+  searchText?: string
+  disabled?: boolean
+}
 export type SelectProps = {
   value?: string
   defaultValue?: string

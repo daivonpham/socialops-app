@@ -5,9 +5,13 @@ export function Select({ label, id, options, showSearch = true, onChange, ...pro
   const control = (
     <AntSelect
       id={id}
-      options={[...options]}
+      options={options.map((option) => ({
+        ...option,
+        searchText:
+          option.searchText ?? (typeof option.label === 'string' ? option.label : option.value),
+      }))}
       showSearch={showSearch}
-      optionFilterProp="label"
+      optionFilterProp="searchText"
       popupMatchSelectWidth={false}
       onChange={(value) => onChange?.({ target: { value } })}
       {...props}
