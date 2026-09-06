@@ -66,7 +66,10 @@ export default {
       action: semanticColor.action,
       link: semanticColor.link,
     },
-    spacing: pxScale(space),
+    spacing: {
+      ...pxScale(space),
+      'media-action': px(componentToken.media.removeButtonSize),
+    },
     borderRadius: pxScale(radius),
     boxShadow: { ...shadow },
     fontFamily: { sans: typography.fontFamily },

@@ -13,6 +13,12 @@ import FullCalendar from '@fullcalendar/react'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import { useTranslation } from 'react-i18next'
 import {
+  formatDateTime,
+  formatLocalizedDate,
+  getLocalTimeZone,
+  uses12HourTime,
+} from '@/shared/i18n'
+import {
   Alert,
   Button,
   DatePicker,
@@ -78,7 +84,8 @@ export function PlanningCalendar({
   const [pendingReschedule, setPendingReschedule] = useState<PendingReschedule | null>(null)
   const [hasRescheduleError, setHasRescheduleError] = useState(false)
   const fullCalendarView = calendarView === 'month' ? 'dayGridMonth' : 'timeGridWeek'
-  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const uses12HourClock = uses12HourTime(i18n.resolvedLanguage)
+  const timeZone = getLocalTimeZone()
   const events = useMemo<EventInput[]>(
     () =>
       contents.flatMap((content) => {
@@ -271,7 +278,11 @@ export function PlanningCalendar({
           slotEventOverlap={false}
           moreLinkClick="popover"
           events={events}
-          eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
+          eventTimeFormat={{
+            hour: uses12HourClock ? 'numeric' : '2-digit',
+            minute: '2-digit',
+            hour12: uses12HourClock,
+          }}
           moreLinkContent={(args) => t('calendar.more', { count: args.num })}
           eventAllow={(_, event) => {
             if (!event) return false
@@ -341,19 +352,18 @@ function createCalendarHeading(
   locale?: string,
 ): CalendarHeading {
   const rangeEnd = new Date(info.view.currentEnd.getTime() - 1)
-  const rangeFormatter = new Intl.DateTimeFormat(locale, {
+  const rangeFormatOptions: Intl.DateTimeFormatOptions = {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
-  })
-  const month = new Intl.DateTimeFormat(locale, { month: 'short' })
-    .format(currentDate)
+  }
+  const month = formatLocalizedDate(currentDate, locale, { month: 'short' })
     .replace('.', '')
     .toUpperCase()
 
   return {
     title: info.view.title,
-    range: `${rangeFormatter.format(info.view.currentStart)} – ${rangeFormatter.format(rangeEnd)}`,
+    range: `${formatLocalizedDate(info.view.currentStart, locale, rangeFormatOptions)} – ${formatLocalizedDate(rangeEnd, locale, rangeFormatOptions)}`,
     month,
     day: String(currentDate.getDate()),
     week: getIsoWeek(currentDate),
@@ -373,10 +383,4 @@ function toDateKey(date: Date) {
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
-}
-
-function formatDateTime(value: string, locale?: string) {
-  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(
-    new Date(value),
-  )
 }

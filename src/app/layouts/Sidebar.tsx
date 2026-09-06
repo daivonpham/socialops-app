@@ -31,7 +31,7 @@ export function Sidebar({
 }) {
   const { t } = useTranslation('app')
   const { granted, isLoading } = usePermissions()
-  const isPlanning = Boolean(useMatch(ROUTES.PLATFORM_PLANNING))
+  const isPlanning = Boolean(useMatch({ path: ROUTES.PLATFORM_PLANNING, end: false }))
   const platformPath = isPlanning ? ROUTES.PLATFORM_PLANNING : ROUTES.PLATFORM_OVERVIEW
   const canSee = (entry: NavEntry) => !entry.requires || allOf(granted, entry.requires)
 

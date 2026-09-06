@@ -1,4 +1,6 @@
-export type TabOption<T extends string> = { value: T; label: string; disabled?: boolean }
+import type { ReactNode } from 'react'
+
+export type TabOption<T extends string> = { value: T; label: ReactNode; disabled?: boolean }
 export type TabsProps<T extends string> = {
   value: T
   options: readonly TabOption<T>[]

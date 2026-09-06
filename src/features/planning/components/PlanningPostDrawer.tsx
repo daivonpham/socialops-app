@@ -1,6 +1,5 @@
-import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { type AppLocale } from '@/shared/i18n'
+import { formatDateTime, getLocalTimeZone } from '@/shared/i18n'
 import { Drawer, IconFacebook, IconImage, IconTikTok, StatusTag } from '@/shared/ui'
 import type { PlanningContent } from '../api'
 import { PLANNING_STATUS_TONE } from '../model'
@@ -13,12 +12,7 @@ export function PlanningPostDrawer({
   onClose: () => void
 }) {
   const { t, i18n } = useTranslation('planning')
-  const locale = i18n.resolvedLanguage as AppLocale
-  const dateFormatter = useMemo(
-    () => new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeStyle: 'short' }),
-    [locale],
-  )
-  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const timeZone = getLocalTimeZone()
 
   return (
     <Drawer
@@ -73,10 +67,12 @@ export function PlanningPostDrawer({
               </ul>
             </DetailRow>
             <DetailRow label={t('detail.scheduledAt')}>
-              {content.scheduledAt ? dateFormatter.format(new Date(content.scheduledAt)) : '—'}
+              {content.scheduledAt
+                ? formatDateTime(content.scheduledAt, i18n.resolvedLanguage)
+                : '—'}
             </DetailRow>
             <DetailRow label={t('detail.createdAt')}>
-              {dateFormatter.format(new Date(content.createdAt))}
+              {formatDateTime(content.createdAt, i18n.resolvedLanguage)}
             </DetailRow>
             <DetailRow label={t('detail.createdBy')}>{content.createdBy}</DetailRow>
             <DetailRow label={t('detail.timeZone')}>{timeZone}</DetailRow>

@@ -1,20 +1,41 @@
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { hasPermission, usePermissions } from '@/shared/permissions'
 import { Button, Dropdown, IconFacebook, IconPlus, IconTikTok } from '@/shared/ui'
 import type { PlanningPlatform } from '../api'
 import { PLANNING_ACCESS } from '../config/planning-access'
+import { getPlanningCreatePath } from '../config/planning.routes'
 import type { PlanningAccount } from '../model'
 
 export function CreatePostButton({
   accounts,
-  onSelectPlatform,
+  platform,
 }: {
   accounts: PlanningAccount[]
-  onSelectPlatform: (platform: PlanningPlatform) => void
+  platform: 'all' | PlanningPlatform
 }) {
   const { t } = useTranslation('planning')
+  const navigate = useNavigate()
   const { granted } = usePermissions()
   const canCreatePost = hasPermission(granted, PLANNING_ACCESS.publish[0])
+
+  const openComposer = (targetPlatform: PlanningPlatform) => {
+    navigate(getPlanningCreatePath(targetPlatform))
+  }
+
+  const trigger = (
+    <Button
+      variant="primary"
+      icon={<IconPlus />}
+      disabled={!canCreatePost}
+      title={!canCreatePost ? t('create.noPermission') : undefined}
+      onClick={platform === 'all' ? undefined : () => openComposer(platform)}
+    >
+      {t('create.button')}
+    </Button>
+  )
+
+  if (platform !== 'all') return trigger
 
   return (
     <Dropdown
@@ -33,16 +54,9 @@ export function CreatePostButton({
           disabled: !accounts.some((account) => account.platform === 'tiktok'),
         },
       ]}
-      onSelect={(key) => onSelectPlatform(key as PlanningPlatform)}
+      onSelect={(key) => openComposer(key as PlanningPlatform)}
     >
-      <Button
-        variant="primary"
-        icon={<IconPlus />}
-        disabled={!canCreatePost}
-        title={!canCreatePost ? t('create.noPermission') : undefined}
-      >
-        {t('create.button')}
-      </Button>
+      {trigger}
     </Dropdown>
   )
 }

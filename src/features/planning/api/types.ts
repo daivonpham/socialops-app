@@ -11,6 +11,16 @@ export type PlanningStatus =
   | 'rejected'
 
 export type PlanningMediaType = 'image' | 'video' | 'text'
+export type PlanningPostType =
+  'facebook_feed' | 'facebook_reel' | 'facebook_story' | 'tiktok_video' | 'tiktok_photo'
+export type PlanningPublishIntent = 'draft' | 'approval' | 'publish_now' | 'schedule'
+
+export type PlanningMedia = {
+  id: string
+  type: Exclude<PlanningMediaType, 'text'>
+  url: string
+  name: string
+}
 
 export type PlanningTarget = {
   id: string
@@ -26,6 +36,7 @@ export type PlanningContent = {
   mediaType: PlanningMediaType
   platform: PlanningPlatform
   targets: PlanningTarget[]
+  publications?: PlanningPublication[]
   status: PlanningStatus
   scheduledAt?: string
   createdAt: string
@@ -44,13 +55,34 @@ export type PlanningContentsResponse = {
   items: PlanningContent[]
 }
 
+export type PlanningPublication = {
+  id: string
+  socialAccountId: string
+  target: PlanningTarget
+  captionOverride?: string
+  scheduledAt?: string
+  status: PlanningStatus
+  externalPostId?: string
+  externalPostUrl?: string
+  publishedAt?: string
+  errorCode?: string
+  errorMessage?: string
+}
+
 export type CreatePlanningContentInput = {
   brandId: string
   platform: PlanningPlatform
-  targetIds: string[]
+  type: PlanningPostType
   caption: string
-  scheduledAt?: string
-  status: 'draft' | 'scheduled'
+  link?: string
+  media: PlanningMedia[]
+  publications: Array<{
+    socialAccountId: string
+    captionOverride?: string
+    scheduledAt?: string
+  }>
+  intent: PlanningPublishIntent
+  platformSettings: Record<string, boolean | string>
 }
 
 export type ReschedulePlanningContentInput = {

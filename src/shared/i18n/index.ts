@@ -1,7 +1,16 @@
 export { commonEnUS } from './en-US'
 export { commonViVN } from './vi-VN'
 export { i18n, initializeI18n } from './config'
-export { formatNumber } from './format'
+export {
+  formatDate,
+  formatDateTime,
+  formatLocalizedDate,
+  formatNumber,
+  formatTime,
+  getDatePickerFormat,
+  getLocalTimeZone,
+  uses12HourTime,
+} from './format'
 export type { TranslationShape } from './types'
 export {
   DEFAULT_LOCALE,

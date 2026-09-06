@@ -68,6 +68,13 @@ const layoutChildren: RouteObject[] = [
     handle: handle({ nav: { labelKey: 'navigation.planning', section: 'top', order: 20 } }),
   },
   {
+    path: ROUTES.PLATFORM_PLANNING_CREATE,
+    lazy: async () => ({
+      Component: (await import('@/features/planning')).CreatePlanningPostPage,
+    }),
+    handle: handle({ requires: [PERMISSIONS.PUBLISHING_PUBLISH.key] }),
+  },
+  {
     path: ROUTES.REPORTS,
     lazy: placeholderPage,
     handle: handle({

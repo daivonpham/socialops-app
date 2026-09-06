@@ -197,14 +197,32 @@ export const planningHandlers = [
   http.post('/api/brands/:brandId/planning', async ({ params, request }) => {
     const body = (await request.json()) as Omit<CreatePlanningContentInput, 'brandId'>
     createdCount += 1
+    const status: PlanningStatus =
+      body.intent === 'draft'
+        ? 'draft'
+        : body.intent === 'approval'
+          ? 'pending_approval'
+          : body.intent === 'schedule'
+            ? 'scheduled'
+            : 'publishing'
+    const targets = body.publications.map((publication) => target(publication.socialAccountId))
     const content: PlanningContent = {
       id: `content-created-${createdCount}`,
       caption: body.caption,
-      mediaType: 'text',
+      thumbnailUrl: body.media[0]?.url,
+      mediaType: body.media[0]?.type ?? 'text',
       platform: body.platform,
-      targets: body.targetIds.map(target),
-      status: body.status,
-      scheduledAt: body.scheduledAt,
+      targets,
+      publications: body.publications.map((publication, index) => ({
+        id: `publication-created-${createdCount}-${index + 1}`,
+        socialAccountId: publication.socialAccountId,
+        target: targets[index]!,
+        captionOverride: publication.captionOverride,
+        scheduledAt: publication.scheduledAt,
+        status,
+      })),
+      status,
+      scheduledAt: body.publications[0]?.scheduledAt,
       createdAt: '2026-09-08T08:00:00+07:00',
       createdBy: 'Current User',
     }

@@ -21,7 +21,7 @@ import {
   type PlanningView,
 } from '../config/planning.filters'
 import { PLANNING_STATUS_META, type PlanningAccount } from '../model'
-import { CreatePlanningPostDrawer } from '../components/CreatePlanningPostDrawer'
+
 import { CreatePostButton } from '../components/CreatePostButton'
 import { PlanningCalendar } from '../components/PlanningCalendar'
 import { PlanningFilters } from '../components/PlanningFilters'
@@ -41,7 +41,6 @@ export default function PlanningPage() {
   )
   const [urlFilters, setUrlFilters] = useUrlFilters(planningFilterDefaults)
   const [selectedContent, setSelectedContent] = useState<PlanningContent | null>(null)
-  const [composerPlatform, setComposerPlatform] = useState<PlanningPlatform | null>(null)
 
   const view = isPlanningView(urlFilters.view) ? urlFilters.view : preferredView
   const calendarView = isPlanningCalendarView(urlFilters.calendarView)
@@ -134,7 +133,7 @@ export default function PlanningPage() {
             status={status}
             onChange={(filters) => setUrlFilters(filters)}
           />
-          <CreatePostButton accounts={accounts} onSelectPlatform={setComposerPlatform} />
+          <CreatePostButton accounts={accounts} platform={platform} />
         </div>
       </div>
 
@@ -157,12 +156,6 @@ export default function PlanningPage() {
       )}
 
       <PlanningPostDrawer content={selectedContent} onClose={() => setSelectedContent(null)} />
-      <CreatePlanningPostDrawer
-        brandId={brandId}
-        platform={composerPlatform}
-        accounts={accounts}
-        onClose={() => setComposerPlatform(null)}
-      />
     </div>
   )
 }

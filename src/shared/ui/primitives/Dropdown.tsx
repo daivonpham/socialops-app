@@ -28,7 +28,7 @@ export type DropdownProps = {
   /** Marks the current choice (workspace/brand switchers). */
   selectedKey?: string
   onSelect?: (key: string) => void
-  placement?: 'bottom' | 'bottomLeft' | 'bottomRight'
+  placement?: 'top' | 'topLeft' | 'topRight' | 'bottom' | 'bottomLeft' | 'bottomRight'
   open?: boolean
   onOpenChange?: (open: boolean) => void
   /** When set, a search field is shown at the top of the panel. */

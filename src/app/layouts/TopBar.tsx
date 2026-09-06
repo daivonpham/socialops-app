@@ -38,7 +38,7 @@ export function TopBar({
 }) {
   const { t } = useTranslation('app')
   const overviewMatch = useMatch(ROUTES.PLATFORM_OVERVIEW)
-  const planningMatch = useMatch(ROUTES.PLATFORM_PLANNING)
+  const planningMatch = useMatch({ path: ROUTES.PLATFORM_PLANNING, end: false })
   const platformParam = overviewMatch?.params.platform ?? planningMatch?.params.platform
   const activePlatform = PLATFORMS.find((platform) => platform === platformParam)
 

@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { formatNumber, type AppLocale } from '@/shared/i18n'
+import { formatDateTime, formatNumber, type AppLocale } from '@/shared/i18n'
 import {
   Button,
   DataTable,
@@ -24,10 +24,6 @@ export function PlanningList({
 }) {
   const { t, i18n } = useTranslation('planning')
   const locale = i18n.resolvedLanguage as AppLocale
-  const dateFormatter = useMemo(
-    () => new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }),
-    [locale],
-  )
   const columns = useMemo<DataTableColumn<PlanningContent>[]>(
     () => [
       {
@@ -112,7 +108,7 @@ export function PlanningList({
         sortable: true,
         render: (_, row) => (
           <span className="whitespace-nowrap text-body-sm tabular-nums text-text-secondary">
-            {row.scheduledAt ? dateFormatter.format(new Date(row.scheduledAt)) : '—'}
+            {row.scheduledAt ? formatDateTime(row.scheduledAt, locale) : '—'}
           </span>
         ),
       },
@@ -145,7 +141,7 @@ export function PlanningList({
         ),
       },
     ],
-    [dateFormatter, locale, onSelectContent, t],
+    [locale, onSelectContent, t],
   )
 
   return (

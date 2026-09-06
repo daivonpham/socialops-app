@@ -6,10 +6,10 @@ import {
   useState,
   type CSSProperties,
   type ReactElement,
-  type ReactNode,
 } from 'react'
 import type { DropdownMenuItem, DropdownProps } from '@/shared/ui/primitives/Dropdown'
 import { IconCheck, IconSearch } from './icons'
+import { PopupSurface } from './PopupSurface'
 
 function matchesQuery(item: DropdownMenuItem, query: string): boolean {
   if ('type' in item) return query.length === 0
@@ -37,49 +37,6 @@ function toMenuItems(
       ) : undefined,
     }
   })
-}
-
-function caretPosition(placement: NonNullable<DropdownProps['placement']>): string {
-  if (placement === 'bottomLeft') return 'left-4 -translate-y-1/2'
-  if (placement === 'bottomRight') return 'right-4 -translate-y-1/2'
-  return 'left-1/2 -translate-x-1/2 -translate-y-1/2'
-}
-
-/**
- * Outlined caret that continues the panel border — Ant's filled arrow cannot
- * do this. Rotated square sits on the top edge so the stroke is one line.
- */
-function DropdownCaret({ placement }: { placement: NonNullable<DropdownProps['placement']> }) {
-  return (
-    <span
-      aria-hidden
-      className={
-        'pointer-events-none absolute top-0 size-3 rotate-45 rounded-xs border-l border-t border-border-subtle bg-bg-surface ' +
-        caretPosition(placement)
-      }
-    />
-  )
-}
-
-function DropdownSurface({
-  placement,
-  className = '',
-  children,
-}: {
-  placement: NonNullable<DropdownProps['placement']>
-  className?: string
-  children: ReactNode
-}) {
-  return (
-    <div className="pt-2">
-      <div
-        className={`${className} relative rounded-lg border border-border-subtle bg-bg-surface shadow-lg`}
-      >
-        <DropdownCaret placement={placement} />
-        {children}
-      </div>
-    </div>
-  )
 }
 
 export function Dropdown({
@@ -140,10 +97,7 @@ export function Dropdown({
             }
       }
       popupRender={(menu) => (
-        <DropdownSurface
-          placement={placement}
-          className={content ? '' : hasChrome ? 'w-sidebar' : ''}
-        >
+        <PopupSurface placement={placement} className={content ? '' : hasChrome ? 'w-sidebar' : ''}>
           {content ?? (
             <>
               {searchPlaceholder ? (
@@ -202,7 +156,7 @@ export function Dropdown({
               ) : null}
             </>
           )}
-        </DropdownSurface>
+        </PopupSurface>
       )}
     >
       {children}

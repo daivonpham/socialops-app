@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 export type DatePickerProps = {
   value?: string
   displayValue?: string
+  showTime?: boolean
   onChange?: (value: string) => void
   className?: string
   disabled?: boolean

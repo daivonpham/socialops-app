@@ -250,6 +250,9 @@ export const componentToken = {
   dropdown: {
     itemPaddingBlock: space[2],
   },
+  media: {
+    removeButtonSize: 22,
+  },
   tabs: {
     /** Border treatment for the compact solid-tab track without changing its height. */
     solidTrackOutline: `inset 0 0 0 1px ${semanticColor.border.subtle}`,
