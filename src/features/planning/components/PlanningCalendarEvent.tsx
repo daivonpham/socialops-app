@@ -4,13 +4,10 @@ import type { PlanningContent, PlanningStatus } from '../api'
 
 const STATUS_CLASS: Record<PlanningStatus, string> = {
   draft: 'border-border-subtle bg-bg-surface-subtle',
-  pending_approval: 'border-warning-100 bg-warning-50',
-  approved: 'border-success-100 bg-success-50',
   scheduled: 'border-info-100 bg-info-50',
   publishing: 'border-warning-100 bg-warning-50',
   published: 'border-success-100 bg-success-50',
   failed: 'border-error-100 bg-error-50',
-  rejected: 'border-error-100 bg-error-50',
 }
 
 export function PlanningCalendarEvent({

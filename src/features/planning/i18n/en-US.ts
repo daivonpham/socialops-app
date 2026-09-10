@@ -1,6 +1,7 @@
 export const planningEnUS = {
   common: {
     cancel: 'Cancel',
+    close: 'Close',
   },
   tabs: {
     ariaLabel: 'Planning views',
@@ -9,9 +10,11 @@ export const planningEnUS = {
   },
   filters: {
     account: 'Account or Page',
-    status: 'Status',
+    status: 'Post status',
+    approvalStatus: 'Approval status',
     allAccounts: 'All accounts',
     allStatuses: 'All statuses',
+    allApprovalStatuses: 'All approval statuses',
   },
   platform: {
     facebook: 'Facebook',
@@ -19,12 +22,15 @@ export const planningEnUS = {
   },
   status: {
     draft: 'Draft',
-    pending_approval: 'Pending approval',
-    approved: 'Approved',
     scheduled: 'Scheduled',
     publishing: 'Publishing',
     published: 'Published',
     failed: 'Failed',
+  },
+  approvalStatus: {
+    none: 'No approval',
+    pending: 'Pending approval',
+    approved: 'Approved',
     rejected: 'Rejected',
   },
   states: {
@@ -58,23 +64,35 @@ export const planningEnUS = {
     eventLabel: '{{time}}, {{platform}}, {{caption}}, {{status}}, {{count}} target accounts',
   },
   list: {
+    title: 'Post list',
     ariaLabel: 'Planned content list',
     content: 'Content',
     platform: 'Platform',
     accounts: 'Accounts',
-    status: 'Status',
+    status: 'Post status',
+    approvalStatus: 'Approval',
     scheduledAt: 'Scheduled at',
     createdBy: 'Created by',
     actions: 'Actions',
     openDetails: 'Open details for {{title}}',
+    editContent: 'Edit {{title}}',
+    changeApprovalStatus: 'Change approval status. Current status: {{status}}',
+    pageCount_one: '{{formattedCount}} Page',
+    pageCount_other: '{{formattedCount}} Pages',
+    morePages_one: '+{{formattedCount}} other Page',
+    morePages_other: '+{{formattedCount}} other Pages',
   },
   detail: {
     title: 'Post details',
+    post: 'Post',
+    postStatus: 'Post status',
+    approvalStatus: 'Approval status',
     accounts: 'Target accounts',
     scheduledAt: 'Scheduled at',
     createdAt: 'Created at',
     createdBy: 'Created by',
     timeZone: 'Timezone',
+    edit: 'Edit post',
   },
   create: {
     button: 'Create post',
@@ -92,9 +110,12 @@ export const planningEnUS = {
   },
   composer: {
     title: 'Create {{platform}} post',
+    editTitle: 'Edit {{platform}} post',
     description: 'Create one content item and publish it to one or more accounts.',
     back: 'Back to planning',
     submitError: "We couldn't create this post. Review the fields and try again.",
+    updateError: "We couldn't update this post. Review the fields and try again.",
+    editLoadError: "We couldn't load this post for editing.",
     platform: {
       title: 'Platform',
       selectLabel: 'Select platform',
@@ -179,6 +200,7 @@ export const planningEnUS = {
       account: 'Preview account',
     },
     actions: {
+      saveChanges: 'Save changes',
       saveDraft: 'Save draft',
       saveDraftHint: 'Save and publish at a later time',
       submitApproval: 'Submit for approval',

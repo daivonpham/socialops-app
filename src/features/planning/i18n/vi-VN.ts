@@ -4,6 +4,7 @@ import type { planningEnUS } from './en-US'
 export const planningViVN = {
   common: {
     cancel: 'Hủy',
+    close: 'Đóng',
   },
   tabs: {
     ariaLabel: 'Kiểu hiển thị kế hoạch',
@@ -12,9 +13,11 @@ export const planningViVN = {
   },
   filters: {
     account: 'Tài khoản hoặc Trang',
-    status: 'Trạng thái',
+    status: 'Trạng thái bài viết',
+    approvalStatus: 'Trạng thái duyệt',
     allAccounts: 'Tất cả tài khoản',
     allStatuses: 'Tất cả trạng thái',
+    allApprovalStatuses: 'Tất cả trạng thái duyệt',
   },
   platform: {
     facebook: 'Facebook',
@@ -22,13 +25,16 @@ export const planningViVN = {
   },
   status: {
     draft: 'Bản nháp',
-    pending_approval: 'Chờ phê duyệt',
-    approved: 'Đã phê duyệt',
     scheduled: 'Đã lên lịch',
     publishing: 'Đang đăng',
     published: 'Đã đăng',
-    failed: 'Thất bại',
-    rejected: 'Bị từ chối',
+    failed: 'Đăng lỗi',
+  },
+  approvalStatus: {
+    none: 'Không duyệt',
+    pending: 'Chờ duyệt',
+    approved: 'Đã duyệt',
+    rejected: 'Từ chối',
   },
   states: {
     loadingTitle: 'Đang tải lịch nội dung',
@@ -62,23 +68,35 @@ export const planningViVN = {
     eventLabel: '{{time}}, {{platform}}, {{caption}}, {{status}}, {{count}} tài khoản đích',
   },
   list: {
+    title: 'Danh sách bài viết',
     ariaLabel: 'Danh sách nội dung kế hoạch',
     content: 'Nội dung',
     platform: 'Nền tảng',
     accounts: 'Tài khoản',
-    status: 'Trạng thái',
+    status: 'Trạng thái bài viết',
+    approvalStatus: 'Trạng thái duyệt',
     scheduledAt: 'Thời gian đăng',
     createdBy: 'Người tạo',
     actions: 'Thao tác',
     openDetails: 'Mở chi tiết {{title}}',
+    editContent: 'Chỉnh sửa {{title}}',
+    changeApprovalStatus: 'Đổi trạng thái duyệt. Hiện tại: {{status}}',
+    pageCount_one: '{{formattedCount}} Trang',
+    pageCount_other: '{{formattedCount}} Trang',
+    morePages_one: '+{{formattedCount}} Trang khác',
+    morePages_other: '+{{formattedCount}} Trang khác',
   },
   detail: {
     title: 'Chi tiết bài viết',
+    post: 'Bài viết',
+    postStatus: 'Trạng thái bài viết',
+    approvalStatus: 'Trạng thái duyệt',
     accounts: 'Tài khoản đích',
     scheduledAt: 'Thời gian đăng',
     createdAt: 'Thời gian tạo',
     createdBy: 'Người tạo',
     timeZone: 'Múi giờ',
+    edit: 'Chỉnh sửa bài viết',
   },
   create: {
     button: 'Tạo bài viết',
@@ -96,9 +114,12 @@ export const planningViVN = {
   },
   composer: {
     title: 'Tạo bài viết {{platform}}',
+    editTitle: 'Chỉnh sửa bài viết {{platform}}',
     description: 'Tạo một nội dung và đăng lên một hoặc nhiều tài khoản.',
     back: 'Quay lại kế hoạch',
     submitError: 'Không thể tạo bài viết. Hãy kiểm tra các trường và thử lại.',
+    updateError: 'Không thể cập nhật bài viết. Hãy kiểm tra các trường và thử lại.',
+    editLoadError: 'Không thể tải bài viết để chỉnh sửa.',
     platform: {
       title: 'Nền tảng',
       selectLabel: 'Chọn nền tảng',
@@ -183,6 +204,7 @@ export const planningViVN = {
       account: 'Tài khoản xem trước',
     },
     actions: {
+      saveChanges: 'Lưu thay đổi',
       saveDraft: 'Lưu bản nháp',
       saveDraftHint: 'Lưu để chỉnh sửa và đăng sau',
       submitApproval: 'Gửi duyệt',

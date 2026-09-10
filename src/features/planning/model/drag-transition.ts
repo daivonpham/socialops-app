@@ -13,7 +13,6 @@ const NON_DRAGGABLE: PlanningDragPolicy = {
 export function getPlanningDragPolicy(status: PlanningStatus): PlanningDragPolicy {
   switch (status) {
     case 'draft':
-    case 'approved':
       return { draggable: true, requiresConfirmation: false }
     case 'scheduled':
       return { draggable: true, requiresConfirmation: true }

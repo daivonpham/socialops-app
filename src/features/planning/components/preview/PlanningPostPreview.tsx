@@ -35,7 +35,7 @@ export function PlanningPostPreview({
 
   return (
     <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border-subtle bg-bg-surface shadow-xs">
-      <div className="flex shrink-0 flex-col items-center gap-3 border-b border-border-subtle p-4 sm:flex-row sm:justify-between">
+      <div className="flex shrink-0 flex-col items-center gap-3 border-b border-border-subtle px-4 py-2 sm:flex-row sm:justify-between">
         <h2 className="text-heading-3 text-text-primary">{t('composer.preview.title')}</h2>
         <div className="flex items-center justify-center self-center leading-none">
           <Tabs

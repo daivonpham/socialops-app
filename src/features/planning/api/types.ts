@@ -1,14 +1,8 @@
 export type PlanningPlatform = 'facebook' | 'tiktok'
 
-export type PlanningStatus =
-  | 'draft'
-  | 'pending_approval'
-  | 'approved'
-  | 'scheduled'
-  | 'publishing'
-  | 'published'
-  | 'failed'
-  | 'rejected'
+export type PlanningStatus = 'draft' | 'scheduled' | 'publishing' | 'published' | 'failed'
+
+export type PlanningApprovalStatus = 'none' | 'pending' | 'approved' | 'rejected'
 
 export type PlanningMediaType = 'image' | 'video' | 'text'
 export type PlanningPostType =
@@ -34,10 +28,15 @@ export type PlanningContent = {
   title?: string
   thumbnailUrl?: string
   mediaType: PlanningMediaType
+  type?: PlanningPostType
+  link?: string
+  media?: PlanningMedia[]
+  platformSettings?: Record<string, boolean | string>
   platform: PlanningPlatform
   targets: PlanningTarget[]
   publications?: PlanningPublication[]
   status: PlanningStatus
+  approvalStatus: PlanningApprovalStatus
   scheduledAt?: string
   createdAt: string
   createdBy: string
@@ -47,6 +46,7 @@ export type PlanningQuery = {
   platform: 'all' | PlanningPlatform
   accountId: 'all' | string
   status: 'all' | PlanningStatus
+  approvalStatus?: 'all' | PlanningApprovalStatus
   from?: string
   to?: string
 }
@@ -89,4 +89,16 @@ export type ReschedulePlanningContentInput = {
   brandId: string
   contentId: string
   scheduledAt: string
+}
+
+export type UpdatePlanningApprovalInput = {
+  brandId: string
+  contentId: string
+  approvalStatus: PlanningApprovalStatus
+}
+
+export type UpdatePlanningContentInput = CreatePlanningContentInput & {
+  contentId: string
+  status: PlanningStatus
+  approvalStatus: PlanningApprovalStatus
 }

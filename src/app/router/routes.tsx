@@ -75,6 +75,13 @@ const layoutChildren: RouteObject[] = [
     handle: handle({ requires: [PERMISSIONS.PUBLISHING_PUBLISH.key] }),
   },
   {
+    path: ROUTES.PLATFORM_PLANNING_EDIT,
+    lazy: async () => ({
+      Component: (await import('@/features/planning')).CreatePlanningPostPage,
+    }),
+    handle: handle({ requires: [PERMISSIONS.PUBLISHING_PUBLISH.key] }),
+  },
+  {
     path: ROUTES.REPORTS,
     lazy: placeholderPage,
     handle: handle({

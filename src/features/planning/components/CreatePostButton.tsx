@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { hasPermission, usePermissions } from '@/shared/permissions'
-import { Button, Dropdown, IconFacebook, IconPlus, IconTikTok } from '@/shared/ui'
+import { Button, Dropdown, IconFacebook, IconPlusCircle, IconTikTok } from '@/shared/ui'
 import type { PlanningPlatform } from '../api'
 import { PLANNING_ACCESS } from '../config/planning-access'
 import { getPlanningCreatePath } from '../config/planning.routes'
@@ -26,7 +26,7 @@ export function CreatePostButton({
   const trigger = (
     <Button
       variant="primary"
-      icon={<IconPlus />}
+      icon={<IconPlusCircle />}
       disabled={!canCreatePost}
       title={!canCreatePost ? t('create.noPermission') : undefined}
       onClick={platform === 'all' ? undefined : () => openComposer(platform)}

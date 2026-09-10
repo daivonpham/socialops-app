@@ -180,6 +180,11 @@ export const antTheme: ThemeConfig = {
       optionSelectedBg: semanticColor.bg['surface-muted'],
       optionSelectedColor: semanticColor.text.primary,
     },
+    DatePicker: {
+      activeBorderColor: semanticColor.border.focus,
+      hoverBorderColor: semanticColor.border.strong,
+      activeShadow: `0 0 0 ${focusRing.width}px ${focusRing.color}`,
+    },
     Checkbox: {
       colorPrimary: semanticColor.action.primary,
       colorPrimaryHover: semanticColor.action['primary-hover'],

@@ -15,7 +15,9 @@ import {
 } from '@/shared/ui'
 import {
   useCreatePlanningContent,
+  usePlanningContent,
   usePlanningContents,
+  useUpdatePlanningContent,
   type PlanningContent,
   type PlanningPlatform,
   type PlanningPublishIntent,
@@ -26,7 +28,10 @@ import { PlanningPostPreview } from '../components/preview/PlanningPostPreview'
 import {
   canSubmitComposer,
   createComposerDraft,
+  createComposerDraftFromContent,
+  getPlanningContentIntent,
   toCreatePlanningContentInput,
+  toUpdatePlanningContentInput,
   type PlanningAccount,
   type PlanningComposerDraft,
   type PreviewViewport,
@@ -36,35 +41,24 @@ export default function CreatePlanningPostPage() {
   const { t } = useTranslation('planning')
   const navigate = useNavigate()
   const { brandId } = useActiveBrand()
-  const { platform: platformParam } = useParams<{ platform: string }>()
+  const { platform: platformParam, contentId } = useParams<{
+    platform: string
+    contentId?: string
+  }>()
   const platform: PlanningPlatform = platformParam === 'tiktok' ? 'tiktok' : 'facebook'
   const isValidPlatform = platformParam === 'facebook' || platformParam === 'tiktok'
-  const [draft, setDraft] = useState(() => createComposerDraft(platform))
-  const [previewViewport, setPreviewViewport] = useState<PreviewViewport>('mobile')
-  const [previewAccountId, setPreviewAccountId] = useState('')
-  const [publishIntent, setPublishIntent] = useState<PlanningPublishIntent>('publish_now')
-  const createContent = useCreatePlanningContent(brandId)
+  const isEditing = Boolean(contentId)
   const catalogQuery = usePlanningContents(brandId, {
     platform: 'all',
     accountId: 'all',
     status: 'all',
   })
-  const accounts = collectAccounts(catalogQuery.data?.items ?? []).filter(
-    (account) => account.platform === platform,
-  )
+  const contentQuery = usePlanningContent(brandId, contentId ?? null)
   const planningPath = getPlanningPath(platform)
-  const setPreviewAccount = useCallback((accountId: string) => setPreviewAccountId(accountId), [])
 
-  if (!isValidPlatform) return <Navigate to="/" replace />
+  if (!isValidPlatform || !brandId) return <Navigate to="/" replace />
 
-  const submit = (intent: 'draft' | 'approval' | 'publish_now' | 'schedule') => {
-    if (!brandId) return
-    createContent.mutate(toCreatePlanningContentInput(brandId, draft, intent), {
-      onSuccess: () => navigate(planningPath),
-    })
-  }
-
-  if (catalogQuery.isPending) {
+  if (catalogQuery.isPending || (isEditing && contentQuery.isPending)) {
     return (
       <div className="grid gap-6">
         <SectionSkeleton rows={2} />
@@ -73,7 +67,83 @@ export default function CreatePlanningPostPage() {
     )
   }
 
+  if (catalogQuery.isError || (isEditing && (contentQuery.isError || !contentQuery.data))) {
+    return (
+      <div className="grid gap-5">
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<IconChevronLeft aria-hidden />}
+          onClick={() => navigate(planningPath)}
+        >
+          {t('composer.back')}
+        </Button>
+        <Alert
+          tone="error"
+          title={isEditing ? t('composer.editLoadError') : t('composer.accounts.loadError')}
+        />
+      </div>
+    )
+  }
+
+  const content = contentQuery.data
+  if (content && content.platform !== platform) return <Navigate to={planningPath} replace />
+  const accounts = collectAccounts(catalogQuery.data?.items ?? []).filter(
+    (account) => account.platform === platform,
+  )
+
+  return (
+    <PlanningComposerWorkspace
+      key={content?.id ?? `create-${platform}`}
+      brandId={brandId}
+      platform={platform}
+      content={content}
+      accounts={accounts}
+      planningPath={planningPath}
+    />
+  )
+}
+
+function PlanningComposerWorkspace({
+  brandId,
+  platform,
+  content,
+  accounts,
+  planningPath,
+}: {
+  brandId: string
+  platform: PlanningPlatform
+  content?: PlanningContent
+  accounts: PlanningAccount[]
+  planningPath: string
+}) {
+  const { t } = useTranslation('planning')
+  const navigate = useNavigate()
+  const [draft, setDraft] = useState(() =>
+    content ? createComposerDraftFromContent(content) : createComposerDraft(platform),
+  )
+  const [previewViewport, setPreviewViewport] = useState<PreviewViewport>('mobile')
+  const [previewAccountId, setPreviewAccountId] = useState('')
+  const [publishIntent, setPublishIntent] = useState<PlanningPublishIntent>(() =>
+    content ? getPlanningContentIntent(content) : 'publish_now',
+  )
+  const createContent = useCreatePlanningContent(brandId)
+  const updateContent = useUpdatePlanningContent(brandId)
+  const setPreviewAccount = useCallback((accountId: string) => setPreviewAccountId(accountId), [])
+
+  const submit = (intent: 'draft' | 'approval' | 'publish_now' | 'schedule') => {
+    const options = {
+      onSuccess: () => navigate(planningPath),
+    }
+    if (content) {
+      updateContent.mutate(toUpdatePlanningContentInput(brandId, content, draft, intent), options)
+      return
+    }
+    createContent.mutate(toCreatePlanningContentInput(brandId, draft, intent), options)
+  }
+
   const canSubmit = canSubmitComposer(draft)
+  const saveContent = content ? updateContent : createContent
 
   return (
     <div className="grid min-h-full gap-5">
@@ -87,14 +157,18 @@ export default function CreatePlanningPostPage() {
             onClick={() => navigate(planningPath)}
           />
           <h1 className="min-w-0 text-heading-2 text-text-primary">
-            {t('composer.title', { platform: t(`platform.${platform}`) })}
+            {t(content ? 'composer.editTitle' : 'composer.title', {
+              platform: t(`platform.${platform}`),
+            })}
           </h1>
         </div>
       </header>
 
-      {createContent.isError ? <Alert tone="error" title={t('composer.submitError')} /> : null}
-      {catalogQuery.isError ? (
-        <Alert tone="error" title={t('composer.accounts.loadError')} />
+      {saveContent.isError ? (
+        <Alert
+          tone="error"
+          title={content ? t('composer.updateError') : t('composer.submitError')}
+        />
       ) : null}
 
       <div className="grid min-h-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(28rem,0.9fr)]">
@@ -104,7 +178,8 @@ export default function CreatePlanningPostPage() {
             draft={draft}
             accounts={accounts}
             intent={publishIntent}
-            loading={createContent.isPending}
+            isEditing={Boolean(content)}
+            loading={saveContent.isPending}
             canSubmit={publishIntent === 'draft' || canSubmit}
             onIntentChange={(intent) => {
               setPublishIntent(intent)
@@ -136,6 +211,7 @@ function PublishingActionBar({
   draft,
   accounts,
   intent,
+  isEditing,
   loading,
   canSubmit,
   onIntentChange,
@@ -145,6 +221,7 @@ function PublishingActionBar({
   draft: PlanningComposerDraft
   accounts: PlanningAccount[]
   intent: PlanningPublishIntent
+  isEditing: boolean
   loading: boolean
   canSubmit: boolean
   onIntentChange: (intent: PlanningPublishIntent) => void
@@ -153,15 +230,17 @@ function PublishingActionBar({
 }) {
   const { t } = useTranslation('planning')
   const selectedAccounts = accounts.filter((account) => draft.targetIds.includes(account.id))
-  const actionLabel = {
-    draft: t('composer.actions.saveDraft'),
-    approval: t('composer.actions.submitApproval'),
-    schedule:
-      draft.scheduleMode === 'by_account'
-        ? t('composer.actions.scheduleByAccount')
-        : t('composer.actions.schedule'),
-    publish_now: t('composer.actions.publish'),
-  }[intent]
+  const actionLabel = isEditing
+    ? t('composer.actions.saveChanges')
+    : {
+        draft: t('composer.actions.saveDraft'),
+        approval: t('composer.actions.submitApproval'),
+        schedule:
+          draft.scheduleMode === 'by_account'
+            ? t('composer.actions.scheduleByAccount')
+            : t('composer.actions.schedule'),
+        publish_now: t('composer.actions.publish'),
+      }[intent]
   const selectedActionKey =
     intent === 'schedule' && draft.scheduleMode === 'by_account' ? 'schedule_by_account' : intent
   const usesSharedSchedule = intent === 'schedule' && draft.scheduleMode === 'same_time'
@@ -244,70 +323,72 @@ function PublishingActionBar({
             icon={<IconSend aria-hidden />}
             loading={loading}
             disabled={!canSubmit}
-            className="rounded-e-none"
+            className={isEditing ? undefined : 'rounded-e-none'}
             onClick={onSubmit}
           >
             {actionLabel}
           </Button>
-          <Dropdown
-            placement="topRight"
-            selectedKey={selectedActionKey}
-            items={[
-              {
-                key: 'draft',
-                label: (
-                  <PublishOption
-                    title={t('composer.actions.saveDraft')}
-                    description={t('composer.actions.saveDraftHint')}
-                  />
-                ),
-              },
-              {
-                key: 'approval',
-                label: (
-                  <PublishOption
-                    title={t('composer.actions.submitApproval')}
-                    description={t('composer.actions.submitApprovalHint')}
-                  />
-                ),
-              },
-              {
-                key: 'schedule',
-                label: (
-                  <PublishOption
-                    title={t('composer.actions.schedule')}
-                    description={t('composer.actions.scheduleHint')}
-                  />
-                ),
-              },
-              {
-                key: 'schedule_by_account',
-                label: (
-                  <PublishOption
-                    title={t('composer.actions.scheduleByAccount')}
-                    description={t('composer.actions.scheduleByAccountHint')}
-                  />
-                ),
-              },
-              {
-                key: 'publish_now',
-                label: (
-                  <PublishOption
-                    title={t('composer.actions.publish')}
-                    description={t('composer.actions.publishHint')}
-                  />
-                ),
-              },
-            ]}
-            onSelect={selectAction}
-          >
-            <Button
-              variant="primary"
-              icon={<IconChevronDown aria-hidden />}
-              aria-label={t('composer.actions.chooseAction')}
-              className="-ms-px rounded-s-none px-2"
-            />
-          </Dropdown>
+          {isEditing ? null : (
+            <Dropdown
+              placement="topRight"
+              selectedKey={selectedActionKey}
+              items={[
+                {
+                  key: 'draft',
+                  label: (
+                    <PublishOption
+                      title={t('composer.actions.saveDraft')}
+                      description={t('composer.actions.saveDraftHint')}
+                    />
+                  ),
+                },
+                {
+                  key: 'approval',
+                  label: (
+                    <PublishOption
+                      title={t('composer.actions.submitApproval')}
+                      description={t('composer.actions.submitApprovalHint')}
+                    />
+                  ),
+                },
+                {
+                  key: 'schedule',
+                  label: (
+                    <PublishOption
+                      title={t('composer.actions.schedule')}
+                      description={t('composer.actions.scheduleHint')}
+                    />
+                  ),
+                },
+                {
+                  key: 'schedule_by_account',
+                  label: (
+                    <PublishOption
+                      title={t('composer.actions.scheduleByAccount')}
+                      description={t('composer.actions.scheduleByAccountHint')}
+                    />
+                  ),
+                },
+                {
+                  key: 'publish_now',
+                  label: (
+                    <PublishOption
+                      title={t('composer.actions.publish')}
+                      description={t('composer.actions.publishHint')}
+                    />
+                  ),
+                },
+              ]}
+              onSelect={selectAction}
+            >
+              <Button
+                variant="primary"
+                icon={<IconChevronDown aria-hidden />}
+                aria-label={t('composer.actions.chooseAction')}
+                className="-ms-px rounded-s-none px-2"
+              />
+            </Dropdown>
+          )}
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 
 export type DataTableAlignment = 'start' | 'center' | 'end'
+export type DataTableColumnFixed = 'left' | 'right'
 export type DataTableSortDirection = 'asc' | 'desc'
 export type DataTableSortType = 'auto' | 'alphanumeric' | 'text' | 'basic'
 export type DataTableColumnWidth = 'actions' | 'compact' | 'default' | 'wide' | 'content'
@@ -20,6 +21,7 @@ export type DataTableColumn<T> = {
   resizable?: boolean
   globalFilterable?: boolean
   align?: DataTableAlignment
+  fixed?: DataTableColumnFixed
   width?: DataTableColumnWidth
   size?: number
   minSize?: number
@@ -50,6 +52,7 @@ export type DataTableProps<T extends object> = {
   data: readonly T[]
   columns: readonly DataTableColumn<T>[]
   getRowId: (row: T) => string
+  title?: ReactNode
   ariaLabel?: string
   density?: 'sm' | 'md'
   stickyHeader?: boolean

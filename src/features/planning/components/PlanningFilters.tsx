@@ -2,16 +2,22 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { SocialAccountLabel } from '@/features/social-accounts'
 import { FilterDropdown, Select } from '@/shared/ui'
-import type { PlanningPlatform, PlanningStatus } from '../api'
+import type { PlanningApprovalStatus, PlanningPlatform, PlanningStatus } from '../api'
 import type { PlanningAccount } from '../model'
 
 const FILTER_STATUSES: PlanningStatus[] = [
   'draft',
-  'pending_approval',
-  'approved',
   'scheduled',
+  'publishing',
   'published',
   'failed',
+]
+
+const FILTER_APPROVAL_STATUSES: PlanningApprovalStatus[] = [
+  'none',
+  'pending',
+  'approved',
+  'rejected',
 ]
 
 export function PlanningFilters({
@@ -19,17 +25,26 @@ export function PlanningFilters({
   platform,
   accountId,
   status,
+  approvalStatus,
   onChange,
 }: {
   accounts: PlanningAccount[]
   platform: 'all' | PlanningPlatform
   accountId: string
   status: 'all' | PlanningStatus
-  onChange: (filters: { accountId: string; status: 'all' | PlanningStatus }) => void
+  approvalStatus: 'all' | PlanningApprovalStatus
+  onChange: (filters: {
+    accountId: string
+    status: 'all' | PlanningStatus
+    approvalStatus: 'all' | PlanningApprovalStatus
+  }) => void
 }) {
   const { t } = useTranslation('planning')
   const [draftAccountId, setDraftAccountId] = useState(accountId)
   const [draftStatus, setDraftStatus] = useState<'all' | PlanningStatus>(status)
+  const [draftApprovalStatus, setDraftApprovalStatus] = useState<'all' | PlanningApprovalStatus>(
+    approvalStatus,
+  )
   const visibleAccounts = accounts.filter(
     (account) => platform === 'all' || account.platform === platform,
   )
@@ -40,12 +55,20 @@ export function PlanningFilters({
         if (!isOpen) return
         setDraftAccountId(accountId)
         setDraftStatus(status)
+        setDraftApprovalStatus(approvalStatus)
       }}
       onReset={() => {
         setDraftAccountId('all')
         setDraftStatus('all')
+        setDraftApprovalStatus('all')
       }}
-      onApply={() => onChange({ accountId: draftAccountId, status: draftStatus })}
+      onApply={() =>
+        onChange({
+          accountId: draftAccountId,
+          status: draftStatus,
+          approvalStatus: draftApprovalStatus,
+        })
+      }
     >
       <Select
         label={t('filters.account')}
@@ -69,6 +92,21 @@ export function PlanningFilters({
         options={[
           { value: 'all', label: t('filters.allStatuses') },
           ...FILTER_STATUSES.map((item) => ({ value: item, label: t(`status.${item}`) })),
+        ]}
+      />
+      <Select
+        label={t('filters.approvalStatus')}
+        value={draftApprovalStatus}
+        className="w-full"
+        onChange={(event) =>
+          setDraftApprovalStatus(event.target.value as 'all' | PlanningApprovalStatus)
+        }
+        options={[
+          { value: 'all', label: t('filters.allApprovalStatuses') },
+          ...FILTER_APPROVAL_STATUSES.map((item) => ({
+            value: item,
+            label: t(`approvalStatus.${item}`),
+          })),
         ]}
       />
     </FilterDropdown>

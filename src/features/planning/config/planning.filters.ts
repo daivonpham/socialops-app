@@ -1,4 +1,4 @@
-import type { PlanningStatus } from '../api'
+import type { PlanningApprovalStatus, PlanningStatus } from '../api'
 
 export type PlanningView = 'calendar' | 'list'
 export type PlanningCalendarView = 'month' | 'week'
@@ -12,6 +12,7 @@ export type PlanningUrlFilters = {
 
   accountId: 'all' | string
   status: 'all' | PlanningStatus
+  approvalStatus: 'all' | PlanningApprovalStatus
 }
 
 export const PLANNING_FILTER_DEFAULTS: PlanningUrlFilters = {
@@ -21,6 +22,7 @@ export const PLANNING_FILTER_DEFAULTS: PlanningUrlFilters = {
 
   accountId: 'all',
   status: 'all',
+  approvalStatus: 'all',
 }
 
 export function readPreferredPlanningView(): PlanningView {

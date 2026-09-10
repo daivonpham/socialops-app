@@ -7,6 +7,7 @@ export const ROUTES = {
   PLATFORM_OVERVIEW: '/platforms/:platform/overview',
   PLATFORM_PLANNING: '/platforms/:platform/planning',
   PLATFORM_PLANNING_CREATE: '/platforms/:platform/planning/create',
+  PLATFORM_PLANNING_EDIT: '/platforms/:platform/planning/:contentId/edit',
   FACEBOOK_OVERVIEW: '/platforms/facebook/overview',
   REPORTS: '/reports',
   MEMBERS: '/members',

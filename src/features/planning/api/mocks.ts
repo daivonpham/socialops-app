@@ -3,10 +3,12 @@ import { envelope } from '@/mocks/envelope'
 import type {
   CreatePlanningContentInput,
   PlanningContent,
+  PlanningApprovalStatus,
   PlanningContentsResponse,
   PlanningPlatform,
   PlanningStatus,
   PlanningTarget,
+  UpdatePlanningContentInput,
 } from './types'
 
 const TARGETS: Record<string, PlanningTarget> = {
@@ -31,6 +33,7 @@ export const MOCK_PLANNING_CONTENTS: PlanningContent[] = [
     platform: 'facebook',
     targets: ['fb-main', 'fb-roastery', 'fb-hanoi', 'fb-danang', 'fb-saigon'].map(target),
     status: 'scheduled',
+    approvalStatus: 'none',
     scheduledAt: '2026-09-08T09:00:00+07:00',
     createdAt: '2026-08-28T10:00:00+07:00',
     createdBy: 'Linh Nguyen',
@@ -41,7 +44,8 @@ export const MOCK_PLANNING_CONTENTS: PlanningContent[] = [
     mediaType: 'video',
     platform: 'tiktok',
     targets: [target('tt-main')],
-    status: 'approved',
+    status: 'scheduled',
+    approvalStatus: 'approved',
     scheduledAt: '2026-09-08T11:30:00+07:00',
     createdAt: '2026-09-01T08:00:00+07:00',
     createdBy: 'Minh Tran',
@@ -52,7 +56,8 @@ export const MOCK_PLANNING_CONTENTS: PlanningContent[] = [
     mediaType: 'image',
     platform: 'facebook',
     targets: [target('fb-main')],
-    status: 'pending_approval',
+    status: 'draft',
+    approvalStatus: 'pending',
     scheduledAt: '2026-09-08T14:00:00+07:00',
     createdAt: '2026-09-02T12:00:00+07:00',
     createdBy: 'An Pham',
@@ -64,6 +69,7 @@ export const MOCK_PLANNING_CONTENTS: PlanningContent[] = [
     platform: 'tiktok',
     targets: [target('tt-barista')],
     status: 'draft',
+    approvalStatus: 'none',
     scheduledAt: '2026-09-08T17:00:00+07:00',
     createdAt: '2026-09-03T09:15:00+07:00',
     createdBy: 'Minh Tran',
@@ -75,6 +81,7 @@ export const MOCK_PLANNING_CONTENTS: PlanningContent[] = [
     platform: 'facebook',
     targets: [target('fb-hanoi')],
     status: 'published',
+    approvalStatus: 'none',
     scheduledAt: '2026-09-01T08:00:00+07:00',
     createdAt: '2026-08-25T08:00:00+07:00',
     createdBy: 'Linh Nguyen',
@@ -86,6 +93,7 @@ export const MOCK_PLANNING_CONTENTS: PlanningContent[] = [
     platform: 'tiktok',
     targets: [target('tt-main')],
     status: 'publishing',
+    approvalStatus: 'approved',
     scheduledAt: '2026-09-10T10:00:00+07:00',
     createdAt: '2026-09-04T11:00:00+07:00',
     createdBy: 'An Pham',
@@ -97,6 +105,7 @@ export const MOCK_PLANNING_CONTENTS: PlanningContent[] = [
     platform: 'facebook',
     targets: [target('fb-roastery')],
     status: 'failed',
+    approvalStatus: 'approved',
     scheduledAt: '2026-09-12T15:00:00+07:00',
     createdAt: '2026-09-05T10:00:00+07:00',
     createdBy: 'Linh Nguyen',
@@ -107,7 +116,8 @@ export const MOCK_PLANNING_CONTENTS: PlanningContent[] = [
     mediaType: 'image',
     platform: 'facebook',
     targets: [target('fb-main')],
-    status: 'rejected',
+    status: 'draft',
+    approvalStatus: 'rejected',
     scheduledAt: '2026-09-15T09:00:00+07:00',
     createdAt: '2026-09-06T13:00:00+07:00',
     createdBy: 'Minh Tran',
@@ -119,6 +129,7 @@ export const MOCK_PLANNING_CONTENTS: PlanningContent[] = [
     platform: 'tiktok',
     targets: [target('tt-barista')],
     status: 'scheduled',
+    approvalStatus: 'none',
     scheduledAt: '2026-09-18T19:00:00+07:00',
     createdAt: '2026-09-07T08:00:00+07:00',
     createdBy: 'An Pham',
@@ -129,7 +140,8 @@ export const MOCK_PLANNING_CONTENTS: PlanningContent[] = [
     mediaType: 'image',
     platform: 'facebook',
     targets: [target('fb-danang'), target('fb-saigon')],
-    status: 'approved',
+    status: 'scheduled',
+    approvalStatus: 'approved',
     scheduledAt: '2026-09-22T12:00:00+07:00',
     createdAt: '2026-09-09T09:00:00+07:00',
     createdBy: 'Linh Nguyen',
@@ -141,6 +153,7 @@ export const MOCK_PLANNING_CONTENTS: PlanningContent[] = [
     platform: 'tiktok',
     targets: [target('tt-main')],
     status: 'published',
+    approvalStatus: 'approved',
     scheduledAt: '2026-09-25T07:30:00+07:00',
     createdAt: '2026-09-10T10:00:00+07:00',
     createdBy: 'Minh Tran',
@@ -152,6 +165,7 @@ export const MOCK_PLANNING_CONTENTS: PlanningContent[] = [
     platform: 'facebook',
     targets: [target('fb-main')],
     status: 'draft',
+    approvalStatus: 'none',
     createdAt: '2026-09-28T16:00:00+07:00',
     createdBy: 'An Pham',
   },
@@ -175,6 +189,7 @@ export const planningHandlers = [
     const platform = (search.get('platform') ?? 'all') as 'all' | PlanningPlatform
     const accountId = search.get('accountId') ?? 'all'
     const status = (search.get('status') ?? 'all') as 'all' | PlanningStatus
+    const approvalStatus = (search.get('approvalStatus') ?? 'all') as 'all' | PlanningApprovalStatus
     const brandId = String(params.brandId)
     const brandContents =
       brandId === 'br-solstice'
@@ -188,29 +203,41 @@ export const planningHandlers = [
           (platform === 'all' || content.platform === platform) &&
           (accountId === 'all' || content.targets.some((item) => item.id === accountId)) &&
           (status === 'all' || content.status === status) &&
+          (approvalStatus === 'all' || content.approvalStatus === approvalStatus) &&
           dateInRange(content, search.get('from'), search.get('to')),
       ),
     }
     return HttpResponse.json(envelope(data, `/brands/${String(params.brandId)}/planning`))
   }),
 
+  http.get('/api/brands/:brandId/planning/:contentId', ({ params }) => {
+    const content = contents.find((item) => item.id === params.contentId)
+    if (!content) return new HttpResponse(null, { status: 404 })
+    return HttpResponse.json(
+      envelope(content, `/brands/${String(params.brandId)}/planning/${String(params.contentId)}`),
+    )
+  }),
+
   http.post('/api/brands/:brandId/planning', async ({ params, request }) => {
     const body = (await request.json()) as Omit<CreatePlanningContentInput, 'brandId'>
     createdCount += 1
     const status: PlanningStatus =
-      body.intent === 'draft'
-        ? 'draft'
-        : body.intent === 'approval'
-          ? 'pending_approval'
-          : body.intent === 'schedule'
-            ? 'scheduled'
-            : 'publishing'
+      body.intent === 'schedule'
+        ? 'scheduled'
+        : body.intent === 'publish_now'
+          ? 'publishing'
+          : 'draft'
+    const approvalStatus: PlanningApprovalStatus = body.intent === 'approval' ? 'pending' : 'none'
     const targets = body.publications.map((publication) => target(publication.socialAccountId))
     const content: PlanningContent = {
       id: `content-created-${createdCount}`,
       caption: body.caption,
       thumbnailUrl: body.media[0]?.url,
       mediaType: body.media[0]?.type ?? 'text',
+      type: body.type,
+      link: body.link,
+      media: body.media,
+      platformSettings: body.platformSettings,
       platform: body.platform,
       targets,
       publications: body.publications.map((publication, index) => ({
@@ -222,6 +249,7 @@ export const planningHandlers = [
         status,
       })),
       status,
+      approvalStatus,
       scheduledAt: body.publications[0]?.scheduledAt,
       createdAt: '2026-09-08T08:00:00+07:00',
       createdBy: 'Current User',
@@ -230,6 +258,40 @@ export const planningHandlers = [
     return HttpResponse.json(envelope(content, `/brands/${String(params.brandId)}/planning`), {
       status: 201,
     })
+  }),
+
+  http.patch('/api/brands/:brandId/planning/:contentId', async ({ params, request }) => {
+    const body = (await request.json()) as Omit<UpdatePlanningContentInput, 'brandId' | 'contentId'>
+    const content = contents.find((item) => item.id === params.contentId)
+    if (!content) return new HttpResponse(null, { status: 404 })
+
+    const targets = body.publications.map((publication) => target(publication.socialAccountId))
+    const updated: PlanningContent = {
+      ...content,
+      caption: body.caption,
+      thumbnailUrl: body.media[0]?.url,
+      mediaType: body.media[0]?.type ?? 'text',
+      type: body.type,
+      link: body.link,
+      media: body.media,
+      platformSettings: body.platformSettings,
+      targets,
+      publications: body.publications.map((publication, index) => ({
+        id: content.publications?.[index]?.id ?? `publication-${content.id}-${index + 1}`,
+        socialAccountId: publication.socialAccountId,
+        target: targets[index]!,
+        captionOverride: publication.captionOverride,
+        scheduledAt: publication.scheduledAt,
+        status: body.status,
+      })),
+      status: body.status,
+      approvalStatus: body.approvalStatus,
+      scheduledAt: body.publications[0]?.scheduledAt ?? content.scheduledAt,
+    }
+    contents = contents.map((item) => (item.id === updated.id ? updated : item))
+    return HttpResponse.json(
+      envelope(updated, `/brands/${String(params.brandId)}/planning/${String(params.contentId)}`),
+    )
   }),
 
   http.patch('/api/brands/:brandId/planning/:contentId/reschedule', async ({ params, request }) => {
@@ -246,6 +308,20 @@ export const planningHandlers = [
       envelope(
         updated,
         `/brands/${String(params.brandId)}/planning/${String(params.contentId)}/reschedule`,
+      ),
+    )
+  }),
+
+  http.patch('/api/brands/:brandId/planning/:contentId/approval', async ({ params, request }) => {
+    const body = (await request.json()) as { approvalStatus: PlanningApprovalStatus }
+    const content = contents.find((item) => item.id === params.contentId)
+    if (!content) return new HttpResponse(null, { status: 404 })
+    const updated: PlanningContent = { ...content, approvalStatus: body.approvalStatus }
+    contents = contents.map((item) => (item.id === updated.id ? updated : item))
+    return HttpResponse.json(
+      envelope(
+        updated,
+        `/brands/${String(params.brandId)}/planning/${String(params.contentId)}/approval`,
       ),
     )
   }),

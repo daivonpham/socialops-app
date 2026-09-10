@@ -76,6 +76,10 @@ export function Dropdown({
   }
 
   const close = () => setOpen(false)
+  const triggerElement = children as ReactElement<{ className?: string }>
+  const trigger = cloneElement(triggerElement, {
+    className: `${triggerElement.props.className ?? ''} ${open ? 'control-active' : ''}`.trim(),
+  })
 
   return (
     <AntDropdown
@@ -159,7 +163,7 @@ export function Dropdown({
         </PopupSurface>
       )}
     >
-      {children}
+      {trigger}
     </AntDropdown>
   )
 }

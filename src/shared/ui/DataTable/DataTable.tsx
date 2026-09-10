@@ -55,10 +55,13 @@ const EMPTY_ROW_SELECTION: RowSelectionState = {}
 const EMPTY_VISIBILITY: Record<string, boolean> = {}
 const EMPTY_SORTING: SortingState = []
 const EMPTY_FILTERS: ColumnFiltersState = []
+const EMPTY_COLUMN_SIZING: Record<string, number> = {}
 const COLUMN_ORDER_STORAGE_PREFIX = 'socialops:data-table:column-order:'
+const COLUMN_SIZING_STORAGE_PREFIX = 'socialops:data-table:column-sizing:'
 
 type DataTableColumnMeta = {
   align: DataTableAlignment
+  fixed?: 'left' | 'right'
   label: string
   reorderable: boolean
 }
@@ -161,6 +164,32 @@ function persistColumnOrder(key: string, order: string[]) {
   }
 }
 
+function readPersistedColumnSizing(key?: string): Record<string, number> {
+  if (!key || typeof window === 'undefined') return EMPTY_COLUMN_SIZING
+  try {
+    const value = window.localStorage.getItem(`${COLUMN_SIZING_STORAGE_PREFIX}${key}`)
+    if (!value) return EMPTY_COLUMN_SIZING
+    const parsed: unknown = JSON.parse(value)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return EMPTY_COLUMN_SIZING
+    return Object.fromEntries(
+      Object.entries(parsed).filter(
+        (entry): entry is [string, number] =>
+          typeof entry[1] === 'number' && Number.isFinite(entry[1]) && entry[1] > 0,
+      ),
+    )
+  } catch {
+    return EMPTY_COLUMN_SIZING
+  }
+}
+
+function persistColumnSizing(key: string, sizing: Record<string, number>) {
+  try {
+    window.localStorage.setItem(`${COLUMN_SIZING_STORAGE_PREFIX}${key}`, JSON.stringify(sizing))
+  } catch {
+    // Storage may be unavailable; resizing still works for the current session.
+  }
+}
+
 function renderValue(value: unknown): ReactNode {
   if (value === null || value === undefined || value === '') return '—'
   return String(value)
@@ -174,6 +203,7 @@ export function DataTable<T extends object>({
   data,
   columns,
   getRowId,
+  title,
   ariaLabel,
   density = 'md',
   stickyHeader = false,
@@ -206,6 +236,9 @@ export function DataTable<T extends object>({
   const columnKeys = useMemo(() => columns.map((column) => column.key), [columns])
   const [persistedColumnOrder, setPersistedColumnOrder] = useState(() =>
     readPersistedColumnOrder(columnPersistenceKey),
+  )
+  const [persistedColumnSizing, setPersistedColumnSizing] = useState(() =>
+    readPersistedColumnSizing(columnPersistenceKey),
   )
   const shouldPersistColumnOrder = Boolean(columnPersistenceKey && columnOrder === undefined)
   const controlledRowSelection = useMemo(() => toRowSelection(rowSelection), [rowSelection])
@@ -240,6 +273,7 @@ export function DataTable<T extends object>({
         maxSize: column.maxSize ?? componentToken.table.columnMaxWidth,
         meta: {
           align: column.align ?? 'start',
+          fixed: column.fixed,
           label: getColumnLabel(column),
           reorderable: column.reorderable ?? true,
         },
@@ -291,6 +325,7 @@ export function DataTable<T extends object>({
       ...(columnOrder !== undefined || shouldPersistColumnOrder
         ? { columnOrder: controlledColumnOrder }
         : {}),
+      ...(columnPersistenceKey ? { columnSizing: persistedColumnSizing } : {}),
       ...(sorting !== undefined ? { sorting: controlledSorting } : {}),
       ...(columnFilters !== undefined ? { columnFilters: controlledFilters } : {}),
       ...(globalFilter !== undefined ? { globalFilter } : {}),
@@ -308,6 +343,7 @@ export function DataTable<T extends object>({
       controlledSorting,
       globalFilter,
       pagination,
+      persistedColumnSizing,
       rowSelection,
       shouldPersistColumnOrder,
       sorting,
@@ -322,6 +358,7 @@ export function DataTable<T extends object>({
     state,
     initialState: {
       columnOrder: controlledColumnOrder,
+      columnSizing: persistedColumnSizing,
       columnVisibility: columnVisibility ?? EMPTY_VISIBILITY,
       rowSelection: controlledRowSelection,
       sorting: controlledSorting,
@@ -371,6 +408,13 @@ export function DataTable<T extends object>({
             onColumnOrderChange?.(next)
           }
         : undefined,
+    onColumnSizingChange: columnPersistenceKey
+      ? (updater) => {
+          const next = functionalUpdate(updater, persistedColumnSizing)
+          setPersistedColumnSizing(next)
+          persistColumnSizing(columnPersistenceKey, next)
+        }
+      : undefined,
     onSortingChange: onSortingChange
       ? (updater) => onSortingChange(fromSorting(functionalUpdate(updater, controlledSorting)))
       : undefined,
@@ -411,8 +455,12 @@ export function DataTable<T extends object>({
     })
   }
 
-  const resetColumnOrder = () => {
+  const resetColumns = () => {
     table.setColumnOrder(columnKeys)
+    if (columnPersistenceKey) {
+      setPersistedColumnSizing(EMPTY_COLUMN_SIZING)
+      window.localStorage.removeItem(`${COLUMN_SIZING_STORAGE_PREFIX}${columnPersistenceKey}`)
+    }
   }
 
   const visibleColumnCount = table.getVisibleLeafColumns().length
@@ -422,27 +470,34 @@ export function DataTable<T extends object>({
 
   return (
     <div className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-border-subtle bg-bg-surface shadow-xs">
-      {showColumnSettings ? (
-        <div className="flex justify-end border-b border-border-subtle px-3 py-2">
-          <Dropdown
-            placement="bottomRight"
-            content={
-              <DataTableColumnSettings
-                table={table}
-                moveColumn={moveColumn}
-                resetColumnOrder={resetColumnOrder}
-                enableColumnReordering={enableColumnReordering}
+      {title || showColumnSettings ? (
+        <div className="flex min-h-12 items-center justify-between gap-3 border-b border-border-subtle px-4 py-2">
+          {title ? (
+            <h2 className="min-w-0 truncate text-heading-3 text-text-primary">{title}</h2>
+          ) : (
+            <span />
+          )}
+          {showColumnSettings ? (
+            <Dropdown
+              placement="bottomRight"
+              content={
+                <DataTableColumnSettings
+                  table={table}
+                  moveColumn={moveColumn}
+                  resetColumns={resetColumns}
+                  enableColumnReordering={enableColumnReordering}
+                />
+              }
+            >
+              <Button
+                size="sm"
+                variant="ghost"
+                icon={<IconSettings />}
+                aria-label={t('dataTable.columnSettings')}
+                title={t('dataTable.columnSettings')}
               />
-            }
-          >
-            <Button
-              size="sm"
-              variant="ghost"
-              icon={<IconSettings />}
-              aria-label={t('dataTable.columnSettings')}
-              title={t('dataTable.columnSettings')}
-            />
-          </Dropdown>
+            </Dropdown>
+          ) : null}
         </div>
       ) : null}
       <div className="app-scrollbar min-w-0 max-w-full overflow-x-auto overscroll-x-contain">
@@ -477,8 +532,15 @@ export function DataTable<T extends object>({
                       aria-sort={
                         sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : 'none'
                       }
-                      className={`${header.column.id === SELECTION_COLUMN_ID ? selectionPaddingClass : paddingClass} relative font-medium text-text-tertiary ${ALIGN_CLASS[meta?.align ?? 'start']}`}
-                      style={{ width: header.getSize() }}
+                      className={`${header.column.id === SELECTION_COLUMN_ID ? selectionPaddingClass : paddingClass} relative font-medium text-text-tertiary ${ALIGN_CLASS[meta?.align ?? 'start']} ${meta?.fixed ? 'z-base bg-bg-surface-subtle' : ''} ${meta?.fixed === 'right' ? 'border-s border-border-subtle' : meta?.fixed === 'left' ? 'border-e border-border-subtle' : ''}`}
+                      style={{
+                        width: header.getSize(),
+                        ...(meta?.fixed === 'right'
+                          ? { position: 'sticky', right: 0 }
+                          : meta?.fixed === 'left'
+                            ? { position: 'sticky', left: 0 }
+                            : {}),
+                      }}
                     >
                       {header.isPlaceholder ? null : (
                         <div
@@ -591,7 +653,7 @@ export function DataTable<T extends object>({
                   key={row.id}
                   data-selected={row.getIsSelected() || undefined}
                   tabIndex={onRowClick ? 0 : undefined}
-                  className={`border-b border-border-subtle transition-colors duration-fast last:border-b-0 hover:bg-bg-surface-subtle data-[selected=true]:bg-action-subtle ${
+                  className={`group border-b border-border-subtle transition-colors duration-fast last:border-b-0 hover:bg-bg-surface-subtle data-[selected=true]:bg-action-subtle ${
                     onRowClick ? 'cursor-pointer focus-visible:focus-ring' : ''
                   }`}
                   onClick={() => onRowClick?.(row.original)}
@@ -605,15 +667,26 @@ export function DataTable<T extends object>({
                       : undefined
                   }
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <td
-                      key={cell.id}
-                      className={`${cell.column.id === SELECTION_COLUMN_ID ? selectionPaddingClass : paddingClass} overflow-hidden ${ALIGN_CLASS[cell.column.columnDef.meta?.align ?? 'start']}`}
-                      style={{ width: cell.column.getSize() }}
-                    >
-                      <table.FlexRender cell={cell} />
-                    </td>
-                  ))}
+                  {row.getVisibleCells().map((cell) => {
+                    const meta = cell.column.columnDef.meta
+                    const fixed = meta?.fixed
+                    return (
+                      <td
+                        key={cell.id}
+                        className={`${cell.column.id === SELECTION_COLUMN_ID ? selectionPaddingClass : paddingClass} overflow-hidden ${ALIGN_CLASS[meta?.align ?? 'start']} ${fixed ? 'z-base bg-bg-surface group-hover:bg-bg-surface-subtle group-data-[selected=true]:bg-action-subtle' : ''} ${fixed === 'right' ? 'border-s border-border-subtle' : fixed === 'left' ? 'border-e border-border-subtle' : ''}`}
+                        style={{
+                          width: cell.column.getSize(),
+                          ...(fixed === 'right'
+                            ? { position: 'sticky', right: 0 }
+                            : fixed === 'left'
+                              ? { position: 'sticky', left: 0 }
+                              : {}),
+                        }}
+                      >
+                        <table.FlexRender cell={cell} />
+                      </td>
+                    )
+                  })}
                 </tr>
               ))
             ) : (
@@ -643,12 +716,12 @@ export function DataTable<T extends object>({
 function DataTableColumnSettings<T extends object>({
   table,
   moveColumn,
-  resetColumnOrder,
+  resetColumns,
   enableColumnReordering,
 }: {
   table: ReactTable<typeof DATA_TABLE_FEATURES, T>
   moveColumn: (activeId: string, targetId: string) => void
-  resetColumnOrder: () => void
+  resetColumns: () => void
   enableColumnReordering: boolean
 }) {
   const { t } = useTranslation('common')
@@ -669,7 +742,7 @@ function DataTableColumnSettings<T extends object>({
           icon={<IconRefresh />}
           aria-label={t('dataTable.resetColumns')}
           title={t('dataTable.resetColumns')}
-          onClick={resetColumnOrder}
+          onClick={resetColumns}
         />
       </div>
       <div className="app-scrollbar max-h-table-settings overflow-y-auto p-2">

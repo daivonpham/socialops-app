@@ -52,6 +52,7 @@ export { IoFilter as IconFilter } from 'react-icons/io5'
 export { MdFacebook as IconFacebook } from 'react-icons/md'
 export { FaTiktok as IconTikTok } from 'react-icons/fa6'
 export {
+  RxPlusCircled as IconPlusCircle,
   RxPanelLeftMinimized as IconSidebarCollapse,
   RxPanelRightMinimized as IconSidebarExpand,
 } from 'react-icons/rx'

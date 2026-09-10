@@ -8,17 +8,19 @@ export function TikTokPostPreview({
   caption,
   media,
   viewport,
+  fluid = false,
 }: {
   account?: PlanningAccount
   caption: string
   media: ComposerMedia[]
   viewport: PreviewViewport
+  fluid?: boolean
 }) {
   const primaryMedia = media[0]
 
   return (
     <div
-      className={`relative aspect-[9/16] w-full shrink-0 overflow-hidden rounded-xl bg-neutral-950 text-text-inverse shadow-md transition-[max-width] duration-base ${viewport === 'mobile' ? 'max-w-[18rem]' : 'max-w-[24rem]'}`}
+      className={`relative aspect-[9/16] w-full shrink-0 overflow-hidden rounded-xl bg-neutral-950 text-text-inverse shadow-md transition-[max-width] duration-base ${fluid ? 'max-w-full' : viewport === 'mobile' ? 'max-w-[18rem]' : 'max-w-[24rem]'}`}
     >
       {primaryMedia?.type === 'video' ? (
         <video src={primaryMedia.url} className="h-full w-full object-cover" muted />

@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useCallback, useMemo, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 import { useSocialAccountCounts } from '@/features/social-accounts'
@@ -9,6 +9,7 @@ import { EmptyState, IconCalendar, SectionError, SectionSkeleton, Tabs } from '@
 import {
   usePlanningContents,
   type PlanningContent,
+  type PlanningApprovalStatus,
   type PlanningPlatform,
   type PlanningQuery,
   type PlanningStatus,
@@ -20,16 +21,18 @@ import {
   type PlanningCalendarView,
   type PlanningView,
 } from '../config/planning.filters'
+import { getPlanningEditPath } from '../config/planning.routes'
 import { PLANNING_STATUS_META, type PlanningAccount } from '../model'
 
 import { CreatePostButton } from '../components/CreatePostButton'
 import { PlanningCalendar } from '../components/PlanningCalendar'
 import { PlanningFilters } from '../components/PlanningFilters'
 import { PlanningList } from '../components/PlanningList'
-import { PlanningPostDrawer } from '../components/PlanningPostDrawer'
+import { PlanningPostModal } from '../components/PlanningPostDrawer'
 
 export default function PlanningPage() {
   const { t } = useTranslation('planning')
+  const navigate = useNavigate()
   const { brandId } = useActiveBrand()
   const { platform: routePlatformParam } = useParams<{ platform: string }>()
 
@@ -49,10 +52,14 @@ export default function PlanningPage() {
   const selectedDate = isDateKey(urlFilters.date) ? urlFilters.date : PLANNING_FILTER_DEFAULTS.date
   const platform = routePlatform
   const status = isPlanningStatus(urlFilters.status) ? urlFilters.status : 'all'
+  const approvalStatus = isPlanningApprovalStatus(urlFilters.approvalStatus)
+    ? urlFilters.approvalStatus
+    : 'all'
   const query: PlanningQuery = {
     platform,
     accountId: urlFilters.accountId || 'all',
     status,
+    approvalStatus,
   }
   const catalogQuery = usePlanningContents(brandId, {
     platform: 'all',
@@ -66,6 +73,13 @@ export default function PlanningPage() {
     [catalogQuery.data],
   )
   const contents = contentsQuery.data?.items ?? []
+  const editContent = useCallback(
+    (content: PlanningContent) => {
+      setSelectedContent(null)
+      navigate(getPlanningEditPath(content.platform, content.id))
+    },
+    [navigate],
+  )
 
   if (!brandId) {
     return (
@@ -131,6 +145,7 @@ export default function PlanningPage() {
             platform={platform}
             accountId={query.accountId}
             status={status}
+            approvalStatus={approvalStatus}
             onChange={(filters) => setUrlFilters(filters)}
           />
           <CreatePostButton accounts={accounts} platform={platform} />
@@ -152,10 +167,19 @@ export default function PlanningPage() {
           onSelectContent={setSelectedContent}
         />
       ) : (
-        <PlanningList contents={contents} onSelectContent={setSelectedContent} />
+        <PlanningList
+          brandId={brandId}
+          contents={contents}
+          onSelectContent={setSelectedContent}
+          onEditContent={editContent}
+        />
       )}
 
-      <PlanningPostDrawer content={selectedContent} onClose={() => setSelectedContent(null)} />
+      <PlanningPostModal
+        content={selectedContent}
+        onClose={() => setSelectedContent(null)}
+        onEdit={editContent}
+      />
     </div>
   )
 }
@@ -200,6 +224,16 @@ function isPlanningCalendarView(value: string): value is PlanningCalendarView {
 
 function isPlanningStatus(value: string): value is 'all' | PlanningStatus {
   return value === 'all' || value in PLANNING_STATUS_META
+}
+
+function isPlanningApprovalStatus(value: string): value is 'all' | PlanningApprovalStatus {
+  return (
+    value === 'all' ||
+    value === 'none' ||
+    value === 'pending' ||
+    value === 'approved' ||
+    value === 'rejected'
+  )
 }
 
 function isDateKey(value: string) {

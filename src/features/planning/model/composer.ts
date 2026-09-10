@@ -1,9 +1,11 @@
 import type {
   CreatePlanningContentInput,
+  PlanningContent,
   PlanningMedia,
   PlanningPlatform,
   PlanningPostType,
   PlanningPublishIntent,
+  UpdatePlanningContentInput,
 } from '../api'
 
 export type PreviewViewport = 'mobile' | 'desktop'
@@ -53,6 +55,63 @@ export function createComposerDraft(platform: PlanningPlatform): PlanningCompose
   }
 }
 
+export function createComposerDraftFromContent(content: PlanningContent): PlanningComposerDraft {
+  const defaults = createComposerDraft(content.platform)
+  const publications = content.publications ?? []
+  const scheduledAt = content.scheduledAt ?? publications[0]?.scheduledAt ?? ''
+  const publicationSchedules = publications.filter((publication) => publication.scheduledAt)
+  const usesAccountSchedules =
+    publicationSchedules.length > 1 &&
+    new Set(publicationSchedules.map((publication) => publication.scheduledAt)).size > 1
+  const fallbackMedia =
+    content.thumbnailUrl && content.mediaType !== 'text'
+      ? [
+          {
+            id: `${content.id}-media`,
+            type: content.mediaType,
+            url: content.thumbnailUrl,
+            name: content.title ?? content.caption,
+          },
+        ]
+      : []
+
+  return {
+    ...defaults,
+    postType: content.type ?? inferPostType(content),
+    targetIds:
+      publications.length > 0
+        ? publications.map((publication) => publication.socialAccountId)
+        : content.targets.map((target) => target.id),
+    caption: content.caption,
+    link: content.link ?? '',
+    media: content.media ?? fallbackMedia,
+    captionOverrides: Object.fromEntries(
+      publications.flatMap((publication) =>
+        publication.captionOverride
+          ? [[publication.socialAccountId, publication.captionOverride]]
+          : [],
+      ),
+    ),
+    publishMode: content.status === 'scheduled' ? 'schedule' : 'publish_now',
+    scheduleMode: usesAccountSchedules ? 'by_account' : 'same_time',
+    scheduledAt,
+    accountSchedules: Object.fromEntries(
+      publicationSchedules.map((publication) => [
+        publication.socialAccountId,
+        publication.scheduledAt!,
+      ]),
+    ),
+    platformSettings: { ...defaults.platformSettings, ...content.platformSettings },
+  }
+}
+
+export function getPlanningContentIntent(content: PlanningContent): PlanningPublishIntent {
+  if (content.approvalStatus === 'pending') return 'approval'
+  if (content.status === 'draft') return 'draft'
+  if (content.status === 'scheduled') return 'schedule'
+  return 'publish_now'
+}
+
 export function canSubmitComposer(draft: PlanningComposerDraft): boolean {
   if (draft.targetIds.length === 0 || draft.caption.trim().length === 0) return false
   if (draft.publishMode !== 'schedule') return true
@@ -85,4 +144,25 @@ export function toCreatePlanningContentInput(
           : undefined,
     })),
   }
+}
+
+export function toUpdatePlanningContentInput(
+  brandId: string,
+  content: PlanningContent,
+  draft: PlanningComposerDraft,
+  intent: PlanningPublishIntent,
+): UpdatePlanningContentInput {
+  return {
+    ...toCreatePlanningContentInput(brandId, draft, intent),
+    contentId: content.id,
+    status: content.status,
+    approvalStatus: content.approvalStatus,
+  }
+}
+
+function inferPostType(content: PlanningContent): PlanningPostType {
+  if (content.platform === 'tiktok') {
+    return content.mediaType === 'image' ? 'tiktok_photo' : 'tiktok_video'
+  }
+  return content.mediaType === 'video' ? 'facebook_reel' : 'facebook_feed'
 }

@@ -64,9 +64,7 @@ export function PlanningPostEditor({
   return (
     <section className="overflow-hidden rounded-xl border border-border-subtle bg-bg-surface shadow-xs">
       <div className="grid gap-5 p-5">
-        <FieldGroup
-          label={t('composer.postType.label', { platform: t(`platform.${draft.platform}`) })}
-        >
+        <FieldGroup label={t('composer.postType.title')}>
           <Tabs
             value={draft.postType}
             ariaLabel={t('composer.postType.title')}

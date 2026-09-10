@@ -16,12 +16,14 @@ export function FacebookPostPreview({
   media,
   viewport,
   postType,
+  fluid = false,
 }: {
   account?: PlanningAccount
   caption: string
   media: ComposerMedia[]
   viewport: PreviewViewport
   postType: PlanningPostType
+  fluid?: boolean
 }) {
   if (postType === 'facebook_reel' || postType === 'facebook_story') {
     return (
@@ -31,6 +33,7 @@ export function FacebookPostPreview({
         media={media}
         viewport={viewport}
         story={postType === 'facebook_story'}
+        fluid={fluid}
       />
     )
   }
@@ -40,7 +43,7 @@ export function FacebookPostPreview({
 
   return (
     <div
-      className={`w-full shrink-0 overflow-hidden rounded-xl border border-border-subtle bg-bg-surface text-text-primary shadow-md transition-[max-width] duration-base ${viewport === 'mobile' ? 'max-w-[20rem]' : ''}`}
+      className={`w-full shrink-0 overflow-hidden rounded-xl border border-border-subtle bg-bg-surface text-text-primary shadow-md transition-[max-width] duration-base ${fluid ? 'max-w-full' : viewport === 'mobile' ? 'max-w-[20rem]' : ''}`}
     >
       <FacebookIdentity account={account} compact={viewport === 'mobile'} />
       <p
@@ -107,17 +110,19 @@ function FacebookVerticalPreview({
   media,
   viewport,
   story,
+  fluid,
 }: {
   account?: PlanningAccount
   caption: string
   media: ComposerMedia[]
   viewport: PreviewViewport
   story: boolean
+  fluid: boolean
 }) {
   const primaryMedia = media[0]
   return (
     <div
-      className={`relative aspect-[9/16] w-full shrink-0 overflow-hidden rounded-xl bg-neutral-950 text-text-inverse shadow-md transition-[max-width] duration-base ${viewport === 'mobile' ? 'max-w-[18rem]' : 'max-w-[24rem]'}`}
+      className={`relative aspect-[9/16] w-full shrink-0 overflow-hidden rounded-xl bg-neutral-950 text-text-inverse shadow-md transition-[max-width] duration-base ${fluid ? 'max-w-full' : viewport === 'mobile' ? 'max-w-[18rem]' : 'max-w-[24rem]'}`}
     >
       {primaryMedia?.type === 'video' ? (
         <video src={primaryMedia.url} className="h-full w-full object-cover" muted />

@@ -2,12 +2,12 @@ import { Tag } from 'antd'
 import type { StatusTagProps, StatusTone } from '@/shared/ui/StatusTag'
 
 const TONES: Record<StatusTone, string> = {
-  neutral: 'bg-neutral-100 text-neutral-700',
-  success: 'bg-success-50 text-success-700',
-  warning: 'bg-warning-50 text-warning-700',
-  error: 'bg-error-50 text-error-700',
-  info: 'bg-info-50 text-info-700',
-  brand: 'bg-brand-50 text-brand-700',
+  neutral: 'bg-neutral-600 text-text-inverse',
+  success: 'bg-success-500 text-text-inverse',
+  warning: 'bg-warning-700 text-text-inverse',
+  error: 'bg-error-600 text-text-inverse',
+  info: 'bg-info-500 text-text-inverse',
+  brand: 'bg-brand-600 text-text-inverse',
 }
 
 export function StatusTag({ children, tone = 'neutral' }: StatusTagProps) {
