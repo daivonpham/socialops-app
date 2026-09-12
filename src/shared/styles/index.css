@@ -44,6 +44,58 @@
 
 /* Optional elevated close treatment for prominent detail modals. */
 @layer components {
+  .popup-surface--bottom {
+    padding-top: theme(spacing.2);
+  }
+
+  .popup-surface__caret--bottom {
+    top: 0;
+    border-width: 1px 0 0 1px;
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+
+  .popup-surface--top {
+    padding-bottom: theme(spacing.2);
+  }
+
+  .popup-surface__caret--top {
+    bottom: 0;
+    border-width: 0 1px 1px 0;
+    transform: translate(-50%, 50%) rotate(45deg);
+  }
+
+  .ant-dropdown-placement-bottom .popup-surface,
+  .ant-dropdown-placement-bottomLeft .popup-surface,
+  .ant-dropdown-placement-bottomRight .popup-surface {
+    padding-top: theme(spacing.2);
+    padding-bottom: 0;
+  }
+
+  .ant-dropdown-placement-bottom .popup-surface__caret,
+  .ant-dropdown-placement-bottomLeft .popup-surface__caret,
+  .ant-dropdown-placement-bottomRight .popup-surface__caret {
+    top: 0;
+    bottom: auto;
+    border-width: 1px 0 0 1px;
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+
+  .ant-dropdown-placement-top .popup-surface,
+  .ant-dropdown-placement-topLeft .popup-surface,
+  .ant-dropdown-placement-topRight .popup-surface {
+    padding-top: 0;
+    padding-bottom: theme(spacing.2);
+  }
+
+  .ant-dropdown-placement-top .popup-surface__caret,
+  .ant-dropdown-placement-topLeft .popup-surface__caret,
+  .ant-dropdown-placement-topRight .popup-surface__caret {
+    top: auto;
+    bottom: 0;
+    border-width: 0 1px 1px 0;
+    transform: translate(-50%, 50%) rotate(45deg);
+  }
+
   .app-modal-floating-close .ant-modal-content {
     overflow: visible;
   }

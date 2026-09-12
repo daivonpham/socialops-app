@@ -1,5 +1,5 @@
 import { useCallback, useState, type Dispatch, type SetStateAction } from 'react'
-import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { SocialAccountLabel } from '@/features/social-accounts'
 import { useActiveBrand } from '@/shared/scope'
@@ -20,6 +20,7 @@ import {
   useUpdatePlanningContent,
   type PlanningContent,
   type PlanningPlatform,
+  type PlanningPostType,
   type PlanningPublishIntent,
 } from '../api'
 import { PlanningPostEditor } from '../components/composer/PlanningPostEditor'
@@ -40,6 +41,7 @@ import {
 export default function CreatePlanningPostPage() {
   const { t } = useTranslation('planning')
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { brandId } = useActiveBrand()
   const { platform: platformParam, contentId } = useParams<{
     platform: string
@@ -48,6 +50,10 @@ export default function CreatePlanningPostPage() {
   const platform: PlanningPlatform = platformParam === 'tiktok' ? 'tiktok' : 'facebook'
   const isValidPlatform = platformParam === 'facebook' || platformParam === 'tiktok'
   const isEditing = Boolean(contentId)
+  const requestedDate = isEditing ? null : getRequestedDate(searchParams.get('date'))
+  const requestedPostType = isEditing
+    ? null
+    : getRequestedPostType(searchParams.get('postType'), platform)
   const catalogQuery = usePlanningContents(brandId, {
     platform: 'all',
     accountId: 'all',
@@ -94,12 +100,17 @@ export default function CreatePlanningPostPage() {
 
   return (
     <PlanningComposerWorkspace
-      key={content?.id ?? `create-${platform}`}
+      key={
+        content?.id ??
+        `create-${platform}-${requestedPostType ?? 'default'}-${requestedDate ?? 'now'}`
+      }
       brandId={brandId}
       platform={platform}
       content={content}
       accounts={accounts}
       planningPath={planningPath}
+      requestedDate={requestedDate}
+      requestedPostType={requestedPostType}
     />
   )
 }
@@ -110,22 +121,39 @@ function PlanningComposerWorkspace({
   content,
   accounts,
   planningPath,
+  requestedDate,
+  requestedPostType,
 }: {
   brandId: string
   platform: PlanningPlatform
   content?: PlanningContent
   accounts: PlanningAccount[]
   planningPath: string
+  requestedDate: string | null
+  requestedPostType: PlanningPostType | null
 }) {
   const { t } = useTranslation('planning')
   const navigate = useNavigate()
-  const [draft, setDraft] = useState(() =>
-    content ? createComposerDraftFromContent(content) : createComposerDraft(platform),
-  )
+  const shouldSchedule =
+    !content && Boolean(requestedDate && requestedDate !== toDateKey(new Date()))
+  const [draft, setDraft] = useState(() => {
+    const initialDraft = content
+      ? createComposerDraftFromContent(content)
+      : {
+          ...createComposerDraft(platform),
+          ...(requestedPostType ? { postType: requestedPostType } : {}),
+        }
+    if (!shouldSchedule || !requestedDate) return initialDraft
+    return {
+      ...initialDraft,
+      publishMode: 'schedule' as const,
+      scheduledAt: `${requestedDate}T09:00`,
+    }
+  })
   const [previewViewport, setPreviewViewport] = useState<PreviewViewport>('mobile')
   const [previewAccountId, setPreviewAccountId] = useState('')
   const [publishIntent, setPublishIntent] = useState<PlanningPublishIntent>(() =>
-    content ? getPlanningContentIntent(content) : 'publish_now',
+    content ? getPlanningContentIntent(content) : shouldSchedule ? 'schedule' : 'publish_now',
   )
   const createContent = useCreatePlanningContent(brandId)
   const updateContent = useUpdatePlanningContent(brandId)
@@ -205,6 +233,32 @@ function PlanningComposerWorkspace({
       </div>
     </div>
   )
+}
+
+function getRequestedDate(value: string | null): string | null {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null
+  const date = new Date(`${value}T00:00:00`)
+  return Number.isNaN(date.getTime()) || toDateKey(date) !== value ? null : value
+}
+
+function getRequestedPostType(
+  value: string | null,
+  platform: PlanningPlatform,
+): PlanningPostType | null {
+  const allowedTypes: Record<PlanningPlatform, PlanningPostType[]> = {
+    facebook: ['facebook_feed', 'facebook_story', 'facebook_reel'],
+    tiktok: ['tiktok_video', 'tiktok_photo'],
+  }
+  return allowedTypes[platform].includes(value as PlanningPostType)
+    ? (value as PlanningPostType)
+    : null
+}
+
+function toDateKey(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 function PublishingActionBar({

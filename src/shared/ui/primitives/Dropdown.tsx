@@ -31,6 +31,10 @@ export type DropdownProps = {
   placement?: 'top' | 'topLeft' | 'topRight' | 'bottom' | 'bottomLeft' | 'bottomRight'
   open?: boolean
   onOpenChange?: (open: boolean) => void
+  getPopupContainer?: (triggerNode: HTMLElement) => HTMLElement
+  popupClassName?: string
+  onPopupMouseEnter?: () => void
+  onPopupMouseLeave?: () => void
   /** When set, a search field is shown at the top of the panel. */
   searchPlaceholder?: string
   /** Generic empty-search copy; shared/ui supplies the localized default. */

@@ -47,6 +47,10 @@ export function Dropdown({
   placement = 'bottom',
   open: controlledOpen,
   onOpenChange,
+  getPopupContainer,
+  popupClassName,
+  onPopupMouseEnter,
+  onPopupMouseLeave,
   searchPlaceholder,
   emptyText,
   footer,
@@ -87,6 +91,8 @@ export function Dropdown({
       placement={placement}
       open={open}
       onOpenChange={setOpen}
+      getPopupContainer={getPopupContainer}
+      overlayClassName={popupClassName}
       menu={
         content
           ? undefined
@@ -101,7 +107,12 @@ export function Dropdown({
             }
       }
       popupRender={(menu) => (
-        <PopupSurface placement={placement} className={content ? '' : hasChrome ? 'w-sidebar' : ''}>
+        <PopupSurface
+          placement={placement}
+          className={content ? '' : hasChrome ? 'w-sidebar' : ''}
+          onMouseEnter={onPopupMouseEnter}
+          onMouseLeave={onPopupMouseLeave}
+        >
           {content ?? (
             <>
               {searchPlaceholder ? (

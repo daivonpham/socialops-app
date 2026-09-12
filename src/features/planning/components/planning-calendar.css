@@ -28,6 +28,50 @@
 
   .planning-calendar .fc .fc-daygrid-day-frame {
     min-height: 9rem;
+    @apply relative;
+  }
+
+  .planning-calendar .fc .planning-calendar__create-action--month {
+    @apply absolute start-1 top-1 z-2 opacity-0 transition-opacity duration-fast;
+  }
+
+  .planning-calendar .fc .fc-timegrid-col-frame {
+    @apply relative;
+  }
+
+  .planning-calendar .fc .planning-calendar__create-action--week {
+    top: 1rem;
+    width: calc(100% - 1rem);
+    @apply sticky z-4 mx-auto flex h-0 justify-center opacity-0 transition-opacity duration-fast;
+  }
+
+  .planning-calendar .fc .planning-calendar__create-action--week::after {
+    content: '';
+    position: absolute;
+    top: 2.5rem;
+    right: 0;
+    left: 0;
+    height: 0.75rem;
+  }
+
+  .planning-calendar .fc .planning-calendar__create-button {
+    @apply rounded-pill text-text-secondary shadow-xs hover:border-platform-facebook hover:bg-platform-facebook hover:text-text-inverse;
+  }
+
+  .planning-calendar .fc .planning-calendar__create-button--week {
+    @apply h-10 w-full rounded-lg border-border bg-bg-surface px-4 text-start text-label-md text-text-primary shadow-md hover:border-border-strong hover:bg-bg-surface-muted hover:text-text-primary;
+  }
+
+  .planning-calendar__create-popup .ant-dropdown-menu-title-content {
+    @apply whitespace-nowrap;
+  }
+
+  .planning-calendar .fc .fc-daygrid-day-frame:hover .planning-calendar__create-action,
+  .planning-calendar .fc .fc-daygrid-day-frame:focus-within .planning-calendar__create-action,
+  .planning-calendar .fc .planning-calendar__create-action--week.is-hovered,
+  .planning-calendar .fc .fc-timegrid-col:focus-within .planning-calendar__create-action,
+  .planning-calendar .fc .planning-calendar__create-action:has(.control-active) {
+    @apply opacity-100;
   }
 
   .planning-calendar .fc .fc-daygrid-day-number {
@@ -107,6 +151,12 @@
 
   .planning-calendar .fc .fc-timegrid-now-indicator-arrow {
     @apply border-e-error-600;
+  }
+}
+
+@media (hover: none) {
+  .planning-calendar .fc .planning-calendar__create-action {
+    opacity: 1;
   }
 }
 

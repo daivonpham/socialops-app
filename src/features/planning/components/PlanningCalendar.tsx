@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createRoot, type Root } from 'react-dom/client'
 import type {
   DatesSetArg,
+  DayCellMountArg,
   EventClickArg,
   EventContentArg,
   EventDropArg,
@@ -22,12 +24,25 @@ import {
   Alert,
   Button,
   DatePicker,
+  Dropdown,
+  IconChevronDown,
   IconChevronLeft,
   IconChevronRight,
+  IconImage,
+  IconMobile,
+  IconPlus,
+  IconPost,
+  IconReel,
+  IconVideo,
   Modal,
   Select,
 } from '@/shared/ui'
-import { useReschedulePlanningContent, type PlanningContent } from '../api'
+import {
+  useReschedulePlanningContent,
+  type PlanningContent,
+  type PlanningPlatform,
+  type PlanningPostType,
+} from '../api'
 import type { PlanningCalendarView } from '../config/planning.filters'
 import { getPlanningDragPolicy } from '../model'
 import { PlanningCalendarEvent } from './PlanningCalendarEvent'
@@ -57,22 +72,28 @@ const FULL_CALENDAR_PLUGINS = [dayGridPlugin, timeGridPlugin, interactionPlugin]
 export function PlanningCalendar({
   brandId,
   contents,
+  createPlatform,
   calendarView,
   selectedDate,
   onCalendarViewChange,
   onDateChange,
   onSelectContent,
+  onCreatePost,
 }: {
   brandId: string
   contents: PlanningContent[]
+  createPlatform?: PlanningPlatform
   calendarView: PlanningCalendarView
   selectedDate: string
   onCalendarViewChange: (view: PlanningCalendarView) => void
   onDateChange: (date: string) => void
   onSelectContent: (content: PlanningContent) => void
+  onCreatePost: (date: string, postType: PlanningPostType) => void
 }) {
   const { t, i18n } = useTranslation('planning')
   const calendarRef = useRef<FullCalendar | null>(null)
+  const createButtonRoots = useRef(new Map<HTMLElement, Root>())
+  const createButtonCleanups = useRef(new Map<HTMLElement, () => void>())
   const reschedule = useReschedulePlanningContent(brandId)
   const [calendarHeading, setCalendarHeading] = useState<CalendarHeading>({
     title: '',
@@ -185,6 +206,79 @@ export function PlanningCalendar({
     onDateChange(date)
   }
 
+  const mountCreateButton = useCallback(
+    (info: DayCellMountArg) => {
+      const isMonthView = info.view.type === 'dayGridMonth'
+      const isWeekView = info.view.type === 'timeGridWeek'
+      if (
+        !createPlatform ||
+        (!isMonthView && !isWeekView) ||
+        toDateKey(info.date) < toDateKey(new Date())
+      ) {
+        return
+      }
+
+      const dayFrame = info.el.querySelector<HTMLElement>(
+        isMonthView ? '.fc-daygrid-day-frame' : '.fc-timegrid-col-frame',
+      )
+      if (!dayFrame || createButtonRoots.current.has(info.el)) return
+
+      const date = toDateKey(info.date)
+      const label = t('calendar.createPost', {
+        date: formatLocalizedDate(info.date, i18n.resolvedLanguage, {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        }),
+      })
+      const container = document.createElement('div')
+      container.className = `planning-calendar__create-action planning-calendar__create-action--${isMonthView ? 'month' : 'week'}`
+      dayFrame.appendChild(container)
+
+      if (isWeekView) {
+        const timeGridBody = info.el.closest<HTMLElement>('.fc-timegrid-body')
+        if (timeGridBody) {
+          const updateHoveredColumn = (event: PointerEvent) => {
+            const bounds = info.el.getBoundingClientRect()
+            const isHovered = event.clientX >= bounds.left && event.clientX <= bounds.right
+            container.classList.toggle('is-hovered', isHovered)
+          }
+          const clearHoveredColumn = () => container.classList.remove('is-hovered')
+
+          timeGridBody.addEventListener('pointermove', updateHoveredColumn)
+          timeGridBody.addEventListener('pointerleave', clearHoveredColumn)
+          createButtonCleanups.current.set(info.el, () => {
+            timeGridBody.removeEventListener('pointermove', updateHoveredColumn)
+            timeGridBody.removeEventListener('pointerleave', clearHoveredColumn)
+          })
+        }
+      }
+
+      const root = createRoot(container)
+      createButtonRoots.current.set(info.el, root)
+      root.render(
+        <CalendarCreateMenu
+          date={date}
+          dayFrame={dayFrame}
+          label={label}
+          mode={isMonthView ? 'month' : 'week'}
+          platform={createPlatform}
+          onSelect={onCreatePost}
+        />,
+      )
+    },
+    [createPlatform, i18n.resolvedLanguage, onCreatePost, t],
+  )
+
+  const unmountCreateButton = useCallback((info: DayCellMountArg) => {
+    createButtonCleanups.current.get(info.el)?.()
+    createButtonCleanups.current.delete(info.el)
+    const root = createButtonRoots.current.get(info.el)
+    if (!root) return
+    root.unmount()
+    createButtonRoots.current.delete(info.el)
+  }, [])
+
   return (
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border-subtle bg-bg-surface shadow-xs">
       <div className="flex shrink-0 flex-col gap-4 border-b border-border-subtle p-4 lg:flex-row lg:items-center lg:justify-between">
@@ -259,6 +353,7 @@ export function PlanningCalendar({
 
       <div className="planning-calendar app-scrollbar min-h-0 flex-1 overflow-auto">
         <FullCalendar
+          key={createPlatform ?? 'read-only'}
           ref={calendarRef}
           plugins={FULL_CALENDAR_PLUGINS}
           locales={[viLocale]}
@@ -299,6 +394,8 @@ export function PlanningCalendar({
           }}
           eventDrop={handleEventDrop}
           datesSet={handleDatesSet}
+          dayCellDidMount={mountCreateButton}
+          dayCellWillUnmount={unmountCreateButton}
         />
       </div>
 
@@ -333,6 +430,147 @@ export function PlanningCalendar({
         ) : null}
       </Modal>
     </section>
+  )
+}
+
+function CalendarCreateMenu({
+  date,
+  dayFrame,
+  label,
+  mode,
+  platform,
+  onSelect,
+}: {
+  date: string
+  dayFrame: HTMLElement
+  label: string
+  mode: 'month' | 'week'
+  platform: PlanningPlatform
+  onSelect: (date: string, postType: PlanningPostType) => void
+}) {
+  const { t } = useTranslation('planning')
+  const [open, setOpen] = useState(false)
+  const closeTimer = useRef<number | null>(null)
+  const isToday = date === toDateKey(new Date())
+
+  const cancelClose = useCallback(() => {
+    if (closeTimer.current === null) return
+    window.clearTimeout(closeTimer.current)
+    closeTimer.current = null
+  }, [])
+
+  const closeMenu = useCallback(() => {
+    cancelClose()
+    setOpen(false)
+    const activeElement = document.activeElement
+    if (activeElement instanceof HTMLElement && dayFrame.contains(activeElement)) {
+      activeElement.blur()
+    }
+  }, [cancelClose, dayFrame])
+
+  const scheduleClose = useCallback(() => {
+    cancelClose()
+    closeTimer.current = window.setTimeout(closeMenu, 10)
+  }, [cancelClose, closeMenu])
+
+  useEffect(() => {
+    dayFrame.addEventListener('mouseenter', cancelClose)
+    dayFrame.addEventListener('mouseleave', scheduleClose)
+    return () => {
+      cancelClose()
+      dayFrame.removeEventListener('mouseenter', cancelClose)
+      dayFrame.removeEventListener('mouseleave', scheduleClose)
+    }
+  }, [cancelClose, dayFrame, scheduleClose])
+
+  useEffect(() => {
+    if (!open) return
+
+    const trackOpenMenuPointer = (event: PointerEvent) => {
+      const target = event.target
+      if (!(target instanceof Element)) return
+
+      if (dayFrame.contains(target) || target.closest('.planning-calendar__create-popup')) {
+        cancelClose()
+        return
+      }
+
+      scheduleClose()
+    }
+
+    document.addEventListener('pointermove', trackOpenMenuPointer)
+    return () => document.removeEventListener('pointermove', trackOpenMenuPointer)
+  }, [cancelClose, dayFrame, open, scheduleClose])
+
+  const items =
+    platform === 'facebook'
+      ? [
+          {
+            key: 'facebook_feed',
+            label: t(isToday ? 'calendar.createFacebookFeed' : 'calendar.scheduleFacebookFeed'),
+            icon: <IconPost aria-hidden />,
+          },
+          {
+            key: 'facebook_story',
+            label: t(isToday ? 'calendar.createFacebookStory' : 'calendar.scheduleFacebookStory'),
+            icon: <IconMobile aria-hidden />,
+          },
+          {
+            key: 'facebook_reel',
+            label: t(isToday ? 'calendar.createFacebookReel' : 'calendar.scheduleFacebookReel'),
+            icon: <IconReel aria-hidden />,
+          },
+        ]
+      : [
+          {
+            key: 'tiktok_video',
+            label: t(isToday ? 'calendar.createTikTokVideo' : 'calendar.scheduleTikTokVideo'),
+            icon: <IconVideo aria-hidden />,
+          },
+          {
+            key: 'tiktok_photo',
+            label: t(isToday ? 'calendar.createTikTokPhoto' : 'calendar.scheduleTikTokPhoto'),
+            icon: <IconImage aria-hidden />,
+          },
+        ]
+
+  return (
+    <Dropdown
+      placement="bottomLeft"
+      items={items}
+      open={open}
+      onOpenChange={setOpen}
+      popupClassName="planning-calendar__create-popup"
+      onPopupMouseEnter={cancelClose}
+      onPopupMouseLeave={scheduleClose}
+      onSelect={(postType) => {
+        closeMenu()
+        onSelect(date, postType as PlanningPostType)
+      }}
+    >
+      {mode === 'month' ? (
+        <Button
+          size="sm"
+          icon={<IconPlus aria-hidden />}
+          aria-label={label}
+          title={label}
+          className="planning-calendar__create-button"
+          onClick={(event) => event.stopPropagation()}
+        />
+      ) : (
+        <Button
+          aria-label={label}
+          title={label}
+          className={`planning-calendar__create-button planning-calendar__create-button--week ${open ? 'border-border-focus text-action-text ring-2 ring-brand-100' : ''}`}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <span className="flex w-full items-center justify-between gap-2">
+            <span>{t('calendar.schedule')}</span>
+            <IconChevronDown aria-hidden className="text-icon-sm" />
+          </span>
+        </Button>
+      )}
+    </Dropdown>
   )
 }
 

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import { useSocialAccountCounts } from '@/features/social-accounts'
 import { useUrlFilters } from '@/shared/hooks'
+import { hasPermission, usePermissions } from '@/shared/permissions'
 import { useActiveBrand } from '@/shared/scope'
 import { EmptyState, IconCalendar, SectionError, SectionSkeleton, Tabs } from '@/shared/ui'
 import {
@@ -21,7 +22,8 @@ import {
   type PlanningCalendarView,
   type PlanningView,
 } from '../config/planning.filters'
-import { getPlanningEditPath } from '../config/planning.routes'
+import { PLANNING_ACCESS } from '../config/planning-access'
+import { getPlanningCreatePath, getPlanningEditPath } from '../config/planning.routes'
 import { PLANNING_STATUS_META, type PlanningAccount } from '../model'
 
 import { CreatePostButton } from '../components/CreatePostButton'
@@ -34,6 +36,7 @@ export default function PlanningPage() {
   const { t } = useTranslation('planning')
   const navigate = useNavigate()
   const { brandId } = useActiveBrand()
+  const { granted } = usePermissions()
   const { platform: routePlatformParam } = useParams<{ platform: string }>()
 
   const routePlatform = isPlanningPlatform(routePlatformParam) ? routePlatformParam : 'all'
@@ -72,6 +75,9 @@ export default function PlanningPage() {
     () => collectAccounts(catalogQuery.data?.items ?? []),
     [catalogQuery.data],
   )
+  const createPlatform =
+    platform === 'all' ? accounts.find((account) => account.platform)?.platform : platform
+  const canCreatePost = hasPermission(granted, PLANNING_ACCESS.publish[0])
   const contents = contentsQuery.data?.items ?? []
   const editContent = useCallback(
     (content: PlanningContent) => {
@@ -160,11 +166,16 @@ export default function PlanningPage() {
         <PlanningCalendar
           brandId={brandId}
           contents={contents}
+          createPlatform={canCreatePost ? createPlatform : undefined}
           calendarView={calendarView}
           selectedDate={selectedDate}
           onCalendarViewChange={(nextView) => setUrlFilters({ calendarView: nextView })}
           onDateChange={(date) => setUrlFilters({ date })}
           onSelectContent={setSelectedContent}
+          onCreatePost={(date, postType) => {
+            if (!createPlatform) return
+            navigate(getPlanningCreatePath(createPlatform, { date, postType }))
+          }}
         />
       ) : (
         <PlanningList
