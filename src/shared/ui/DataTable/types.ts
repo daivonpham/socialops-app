@@ -6,6 +6,11 @@ export type DataTableSortDirection = 'asc' | 'desc'
 export type DataTableSortType = 'auto' | 'alphanumeric' | 'text' | 'basic'
 export type DataTableColumnWidth = 'actions' | 'compact' | 'default' | 'wide' | 'content'
 
+export type DataTableColumnFilterOption = {
+  value: string
+  label: ReactNode
+}
+
 export type DataTableColumn<T> = {
   key: string
   title: ReactNode
@@ -16,6 +21,10 @@ export type DataTableColumn<T> = {
   render?: (value: unknown, row: T) => ReactNode
   sortable?: boolean
   sortType?: DataTableSortType
+  filterOptions?: readonly DataTableColumnFilterOption[]
+  filterValue?: string
+  filterDefaultValue?: string
+  onFilterChange?: (value: string) => void
   hideable?: boolean
   reorderable?: boolean
   resizable?: boolean

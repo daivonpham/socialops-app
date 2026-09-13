@@ -3,22 +3,11 @@ import { useTranslation } from 'react-i18next'
 import { SocialAccountLabel } from '@/features/social-accounts'
 import { FilterDropdown, Select } from '@/shared/ui'
 import type { PlanningApprovalStatus, PlanningPlatform, PlanningStatus } from '../api'
+import {
+  PLANNING_FILTER_APPROVAL_STATUSES,
+  PLANNING_FILTER_STATUSES,
+} from '../config/planning.filters'
 import type { PlanningAccount } from '../model'
-
-const FILTER_STATUSES: PlanningStatus[] = [
-  'draft',
-  'scheduled',
-  'publishing',
-  'published',
-  'failed',
-]
-
-const FILTER_APPROVAL_STATUSES: PlanningApprovalStatus[] = [
-  'none',
-  'pending',
-  'approved',
-  'rejected',
-]
 
 export function PlanningFilters({
   accounts,
@@ -91,7 +80,10 @@ export function PlanningFilters({
         onChange={(event) => setDraftStatus(event.target.value as 'all' | PlanningStatus)}
         options={[
           { value: 'all', label: t('filters.allStatuses') },
-          ...FILTER_STATUSES.map((item) => ({ value: item, label: t(`status.${item}`) })),
+          ...PLANNING_FILTER_STATUSES.map((item) => ({
+            value: item,
+            label: t(`status.${item}`),
+          })),
         ]}
       />
       <Select
@@ -103,7 +95,7 @@ export function PlanningFilters({
         }
         options={[
           { value: 'all', label: t('filters.allApprovalStatuses') },
-          ...FILTER_APPROVAL_STATUSES.map((item) => ({
+          ...PLANNING_FILTER_APPROVAL_STATUSES.map((item) => ({
             value: item,
             label: t(`approvalStatus.${item}`),
           })),

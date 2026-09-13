@@ -18,6 +18,7 @@ export const commonViVN = {
     sortAscending: 'Sắp xếp tăng dần',
     sortDescending: 'Sắp xếp giảm dần',
     clearSorting: 'Bỏ sắp xếp',
+    filterColumn: 'Lọc {{column}}',
     reorderColumn: 'Đổi vị trí cột {{column}}',
     reorderHint: 'Kéo để đổi vị trí.',
     resizeColumn: 'Đổi độ rộng cột {{column}}',

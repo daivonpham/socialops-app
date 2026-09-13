@@ -181,6 +181,9 @@ export default function PlanningPage() {
         <PlanningList
           brandId={brandId}
           contents={contents}
+          status={status}
+          approvalStatus={approvalStatus}
+          onFiltersChange={setUrlFilters}
           onSelectContent={setSelectedContent}
           onEditContent={editContent}
         />

@@ -15,6 +15,7 @@ export const commonEnUS = {
     sortAscending: 'Sort ascending',
     sortDescending: 'Sort descending',
     clearSorting: 'Clear sorting',
+    filterColumn: 'Filter {{column}}',
     reorderColumn: 'Reorder {{column}}',
     reorderHint: 'Drag to reorder.',
     resizeColumn: 'Resize {{column}}',

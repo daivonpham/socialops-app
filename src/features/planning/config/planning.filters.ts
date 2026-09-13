@@ -3,6 +3,21 @@ import type { PlanningApprovalStatus, PlanningStatus } from '../api'
 export type PlanningView = 'calendar' | 'list'
 export type PlanningCalendarView = 'month' | 'week'
 
+export const PLANNING_FILTER_STATUSES: PlanningStatus[] = [
+  'draft',
+  'scheduled',
+  'publishing',
+  'published',
+  'failed',
+]
+
+export const PLANNING_FILTER_APPROVAL_STATUSES: PlanningApprovalStatus[] = [
+  'none',
+  'pending',
+  'approved',
+  'rejected',
+]
+
 const PLANNING_PREFERRED_VIEW_STORAGE_KEY = 'socialops.planning.preferred-view:v1'
 
 export type PlanningUrlFilters = {

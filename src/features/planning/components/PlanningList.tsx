@@ -13,18 +13,36 @@ import {
   Tooltip,
   type DataTableColumn,
 } from '@/shared/ui'
-import { useUpdatePlanningApproval, type PlanningContent } from '../api'
+import {
+  useUpdatePlanningApproval,
+  type PlanningApprovalStatus,
+  type PlanningContent,
+  type PlanningStatus,
+} from '../api'
+import {
+  PLANNING_FILTER_APPROVAL_STATUSES,
+  PLANNING_FILTER_STATUSES,
+} from '../config/planning.filters'
 import { PLANNING_STATUS_TONE } from '../model'
 import { ApprovalStatusSelect } from './ApprovalStatusSelect'
 
 export function PlanningList({
   brandId,
   contents,
+  status,
+  approvalStatus,
+  onFiltersChange,
   onSelectContent,
   onEditContent,
 }: {
   brandId: string
   contents: PlanningContent[]
+  status: 'all' | PlanningStatus
+  approvalStatus: 'all' | PlanningApprovalStatus
+  onFiltersChange: (filters: {
+    status?: 'all' | PlanningStatus
+    approvalStatus?: 'all' | PlanningApprovalStatus
+  }) => void
   onSelectContent: (content: PlanningContent) => void
   onEditContent: (content: PlanningContent) => void
 }) {
@@ -105,6 +123,17 @@ export function PlanningList({
         dataIndex: 'status',
         title: t('list.status'),
         width: 'default',
+        filterValue: status,
+        filterDefaultValue: 'all',
+        filterOptions: [
+          { value: 'all', label: t('filters.allStatuses') },
+          ...PLANNING_FILTER_STATUSES.map((item) => ({
+            value: item,
+            label: t(`status.${item}`),
+          })),
+        ],
+        onFilterChange: (value) =>
+          onFiltersChange({ status: value as 'all' | PlanningStatus }),
         render: (_, row) => (
           <StatusTag tone={PLANNING_STATUS_TONE[row.status]}>{t(`status.${row.status}`)}</StatusTag>
         ),
@@ -114,6 +143,19 @@ export function PlanningList({
         dataIndex: 'approvalStatus',
         title: t('list.approvalStatus'),
         width: 'wide',
+        filterValue: approvalStatus,
+        filterDefaultValue: 'all',
+        filterOptions: [
+          { value: 'all', label: t('filters.allApprovalStatuses') },
+          ...PLANNING_FILTER_APPROVAL_STATUSES.map((item) => ({
+            value: item,
+            label: t(`approvalStatus.${item}`),
+          })),
+        ],
+        onFilterChange: (value) =>
+          onFiltersChange({
+            approvalStatus: value as 'all' | PlanningApprovalStatus,
+          }),
         render: (_, row) => (
           <ApprovalStatusSelect
             value={row.approvalStatus}
@@ -176,7 +218,17 @@ export function PlanningList({
         ),
       },
     ],
-    [brandId, locale, onEditContent, onSelectContent, t, updateApproval],
+    [
+      approvalStatus,
+      brandId,
+      locale,
+      onEditContent,
+      onFiltersChange,
+      onSelectContent,
+      status,
+      t,
+      updateApproval,
+    ],
   )
 
   return (

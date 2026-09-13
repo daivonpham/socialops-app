@@ -37,6 +37,7 @@ import {
   IconArrowUp,
   IconCaretUpDown,
   IconDrag,
+  IconFilter,
   IconRefresh,
   IconSettings,
 } from '../primitives/icons'
@@ -519,7 +520,12 @@ export function DataTable<T extends object>({
               >
                 {headerGroup.headers.map((header) => {
                   const meta = header.column.columnDef.meta
+                  const sourceColumn = columns.find((column) => column.key === header.column.id)
                   const sorted = header.column.getIsSorted()
+                  const filterActive = Boolean(
+                    sourceColumn?.filterValue !== undefined &&
+                      sourceColumn.filterValue !== (sourceColumn.filterDefaultValue ?? ''),
+                  )
                   const canResize = enableColumnResizing && header.column.getCanResize()
                   const minSize =
                     header.column.columnDef.minSize ?? componentToken.table.columnMinWidth
@@ -601,6 +607,33 @@ export function DataTable<T extends object>({
                               <table.FlexRender header={header} />
                             </span>
                           )}
+                          {sourceColumn?.filterOptions?.length ? (
+                            <Dropdown
+                              placement={meta?.align === 'end' ? 'bottomRight' : 'bottomLeft'}
+                              selectedKey={sourceColumn.filterValue}
+                              items={sourceColumn.filterOptions.map((option) => ({
+                                key: option.value,
+                                label: option.label,
+                              }))}
+                              onSelect={(value) => sourceColumn.onFilterChange?.(value)}
+                            >
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                icon={
+                                  <IconFilter
+                                    className={filterActive ? 'text-action-text' : undefined}
+                                  />
+                                }
+                                aria-label={t('dataTable.filterColumn', {
+                                  column: meta?.label ?? header.column.id,
+                                })}
+                                title={t('dataTable.filterColumn', {
+                                  column: meta?.label ?? header.column.id,
+                                })}
+                              />
+                            </Dropdown>
+                          ) : null}
                         </div>
                       )}
                       {canResize ? (
