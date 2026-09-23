@@ -36,5 +36,6 @@ export const commonViVN = {
   locales: {
     enUS: 'English (US)',
     viVN: 'Tiếng Việt',
+    changeLanguage: 'Đổi ngôn ngữ',
   },
 } as const satisfies TranslationShape<typeof commonEnUS>

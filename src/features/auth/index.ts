@@ -1,0 +1,6 @@
+export { AUTH_I18N } from './i18n'
+export { AUTH_ROUTES } from './config/auth.routes'
+export { default as LoginPage } from './pages/LoginPage'
+export { default as RegisterPage } from './pages/RegisterPage'
+export { default as ChangePasswordPage } from './pages/ChangePasswordPage'
+export * from './api'

@@ -1,11 +1,10 @@
-import { generatePath, Link, useMatch } from 'react-router-dom'
+import { generatePath, Link, useMatch, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ROUTES } from '@/app/router/paths'
 import { getNavEntries } from '@/app/router/routes'
 import { BrandSwitcher } from '@/features/brands'
 import { PLATFORMS } from '@/features/social-accounts'
 import { WorkspaceSwitcher } from '@/features/workspaces'
-import { normalizeLocale, resolveLocale, SUPPORTED_LOCALES, type AppLocale } from '@/shared/i18n'
 import {
   Avatar,
   Button,
@@ -15,7 +14,9 @@ import {
   IconSignOut,
   Logo,
   NavItem,
+  useLocaleMenu,
 } from '@/shared/ui'
+import { useAuth } from '@/shared/auth'
 
 const topNav = getNavEntries('top')
 
@@ -111,45 +112,49 @@ export function TopBar({
   )
 }
 
-/** Static chrome until an auth feature exists — no user endpoint is mocked on purpose. */
 function AccountMenu() {
-  const { t, i18n } = useTranslation('app')
-  const { t: tCommon } = useTranslation('common')
-  const locale = resolveLocale(i18n.resolvedLanguage ?? i18n.language)
+  const { t } = useTranslation('app')
+  const { locale, items: localeItems, selectLocale } = useLocaleMenu()
+  const { signOut, user } = useAuth()
+  const navigate = useNavigate()
+
+  const selectItem = (key: string) => {
+    if (key === 'profile') {
+      navigate(ROUTES.PROFILE)
+      return
+    }
+    if (key === 'sign-out') {
+      void signOut().finally(() => navigate(ROUTES.LOGIN, { replace: true }))
+      return
+    }
+    selectLocale(key)
+  }
 
   return (
     <Dropdown
       placement="bottomRight"
       selectedKey={locale}
-      onSelect={(key) => {
-        const nextLocale = normalizeLocale(key)
-        if (nextLocale && nextLocale !== locale) void i18n.changeLanguage(nextLocale)
-      }}
+      onSelect={selectItem}
       items={[
         { key: 'profile', label: t('account.profile'), icon: <IconProfile /> },
         { type: 'divider' },
-        ...SUPPORTED_LOCALES.map((option) => ({
-          key: option,
-          label: t('account.languageOption', { language: localeDisplayName(option, tCommon) }),
-        })),
+        ...localeItems,
         { type: 'divider' },
         { key: 'sign-out', label: t('account.signOut'), icon: <IconSignOut />, danger: true },
       ]}
     >
-      {/* The avatar renders initials, so this is not an icon-only button and
-          §11 does not ask for a tooltip — and one here would sit on top of the
-          very menu it opens (tooltip 700 > dropdown 500, design.md §10). */}
+      {/* Google users render their profile image; other accounts fall back to initials. */}
       <button
         type="button"
         aria-label={t('account.menu')}
         className="rounded-full outline-none focus-visible:focus-ring"
       >
-        <Avatar name="Alex Nguyen" size="sm" />
+        <Avatar
+          name={user?.displayName ?? user?.email ?? 'User'}
+          src={user?.avatarUrl ?? undefined}
+          size="sm"
+        />
       </button>
     </Dropdown>
   )
-}
-
-function localeDisplayName(locale: AppLocale, t: ReturnType<typeof useTranslation<'common'>>['t']) {
-  return locale === 'en-US' ? t('locales.enUS') : t('locales.viVN')
 }

@@ -44,6 +44,154 @@
 
 /* Optional elevated close treatment for prominent detail modals. */
 @layer components {
+  .app-button-layered {
+    display: inline-grid;
+    box-sizing: border-box;
+  }
+
+  .app-button-layered--sm {
+    height: 32px;
+  }
+
+  .app-button-layered--md {
+    height: 36px;
+  }
+
+  .app-button-layered--lg {
+    height: 40px;
+  }
+
+  .app-button-layered--enabled {
+    border-radius: var(--button-layer-radius, 6px);
+    background: linear-gradient(180deg, #0a8a66 0%, #035f43 100%);
+    padding: 1px;
+  }
+
+  .app-button-layered__middle {
+    display: grid;
+    height: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .app-button-layered--enabled .app-button-layered__middle {
+    border-radius: max(calc(var(--button-layer-radius, 6px) - 1px), 0px);
+    background: linear-gradient(180deg, #34b58d 0%, #148461 100%);
+    padding: 1px;
+  }
+
+  .app-button-layered--enabled .app-button-layered__face.ant-btn {
+    height: 100%;
+    border: 0;
+    border-radius: max(calc(var(--button-layer-radius, 6px) - 2px), 0px);
+    background: #059669;
+    box-shadow: none;
+  }
+
+  .app-button-layered:not(.app-button-layered--enabled) .app-button-layered__face.ant-btn {
+    height: 100%;
+    border-radius: var(--button-layer-radius, 6px);
+  }
+
+  .app-button-layered--enabled:hover .app-button-layered__face,
+  .app-button-layered__face:focus-visible {
+    background: #047857;
+  }
+
+  .app-alert--soft {
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+
+  .app-alert--soft .ant-alert-message,
+  .app-alert--soft .ant-alert-description,
+  .app-alert--soft .ant-alert-icon,
+  .app-alert--soft .ant-alert-close-icon {
+    color: inherit;
+  }
+
+  .app-alert--soft-success {
+    border-color: #bbf7d0;
+    background: #dcfce7;
+    color: #15803d;
+  }
+
+  .app-alert--soft-info {
+    border-color: #bfdbfe;
+    background: #dbeafe;
+    color: #1d4ed8;
+  }
+
+  .app-alert--soft-warning {
+    border-color: #fde68a;
+    background: #fef3c7;
+    color: #b45309;
+  }
+
+  .app-alert--soft-error {
+    border-color: #fecaca;
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+
+  .app-toast.ant-notification-notice {
+    @apply rounded-lg border border-border-subtle bg-bg-elevated p-4 shadow-lg;
+  }
+
+  .app-toast .ant-notification-notice-content {
+    @apply min-w-0;
+  }
+
+  .app-toast .ant-notification-notice-message {
+    @apply mb-1 pe-6 text-label-md text-text-primary;
+  }
+
+  .app-toast .ant-notification-notice-description {
+    @apply pe-6 text-body-sm text-text-secondary;
+  }
+
+  .app-toast .ant-notification-notice-icon {
+    @apply mt-0 text-icon-md;
+  }
+
+  .app-toast .ant-notification-notice-close {
+    @apply end-3 top-3 flex size-8 items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-bg-surface-muted hover:text-text-primary;
+  }
+
+  .app-toast--success.ant-notification-notice {
+    @apply border-success-100;
+  }
+
+  .app-toast--success .ant-notification-notice-icon {
+    @apply text-success-700;
+  }
+
+  .app-toast--info.ant-notification-notice {
+    @apply border-info-100;
+  }
+
+  .app-toast--info .ant-notification-notice-icon {
+    @apply text-info-700;
+  }
+
+  .app-toast--warning.ant-notification-notice {
+    @apply border-warning-100;
+  }
+
+  .app-toast--warning .ant-notification-notice-icon {
+    @apply text-warning-700;
+  }
+
+  .app-toast--error.ant-notification-notice {
+    @apply border-error-100;
+  }
+
+  .app-toast--error .ant-notification-notice-icon {
+    @apply text-error-700;
+  }
+
   .popup-surface--bottom {
     padding-top: theme(spacing.2);
   }

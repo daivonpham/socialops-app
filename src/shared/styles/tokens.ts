@@ -190,7 +190,7 @@ export const zIndex = {
 export const focusRing = { width: 2, color: color.brand[100] } as const
 
 /** Avatar sizes (px) — design.md §18. */
-export const avatarSize = { xs: 24, sm: 32, md: 40, lg: 48, xl: 64 } as const
+export const avatarSize = { xs: 24, sm: 32, md: 40, lg: 48, xl: 64, xxl: 96 } as const
 
 /** Layout dimensions (px) — sidebar §15.2, narrow reading width §25. */
 export const layout = {
@@ -201,6 +201,7 @@ export const layout = {
   drawerNormalWidth: 600,
   drawerWideWidth: 760,
   containerNarrow: 720,
+  authPanelWidth: 440,
 } as const
 
 /** Responsive breakpoints (px) — design.md §26. */
@@ -219,6 +220,16 @@ export const breakpoint = {
  * theme; components must not restate them.
  */
 export const componentToken = {
+  toast: {
+    offset: space[6],
+    durationSeconds: 4,
+    maxCount: 4,
+    stackThreshold: 3,
+  },
+  profile: {
+    coverHeight: 200,
+    avatarPreviewSize: 192,
+  },
   /** design.md §12 — variants, sizes and states of the button. */
   button: {
     // Untitled UI button heights: 32 / 36 / 40 / 44 / 48

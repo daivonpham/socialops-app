@@ -85,6 +85,7 @@ export default function CreatePlanningPostPage() {
           {t('composer.back')}
         </Button>
         <Alert
+          variant="soft"
           tone="error"
           title={isEditing ? t('composer.editLoadError') : t('composer.accounts.loadError')}
         />
@@ -194,6 +195,7 @@ function PlanningComposerWorkspace({
 
       {saveContent.isError ? (
         <Alert
+          variant="soft"
           tone="error"
           title={content ? t('composer.updateError') : t('composer.submitError')}
         />
@@ -374,6 +376,7 @@ function PublishingActionBar({
         <div className="flex items-center">
           <Button
             variant="primary"
+            layered={false}
             icon={<IconSend aria-hidden />}
             loading={loading}
             disabled={!canSubmit}
@@ -437,6 +440,7 @@ function PublishingActionBar({
             >
               <Button
                 variant="primary"
+                layered={false}
                 icon={<IconChevronDown aria-hidden />}
                 aria-label={t('composer.actions.chooseAction')}
                 className="-ms-px rounded-s-none px-2"

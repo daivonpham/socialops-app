@@ -1,0 +1,117 @@
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { Alert, Button, Form, IconGoogle, Input } from '@/shared/ui'
+import { useAuth } from '@/shared/auth'
+import { useLogin, useStartGoogleAuth } from '../api'
+import { getAuthErrorKey } from '../model/auth-error'
+import { AuthLayout } from '../components/AuthLayout'
+import { AUTH_ROUTES } from '../config/auth.routes'
+
+type LoginFormValues = { email: string; password: string }
+
+export default function LoginPage() {
+  const { t } = useTranslation('auth')
+  const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const { authenticate } = useAuth()
+  const login = useLogin()
+  const google = useStartGoogleAuth()
+
+  const submit = (values: LoginFormValues) => {
+    login.mutate(values, {
+      onSuccess: (session) => {
+        authenticate(session)
+        navigate(AUTH_ROUTES.POST_AUTH, { replace: true })
+      },
+    })
+  }
+
+  const startGoogle = () => {
+    google.mutate(undefined, {
+      onSuccess: ({ authorizationUrl }) => window.location.assign(authorizationUrl),
+    })
+  }
+
+  return (
+    <AuthLayout
+      title={t('login.title')}
+      description={t('login.description')}
+      footer={
+        <>
+          {t('login.noAccount')}{' '}
+          <Link className="font-semibold text-link hover:text-link-hover" to={AUTH_ROUTES.REGISTER}>
+            {t('login.register')}
+          </Link>
+        </>
+      }
+    >
+      <Form<LoginFormValues> layout="vertical" requiredMark={false} onFinish={submit}>
+        {params.get('oauth') === 'failed' ? (
+          <Alert variant="soft" tone="error" title={t('errors.GOOGLE_AUTH_FAILED')} />
+        ) : null}
+        {login.isError ? (
+          <Alert variant="soft" tone="error" title={t(getAuthErrorKey(login.error))} />
+        ) : null}
+        <Form.Item
+          name="email"
+          label={t('fields.email')}
+          rules={[
+            { required: true, message: t('validation.emailRequired') },
+            Form.rules.email(t('validation.emailInvalid')),
+          ]}
+        >
+          <Input
+            type="email"
+            size="lg"
+            placeholder={t('fields.emailPlaceholder')}
+            autoComplete="email"
+            allowClear
+          />
+        </Form.Item>
+        <Form.Item
+          name="password"
+          label={t('fields.password')}
+          rules={[
+            { required: true, message: t('validation.passwordRequired') },
+            { max: 128, message: t('validation.passwordMax') },
+          ]}
+        >
+          <Input
+            type="password"
+            size="lg"
+            placeholder={t('fields.passwordPlaceholder')}
+            autoComplete="current-password"
+          />
+        </Form.Item>
+        <div className="mb-5 flex justify-end">
+          <Link
+            to={AUTH_ROUTES.FORGOT_PASSWORD}
+            className="text-label-sm text-link hover:text-link-hover"
+          >
+            {t('login.forgotPassword')}
+          </Link>
+        </div>
+        <div className="grid gap-5">
+          <Button
+            variant="primary"
+            size="lg"
+            htmlType="submit"
+            className="w-full"
+            loading={login.isPending}
+          >
+            {t('login.submit')}
+          </Button>
+          <Button
+            size="lg"
+            className="w-full"
+            icon={<IconGoogle />}
+            loading={google.isPending}
+            onClick={startGoogle}
+          >
+            {t('login.google')}
+          </Button>
+        </div>
+      </Form>
+    </AuthLayout>
+  )
+}

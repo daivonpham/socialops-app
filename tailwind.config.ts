@@ -69,6 +69,7 @@ export default {
     spacing: {
       ...pxScale(space),
       'media-action': px(componentToken.media.removeButtonSize),
+      'profile-avatar-preview': px(componentToken.profile.avatarPreviewSize),
     },
     borderRadius: pxScale(radius),
     boxShadow: { ...shadow },
@@ -103,8 +104,11 @@ export default {
         'table-settings': px(componentToken.table.settingsPanelWidth),
       },
       maxHeight: { 'table-settings': px(componentToken.table.settingsPanelMaxHeight) },
-      height: { chart: px(componentToken.chart.height) },
-      maxWidth: { narrow: px(layout.containerNarrow) },
+      height: {
+        chart: px(componentToken.chart.height),
+        'profile-cover': px(componentToken.profile.coverHeight),
+      },
+      maxWidth: { narrow: px(layout.containerNarrow), auth: px(layout.authPanelWidth) },
     },
   },
 } satisfies Config

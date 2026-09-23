@@ -7,6 +7,10 @@ export type ButtonSize = 'sm' | 'md' | 'lg'
 export type ButtonProps = {
   variant?: ButtonVariant
   size?: ButtonSize
+  /** Tắt decorative layers để dùng primary button nguyên bản của Ant Design. */
+  layered?: boolean
+  /** Border radius của lớp ngoài cùng; hai lớp trong tự giảm tương ứng. */
+  borderRadius?: number | string
   icon?: ReactNode
   loading?: boolean
   disabled?: boolean

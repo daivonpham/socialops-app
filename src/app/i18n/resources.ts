@@ -1,4 +1,5 @@
 import { BRANDS_I18N } from '@/features/brands'
+import { AUTH_I18N } from '@/features/auth'
 import { SOCIAL_ACCOUNTS_I18N } from '@/features/social-accounts'
 import { WORKSPACES_I18N } from '@/features/workspaces'
 import { FACEBOOK_I18N } from '@/features/facebook'
@@ -10,6 +11,7 @@ import { appViVN } from './vi-VN'
 export const defaultResources = {
   common: commonEnUS,
   app: appEnUS,
+  auth: AUTH_I18N['en-US'],
   brands: BRANDS_I18N['en-US'],
   workspaces: WORKSPACES_I18N['en-US'],
   socialAccounts: SOCIAL_ACCOUNTS_I18N['en-US'],
@@ -22,6 +24,7 @@ export const resources = {
   'vi-VN': {
     common: commonViVN,
     app: appViVN,
+    auth: AUTH_I18N['vi-VN'],
     brands: BRANDS_I18N['vi-VN'],
     workspaces: WORKSPACES_I18N['vi-VN'],
     socialAccounts: SOCIAL_ACCOUNTS_I18N['vi-VN'],

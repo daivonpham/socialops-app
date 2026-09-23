@@ -10,6 +10,7 @@ import { useEffect, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { antTheme } from '@/shared/components/ant/theme'
 import { LOCALE_META, resolveLocale } from '@/shared/i18n'
+import { ToastProvider } from '@/shared/ui'
 
 const ANT_LOCALE = {
   'en-US': enUS,
@@ -37,7 +38,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         locale={ANT_LOCALE[locale]}
         theme={antTheme}
       >
-        {children}
+        <ToastProvider>{children}</ToastProvider>
       </ConfigProvider>
     </StyleProvider>
   )

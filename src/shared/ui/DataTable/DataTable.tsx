@@ -524,7 +524,7 @@ export function DataTable<T extends object>({
                   const sorted = header.column.getIsSorted()
                   const filterActive = Boolean(
                     sourceColumn?.filterValue !== undefined &&
-                      sourceColumn.filterValue !== (sourceColumn.filterDefaultValue ?? ''),
+                    sourceColumn.filterValue !== (sourceColumn.filterDefaultValue ?? ''),
                   )
                   const canResize = enableColumnResizing && header.column.getCanResize()
                   const minSize =

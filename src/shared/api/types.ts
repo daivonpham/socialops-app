@@ -2,19 +2,20 @@
 
 export interface PaginationMeta {
   page: number
-  pageSize: number
+  limit: number
   total: number
+  totalPage: number
 }
 
 /** Envelope the backend wraps around every response. */
 export interface CommonApiResponse<T> {
-  success: boolean
-  statusCode: number
-  message: string
   data: T
-  metadata?: PaginationMeta
-  timestamp: string
-  path: string
+  metadata?: { pagination: PaginationMeta }
+}
+
+export interface ApiErrorResponse {
+  error: { code: string; message: string; fields?: Array<{ field: string; code: string }> }
+  requestId: string
 }
 
 /** Base params accepted by almost every list endpoint. */

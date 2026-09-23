@@ -343,6 +343,7 @@ export function PlanningCalendar({
       {hasRescheduleError ? (
         <div className="p-4 pb-0">
           <Alert
+            variant="soft"
             tone="error"
             title={t('reschedule.error')}
             closable

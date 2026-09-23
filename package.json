@@ -25,6 +25,7 @@
     "axios": "^1.19.0",
     "dayjs": "^1.11.21",
     "i18next": "^26.4.0",
+    "libphonenumber-js": "^1.13.13",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-i18next": "^17.0.12",

@@ -11,6 +11,7 @@ import { PLATFORMS } from '@/features/social-accounts'
 import { PERMISSIONS } from '@/shared/permissions'
 import { IconAllPlatforms, IconMembers, IconReports, IconSettings, Spin } from '@/shared/ui'
 import { ROUTES } from './paths'
+import { AuthBoundary } from './guards'
 
 export type NavSection = 'top' | 'summary' | 'main'
 
@@ -20,6 +21,7 @@ export type NavSection = 'top' | 'summary' | 'main'
  * reads the same `requires`. No separate menu constants file exists.
  */
 export type AppRouteHandle = {
+  auth?: 'public' | 'guest-only' | 'required'
   nav?: { labelKey: AppNavigationKey; section: NavSection; order: number; icon?: ReactNode }
   /** Access needed to enter the route — UX only, the server enforces for real. */
   requires?: readonly string[]
@@ -80,6 +82,16 @@ const layoutChildren: RouteObject[] = [
       Component: (await import('@/features/planning')).CreatePlanningPostPage,
     }),
     handle: handle({ requires: [PERMISSIONS.PUBLISHING_PUBLISH.key] }),
+  },
+  {
+    path: ROUTES.CHANGE_PASSWORD,
+    element: <Navigate to={`${ROUTES.PROFILE}?tab=password`} replace />,
+  },
+  {
+    path: ROUTES.PROFILE,
+    lazy: async () => ({
+      Component: (await import('@/features/profile/pages/ProfilePage')).default,
+    }),
   },
   {
     path: ROUTES.REPORTS,
@@ -150,9 +162,50 @@ const bootFallback = (
   </div>
 )
 
-export const router = createBrowserRouter([
+const routes: RouteObject[] = [
+  {
+    path: ROUTES.LOGIN,
+    handle: handle({ auth: 'guest-only' }),
+    lazy: async () => ({ Component: (await import('@/features/auth')).LoginPage }),
+    hydrateFallbackElement: bootFallback,
+  },
+  {
+    path: ROUTES.REGISTER,
+    handle: handle({ auth: 'guest-only' }),
+    lazy: async () => ({ Component: (await import('@/features/auth')).RegisterPage }),
+    hydrateFallbackElement: bootFallback,
+  },
+  {
+    path: ROUTES.FORGOT_PASSWORD,
+    handle: handle({ auth: 'public' }),
+    lazy: async () => ({
+      Component: (await import('@/features/auth/pages/ForgotPasswordPage')).default,
+    }),
+  },
+  {
+    path: ROUTES.RESET_PASSWORD,
+    handle: handle({ auth: 'public' }),
+    lazy: async () => ({
+      Component: (await import('@/features/auth/pages/ResetPasswordPage')).default,
+    }),
+  },
+  {
+    path: ROUTES.VERIFY_EMAIL,
+    handle: handle({ auth: 'public' }),
+    lazy: async () => ({
+      Component: (await import('@/features/auth/pages/VerifyEmailPage')).default,
+    }),
+  },
+  {
+    path: ROUTES.GOOGLE_CALLBACK,
+    handle: handle({ auth: 'public' }),
+    lazy: async () => ({
+      Component: (await import('@/features/auth/pages/GoogleCallbackPage')).default,
+    }),
+  },
   {
     path: ROUTES.SELECT_BRAND,
+    handle: handle({ auth: 'required' }),
     lazy: async () => ({
       Component: (await import('@/features/brands/pages/BrandPickerPage')).default,
     }),
@@ -160,12 +213,15 @@ export const router = createBrowserRouter([
   },
   {
     path: ROUTES.ROOT,
+    handle: handle({ auth: 'required' }),
     // The layout is lazy too: it keeps the entry chunk small and breaks the
     // static cycle routes → AdminLayout → Sidebar → getNavEntries (this file).
-    lazy: async () => ({
-      Component: (await import('@/app/layouts/AdminLayout')).default,
-    }),
+    lazy: async () => {
+      return { Component: (await import('@/app/layouts/AdminLayout')).default }
+    },
     hydrateFallbackElement: bootFallback,
     children: layoutChildren,
   },
-])
+]
+
+export const router = createBrowserRouter([{ element: <AuthBoundary />, children: routes }])

@@ -16,6 +16,7 @@ export {
   SearchOutlined as IconSearch,
   PlusOutlined as IconPlus,
   CheckOutlined as IconCheck,
+  CameraOutlined as IconCamera,
   WarningOutlined as IconWarning,
   ReloadOutlined as IconRefresh,
   LinkOutlined as IconLink,
@@ -51,6 +52,7 @@ export { PiCaretUpDownLight as IconCaretUpDown } from 'react-icons/pi'
 export { IoFilter as IconFilter } from 'react-icons/io5'
 export { MdFacebook as IconFacebook } from 'react-icons/md'
 export { FaTiktok as IconTikTok } from 'react-icons/fa6'
+export { FcGoogle as IconGoogle } from 'react-icons/fc'
 export {
   RxPlusCircled as IconPlusCircle,
   RxPanelLeftMinimized as IconSidebarCollapse,

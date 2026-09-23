@@ -132,8 +132,7 @@ export function PlanningList({
             label: t(`status.${item}`),
           })),
         ],
-        onFilterChange: (value) =>
-          onFiltersChange({ status: value as 'all' | PlanningStatus }),
+        onFilterChange: (value) => onFiltersChange({ status: value as 'all' | PlanningStatus }),
         render: (_, row) => (
           <StatusTag tone={PLANNING_STATUS_TONE[row.status]}>{t(`status.${row.status}`)}</StatusTag>
         ),

@@ -1,9 +1,10 @@
-import type { ReactNode } from 'react'
-import { Link, Navigate, useLocation, useMatches } from 'react-router-dom'
+import { useEffect, type ReactNode } from 'react'
+import { Link, Navigate, Outlet, useLocation, useMatches } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { allOf, usePermissions } from '@/shared/permissions'
 import { useActiveBrand } from '@/shared/scope'
 import { Spin } from '@/shared/ui'
+import { useAuth } from '@/shared/auth'
 import { ROUTES } from './paths'
 import type { AppRouteHandle } from './routes'
 
@@ -20,6 +21,39 @@ export function RequireBrand({ children }: { children: ReactNode }) {
     return <Navigate to={ROUTES.SELECT_BRAND} replace state={{ from: location.pathname }} />
   }
   return <>{children}</>
+}
+
+export function AuthBoundary() {
+  const { status, restore } = useAuth()
+  const location = useLocation()
+  const matches = useMatches()
+  const auth =
+    [...matches]
+      .reverse()
+      .map((match) => (match.handle as AppRouteHandle | undefined)?.auth)
+      .find((value) => value !== undefined) ?? 'public'
+
+  useEffect(() => {
+    if (auth !== 'public' && status === 'idle') void restore()
+  }, [auth, restore, status])
+
+  if (auth === 'public') return <Outlet />
+
+  if (status === 'idle' || status === 'loading') {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Spin size="lg" />
+      </div>
+    )
+  }
+
+  if (auth === 'required' && status === 'anonymous') {
+    return <Navigate to={ROUTES.LOGIN} replace state={{ from: location.pathname }} />
+  }
+  if (auth === 'guest-only' && status === 'authenticated') {
+    return <Navigate to={ROUTES.SELECT_BRAND} replace />
+  }
+  return <Outlet />
 }
 
 /** Reads the SAME `handle.requires` the sidebar uses — single access source per route. */

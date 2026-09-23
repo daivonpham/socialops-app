@@ -1,5 +1,5 @@
 /** Platform-owned avatar API (design.md §18) — implemented by the active adapter. */
-export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl'
 
 export type AvatarProps = {
   /** Used for initials and the accessible label. */

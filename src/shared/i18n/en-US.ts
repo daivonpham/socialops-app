@@ -33,5 +33,6 @@ export const commonEnUS = {
   locales: {
     enUS: 'English (US)',
     viVN: 'Tiếng Việt',
+    changeLanguage: 'Change language',
   },
 } as const

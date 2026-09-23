@@ -10,9 +10,15 @@ export type InputProps = {
   label?: string
   hint?: string
   disabled?: boolean
-  type?: 'text' | 'search' | 'email' | 'datetime-local'
+  readOnly?: boolean
+  type?: 'text' | 'search' | 'email' | 'password' | 'datetime-local'
+  size?: 'sm' | 'md' | 'lg'
+  name?: string
+  required?: boolean
   autoComplete?: string
   maxLength?: number
+  minLength?: number
+  allowClear?: boolean
   min?: string
   max?: string
   'aria-label'?: string

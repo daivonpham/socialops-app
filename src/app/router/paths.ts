@@ -1,7 +1,17 @@
+import { AUTH_ROUTES } from '@/features/auth/config/auth.routes'
+
 /** Single source of route paths — never hard-code path strings elsewhere. */
 export const ROUTES = {
   ROOT: '/',
-  SELECT_BRAND: '/select-brand',
+  LOGIN: AUTH_ROUTES.LOGIN,
+  REGISTER: AUTH_ROUTES.REGISTER,
+  FORGOT_PASSWORD: AUTH_ROUTES.FORGOT_PASSWORD,
+  RESET_PASSWORD: AUTH_ROUTES.RESET_PASSWORD,
+  VERIFY_EMAIL: AUTH_ROUTES.VERIFY_EMAIL,
+  GOOGLE_CALLBACK: AUTH_ROUTES.GOOGLE_CALLBACK,
+  CHANGE_PASSWORD: AUTH_ROUTES.CHANGE_PASSWORD,
+  PROFILE: '/profile',
+  SELECT_BRAND: AUTH_ROUTES.POST_AUTH,
   ALL_PLATFORMS: '/all-platforms',
   PLATFORM: '/platforms/:platform',
   PLATFORM_OVERVIEW: '/platforms/:platform/overview',
