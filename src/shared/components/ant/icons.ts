@@ -50,8 +50,12 @@ export {
 
 export { PiCaretUpDownLight as IconCaretUpDown } from 'react-icons/pi'
 export { IoFilter as IconFilter } from 'react-icons/io5'
+export { IoSettingsOutline as IconSettingsOutline } from 'react-icons/io5'
 export { MdFacebook as IconFacebook } from 'react-icons/md'
+export { MdOutlineWorkspaces as IconWorkspaces } from 'react-icons/md'
 export { FaTiktok as IconTikTok } from 'react-icons/fa6'
+export { TbBrandAirtable as IconBrandManagement } from 'react-icons/tb'
+export { BsUpload as IconUpload } from 'react-icons/bs'
 export { FcGoogle as IconGoogle } from 'react-icons/fc'
 export {
   RxPlusCircled as IconPlusCircle,

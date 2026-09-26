@@ -11,7 +11,7 @@ function initialsOf(name: string): string {
     .join('')
 }
 
-export function Avatar({ name, src, size = 'md', className }: AvatarProps) {
+export function Avatar({ name, src, size = 'md', className, fallbackClassName }: AvatarProps) {
   return (
     <AntAvatar
       src={src}
@@ -19,7 +19,7 @@ export function Avatar({ name, src, size = 'md', className }: AvatarProps) {
       size={avatarSize[size]}
       className={`shrink-0 border border-border-subtle bg-bg-surface-subtle text-text-tertiary ${className ?? ''}`}
     >
-      {initialsOf(name)}
+      <span className={fallbackClassName}>{initialsOf(name)}</span>
     </AntAvatar>
   )
 }

@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
-import { getWorkspaces } from './service'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { createWorkspace, deleteWorkspace, getWorkspaces, updateWorkspace } from './service'
 
 export const WORKSPACE_QUERY_KEYS = {
   list: () => ['workspaces'] as const,
@@ -11,4 +11,16 @@ export function useWorkspaces() {
     queryFn: getWorkspaces,
     select: (response) => response.data,
   })
+}
+
+export function useCreateWorkspace() {
+  return useMutation({ mutationFn: createWorkspace })
+}
+
+export function useUpdateWorkspace() {
+  return useMutation({ mutationFn: updateWorkspace })
+}
+
+export function useDeleteWorkspace() {
+  return useMutation({ mutationFn: deleteWorkspace })
 }

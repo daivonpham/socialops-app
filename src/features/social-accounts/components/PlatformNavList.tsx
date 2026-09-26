@@ -14,11 +14,15 @@ export const PLATFORM_LABEL_KEY = {
 // Platform colors are contextual identifiers only (design.md §3.6) — icon-sized, never surfaces.
 const PLATFORM_NAV: Record<Platform, { icon: ReactNode; activeIcon?: ReactNode }> = {
   facebook: {
-    icon: <IconFacebook className="text-platform-facebook" />,
+    icon: (
+      <IconFacebook className="text-platform-facebook transition-colors group-hover:text-text-inverse" />
+    ),
     activeIcon: <IconFacebook className="text-text-inverse" />,
   },
   tiktok: {
-    icon: <IconTikTok className="text-text-primary" />,
+    icon: (
+      <IconTikTok className="text-text-primary transition-colors group-hover:text-text-inverse" />
+    ),
     activeIcon: <IconTikTok className="text-text-inverse" />,
   },
 }
@@ -39,7 +43,7 @@ export function PlatformNavList({
   const { brandId } = useActiveBrand()
   const { data: counts, isPending, isError, isFetching, refetch } = useSocialAccountCounts(brandId)
 
-  if (isPending) {
+  if (brandId !== null && isPending) {
     return (
       <div className="px-3 py-2">
         <Spin size="sm" />
@@ -47,7 +51,7 @@ export function PlatformNavList({
     )
   }
 
-  if (isError || !counts) {
+  if (brandId !== null && (isError || !counts)) {
     // design.md §21.5 — say what failed and offer a way out, not just a dead message.
     return (
       <div className="px-3 py-2">
@@ -59,11 +63,13 @@ export function PlatformNavList({
     )
   }
 
+  const resolvedCounts = counts ?? { facebook: 0, tiktok: 0 }
+
   return (
     <>
       {PLATFORMS.map((platform) => {
         const platformLabel = t(PLATFORM_LABEL_KEY[platform])
-        const count = counts[platform]
+        const count = resolvedCounts[platform]
         const formattedCount = formatNumber(
           count,
           resolveLocale(i18n.resolvedLanguage ?? i18n.language),
@@ -74,8 +80,9 @@ export function PlatformNavList({
             to={getHref(platform)}
             icon={PLATFORM_NAV[platform].icon}
             activeIcon={PLATFORM_NAV[platform].activeIcon}
-            activeClassName="bg-neutral-800 text-text-inverse hover:bg-neutral-800"
+            activeClassName="bg-action-primary text-text-inverse hover:bg-action-primary-hover hover:text-text-inverse"
             collapsed={collapsed}
+            tone="primary"
             label={platformLabel}
             badge={
               collapsed ? null : (

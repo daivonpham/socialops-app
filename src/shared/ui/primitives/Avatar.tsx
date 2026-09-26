@@ -7,6 +7,8 @@ export type AvatarProps = {
   src?: string
   size?: AvatarSize
   className?: string
+  /** Optional typography override for generated initials only. */
+  fallbackClassName?: string
 }
 
 export { Avatar } from '@/shared/components/ant/Avatar'

@@ -7,6 +7,7 @@ export type AuthUser = {
   displayName: string
   locale: 'vi' | 'en'
   avatarUrl: string | null
+  brandOnboardingCompleted: boolean
 }
 export type AuthSession = { accessToken: string; user: AuthUser }
 

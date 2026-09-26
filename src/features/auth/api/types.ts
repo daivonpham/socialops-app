@@ -4,6 +4,7 @@ export type AuthUserDto = {
   displayName: string
   locale: 'vi' | 'en'
   avatarUrl: string | null
+  brandOnboardingCompleted: boolean
 }
 export type SessionDto = { accessToken: string; expiresIn: string; user: AuthUserDto }
 

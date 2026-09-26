@@ -9,7 +9,7 @@ export type ScopeContextValue = {
   workspaceId: string | null
   brandId: string | null
   /** Switch workspace — clears the active brand until one is picked again. */
-  setWorkspace: (workspaceId: string) => void
+  setWorkspace: (workspaceId: string | null) => void
   /** Atomically select a brand together with the workspace it belongs to. */
   selectBrand: (workspaceId: string, brandId: string) => void
 }

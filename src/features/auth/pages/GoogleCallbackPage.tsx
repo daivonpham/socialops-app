@@ -8,10 +8,14 @@ import { AUTH_ROUTES } from '../config/auth.routes'
 
 export default function GoogleCallbackPage() {
   const { t } = useTranslation('auth')
-  const { status } = useAuth()
+  const { status, restore } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const providerError = params.has('error')
+  useEffect(() => {
+    if (!providerError && status === 'idle') void restore()
+  }, [providerError, restore, status])
+
   useEffect(() => {
     if (providerError || status === 'anonymous') {
       navigate(`${AUTH_ROUTES.LOGIN}?oauth=failed`, { replace: true })

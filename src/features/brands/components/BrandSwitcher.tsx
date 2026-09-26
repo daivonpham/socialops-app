@@ -1,44 +1,95 @@
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useActiveBrand, useActiveWorkspace } from '@/shared/scope'
-import { Avatar, Button, Dropdown, IconCaretUpDown, Spin } from '@/shared/ui'
+import {
+  Avatar,
+  Button,
+  Dropdown,
+  IconCaretUpDown,
+  IconPlus,
+  IconSettingsOutline,
+  Spin,
+} from '@/shared/ui'
 import { useBrands } from '../api'
+import { useWorkspaces } from '@/features/workspaces'
+import { CreateBrandModal } from './CreateBrandModal'
+import { ManageBrandsModal } from './ManageBrandsModal'
 
 export function BrandSwitcher() {
   const { t } = useTranslation('brands')
   const { workspaceId } = useActiveWorkspace()
   const { brandId, selectBrand } = useActiveBrand()
   const { data: brands, isPending } = useBrands(workspaceId)
+  const { data: workspaces } = useWorkspaces()
+  const [createOpen, setCreateOpen] = useState(false)
+  const [manageOpen, setManageOpen] = useState(false)
 
   if (isPending) return <Spin size="sm" />
 
   const current = brands?.find((brand) => brand.id === brandId)
+  const workspaceRole = workspaces?.find((workspace) => workspace.id === workspaceId)?.role
+  const canManageBrands = workspaceRole === 'owner' || workspaceRole === 'admin'
 
   return (
-    <Dropdown
-      items={(brands ?? []).map((brand) => ({
-        key: brand.id,
-        label: brand.name,
-        icon: <Avatar name={brand.name} size="xs" />,
-      }))}
-      selectedKey={brandId ?? undefined}
-      onSelect={(key) => {
-        if (workspaceId !== null && key !== brandId) selectBrand(workspaceId, key)
-      }}
-    >
-      <Button
-        variant="ghost"
-        size="sm"
-        aria-label={t('switcher.ariaLabel')}
-        className="min-w-0 px-1.5"
+    <>
+      <Dropdown
+        searchPlaceholder={t('switcher.searchPlaceholder')}
+        items={(brands ?? []).map((brand) => ({
+          key: brand.id,
+          label: brand.name,
+          searchText: brand.name,
+          icon: (
+            <Avatar
+              name={brand.name}
+              src={brand.avatarUrl ?? undefined}
+              size="xs"
+              fallbackClassName="inline-flex items-center justify-center align-middle text-label-sm leading-none"
+            />
+          ),
+        }))}
+        selectedKey={brandId ?? undefined}
+        onSelect={(key) => {
+          if (workspaceId !== null && key !== brandId) selectBrand(workspaceId, key)
+        }}
+        footer={
+          canManageBrands
+            ? {
+                label: t('switcher.create'),
+                icon: <IconPlus />,
+                onClick: () => setCreateOpen(true),
+                trailingAction: {
+                  label: t('switcher.manage'),
+                  icon: <IconSettingsOutline />,
+                  onClick: () => setManageOpen(true),
+                },
+              }
+            : undefined
+        }
       >
-        <span className="flex min-w-0 items-center gap-2">
-          {current ? <Avatar name={current.name} size="xs" /> : null}
-          <span className="truncate text-body-sm text-text-secondary">
-            {current?.name ?? t('switcher.selectPlaceholder')}
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-label={t('switcher.ariaLabel')}
+          className="min-w-0 px-1.5"
+        >
+          <span className="flex min-w-0 items-center gap-2">
+            {current ? (
+              <Avatar
+                name={current.name}
+                src={current.avatarUrl ?? undefined}
+                size="xs"
+                fallbackClassName="inline-flex items-center justify-center align-middle text-label-sm leading-none"
+              />
+            ) : null}
+            <span className="truncate text-body-sm text-text-secondary">
+              {current?.name ?? t('switcher.selectPlaceholder')}
+            </span>
+            <IconCaretUpDown aria-hidden className="text-icon-sm text-text-tertiary" />
           </span>
-          <IconCaretUpDown aria-hidden className="text-icon-sm text-text-tertiary" />
-        </span>
-      </Button>
-    </Dropdown>
+        </Button>
+      </Dropdown>
+      <CreateBrandModal open={createOpen} onClose={() => setCreateOpen(false)} />
+      <ManageBrandsModal open={manageOpen} onClose={() => setManageOpen(false)} />
+    </>
   )
 }
-import { useTranslation } from 'react-i18next'

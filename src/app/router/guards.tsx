@@ -2,7 +2,6 @@ import { useEffect, type ReactNode } from 'react'
 import { Link, Navigate, Outlet, useLocation, useMatches } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { allOf, usePermissions } from '@/shared/permissions'
-import { useActiveBrand } from '@/shared/scope'
 import { Spin } from '@/shared/ui'
 import { useAuth } from '@/shared/auth'
 import { ROUTES } from './paths'
@@ -12,16 +11,6 @@ import type { AppRouteHandle } from './routes'
  * Route guards are UX only — they avoid dead-end screens. Real authorization
  * happens on the server for every request (frontend-admin-security).
  */
-
-/** The shell never renders without an active Brand (brand-scoped query keys depend on it). */
-export function RequireBrand({ children }: { children: ReactNode }) {
-  const { brandId } = useActiveBrand()
-  const location = useLocation()
-  if (brandId === null) {
-    return <Navigate to={ROUTES.SELECT_BRAND} replace state={{ from: location.pathname }} />
-  }
-  return <>{children}</>
-}
 
 export function AuthBoundary() {
   const { status, restore } = useAuth()
@@ -51,7 +40,7 @@ export function AuthBoundary() {
     return <Navigate to={ROUTES.LOGIN} replace state={{ from: location.pathname }} />
   }
   if (auth === 'guest-only' && status === 'authenticated') {
-    return <Navigate to={ROUTES.SELECT_BRAND} replace />
+    return <Navigate to={ROUTES.ROOT} replace />
   }
   return <Outlet />
 }

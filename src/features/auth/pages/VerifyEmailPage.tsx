@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Alert, Spin } from '@/shared/ui'
 import { useVerifyEmail } from '../api'
 import { AuthLayout } from '../components/AuthLayout'
+import { BackToLoginLink } from '../components/BackToLoginLink'
 import { AUTH_ROUTES } from '../config/auth.routes'
 
 export default function VerifyEmailPage() {
@@ -21,11 +22,7 @@ export default function VerifyEmailPage() {
     <AuthLayout
       title={t('verify.title')}
       description={t('verify.description')}
-      footer={
-        <Link className="font-semibold text-link" to={AUTH_ROUTES.LOGIN}>
-          {t('verify.login')}
-        </Link>
-      }
+      footer={<BackToLoginLink />}
     >
       {!token ? (
         <Alert variant="soft" tone="error" title={t('verify.missingToken')} />

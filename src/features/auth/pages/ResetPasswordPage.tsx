@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Alert, Button, Input } from '@/shared/ui'
 import { useResetPassword } from '../api'
 import { AuthLayout } from '../components/AuthLayout'
+import { BackToLoginLink } from '../components/BackToLoginLink'
 import { AUTH_ROUTES } from '../config/auth.routes'
 import { getAuthErrorKey } from '../model/auth-error'
 
@@ -31,11 +32,7 @@ export default function ResetPasswordPage() {
     <AuthLayout
       title={t('reset.title')}
       description={t('reset.description')}
-      footer={
-        <Link className="font-semibold text-link" to={AUTH_ROUTES.LOGIN}>
-          {t('reset.back')}
-        </Link>
-      }
+      footer={<BackToLoginLink />}
     >
       {!token ? (
         <Alert variant="soft" tone="error" title={t('reset.missingToken')} />
@@ -52,7 +49,9 @@ export default function ResetPasswordPage() {
         </div>
       ) : (
         <form className="grid gap-5" onSubmit={submit}>
-          {reset.isError ? <Alert variant="soft" tone="error" title={t(getAuthErrorKey(reset.error))} /> : null}
+          {reset.isError ? (
+            <Alert variant="soft" tone="error" title={t(getAuthErrorKey(reset.error))} />
+          ) : null}
           <Input
             id="reset-password"
             name="password"
@@ -73,7 +72,9 @@ export default function ResetPasswordPage() {
             minLength={12}
             required
           />
-          {passwordMismatch ? <Alert variant="soft" tone="error" title={t('fields.passwordMismatch')} /> : null}
+          {passwordMismatch ? (
+            <Alert variant="soft" tone="error" title={t('fields.passwordMismatch')} />
+          ) : null}
           <Button variant="primary" size="lg" htmlType="submit" loading={reset.isPending}>
             {t('reset.submit')}
           </Button>

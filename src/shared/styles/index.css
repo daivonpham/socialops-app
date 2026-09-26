@@ -287,6 +287,11 @@
     justify-content: center;
     color: inherit;
   }
+
+  .app-modal-blur-backdrop .ant-modal-mask {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
 }
 
 /* Shared scrollbar treatment for every intentionally scrollable product surface. */

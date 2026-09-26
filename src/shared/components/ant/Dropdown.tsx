@@ -32,9 +32,28 @@ function toMenuItems(
       danger: item.danger,
       icon: item.icon,
       label: <span className="text-body-sm">{item.label}</span>,
-      extra: selected ? (
-        <IconCheck aria-hidden className="text-icon-sm text-text-tertiary" />
-      ) : undefined,
+      extra:
+        (selected && item.showSelectedIndicator !== false) || item.action ? (
+          <span className="flex items-center gap-1">
+            {selected && item.showSelectedIndicator !== false ? (
+              <IconCheck aria-hidden className="text-icon-sm text-text-tertiary" />
+            ) : null}
+            {item.action ? (
+              <button
+                type="button"
+                aria-label={item.action.label}
+                title={item.action.label}
+                className="flex size-7 items-center justify-center rounded-md text-text-tertiary outline-none hover:bg-bg-surface-muted hover:text-text-primary focus-visible:focus-ring"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  item.action?.onClick()
+                }}
+              >
+                {item.action.icon}
+              </button>
+            ) : null}
+          </span>
+        ) : undefined,
     }
   })
 }
@@ -109,7 +128,6 @@ export function Dropdown({
       popupRender={(menu) => (
         <PopupSurface
           placement={placement}
-          className={content ? '' : hasChrome ? 'w-sidebar' : ''}
           onMouseEnter={onPopupMouseEnter}
           onMouseLeave={onPopupMouseLeave}
         >
@@ -150,14 +168,14 @@ export function Dropdown({
               {footer ? (
                 <>
                   <div className="h-px bg-border-subtle" />
-                  <div className="p-2">
+                  <div className="flex items-center gap-1 p-2">
                     <button
                       type="button"
                       onClick={() => {
                         footer.onClick?.()
                         close()
                       }}
-                      className="flex h-10 w-full items-center gap-2 rounded-lg px-3 text-start text-body-sm text-text-secondary outline-none transition-colors duration-base ease-standard hover:bg-bg-surface-muted hover:text-text-primary focus-visible:focus-ring"
+                      className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-lg px-3 text-start text-body-sm text-text-secondary outline-none transition-colors duration-base ease-standard hover:bg-bg-surface-muted hover:text-text-primary focus-visible:focus-ring"
                     >
                       {footer.icon ? (
                         <span aria-hidden className="flex text-icon-sm">
@@ -166,6 +184,22 @@ export function Dropdown({
                       ) : null}
                       <span className="min-w-0 truncate">{footer.label}</span>
                     </button>
+                    {footer.trailingAction ? (
+                      <button
+                        type="button"
+                        aria-label={footer.trailingAction.label}
+                        title={footer.trailingAction.label}
+                        onClick={() => {
+                          footer.trailingAction?.onClick()
+                          close()
+                        }}
+                        className="flex size-10 shrink-0 items-center justify-center rounded-lg text-text-tertiary outline-none transition-colors duration-base ease-standard hover:bg-bg-surface-muted hover:text-text-primary focus-visible:focus-ring"
+                      >
+                        <span aria-hidden className="flex text-icon-sm">
+                          {footer.trailingAction.icon}
+                        </span>
+                      </button>
+                    ) : null}
                   </div>
                 </>
               ) : null}

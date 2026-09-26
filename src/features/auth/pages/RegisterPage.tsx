@@ -1,9 +1,12 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Alert, Button, Form, IconGoogle, Input } from '@/shared/ui'
 import { useRegister, useStartGoogleAuth } from '../api'
+import type { RegisterInput } from '../api'
 import { getAuthErrorKey } from '../model/auth-error'
 import { AuthLayout } from '../components/AuthLayout'
+import { BackToLoginLink } from '../components/BackToLoginLink'
 import { AUTH_ROUTES } from '../config/auth.routes'
 
 type RegisterFormValues = { name: string; email: string; password: string }
@@ -28,43 +31,67 @@ function getInboxUrl(email: string | undefined) {
 export default function RegisterPage() {
   const { t } = useTranslation('auth')
   const register = useRegister()
+  const resend = useRegister()
   const google = useStartGoogleAuth()
+  const [registeredInput, setRegisteredInput] = useState<RegisterInput | null>(null)
 
   const submit = (values: RegisterFormValues) => {
-    register.mutate({
+    const input = {
       displayName: values.name,
       email: values.email,
       password: values.password,
       locale: document.documentElement.lang.startsWith('vi') ? 'vi' : 'en',
-    })
+    }
+    register.mutate(input, { onSuccess: () => setRegisteredInput(input) })
   }
 
-  if (register.isSuccess) {
-    const registeredEmail = register.variables.email
+  if (registeredInput) {
+    const registeredEmail = registeredInput.email
     const inboxUrl = getInboxUrl(registeredEmail)
+    const openInbox = () => {
+      if (inboxUrl) window.open(inboxUrl, '_blank', 'noopener,noreferrer')
+      else window.location.href = 'mailto:'
+    }
 
     return (
       <AuthLayout
         title={t('register.successTitle')}
-        description={t('register.successDescription', { email: registeredEmail })}
-        footer={
-          <Link className="font-semibold text-link" to={AUTH_ROUTES.LOGIN}>
-            {t('register.login')}
-          </Link>
+        description={
+          <>
+            {t('register.successDescription')}
+            <strong className="mt-1 block font-semibold text-text-primary">
+              {registeredEmail}
+            </strong>
+          </>
         }
+        footer=""
       >
-        <div className="grid gap-4">
-          <Alert variant="soft" tone="success" title={t('register.checkEmail')} />
-          {inboxUrl ? (
-            <Button
-              variant="primary"
-              size="md"
-              className="w-full"
-              onClick={() => window.open(inboxUrl, '_blank', 'noopener,noreferrer')}
+        <div className="grid gap-8">
+          <Button variant="primary" size="lg" className="w-full" onClick={openInbox}>
+            {t('register.openEmail')}
+          </Button>
+
+          <div className="text-center text-body-sm text-text-secondary">
+            <span>{t('register.resendPrompt')} </span>
+            <button
+              type="button"
+              disabled={resend.isPending}
+              className="font-semibold text-link outline-none hover:text-link-hover focus-visible:focus-ring disabled:text-text-disabled"
+              onClick={() => resend.mutate(registeredInput)}
             >
-              {t('register.openEmail')}
-            </Button>
-          ) : null}
+              {resend.isPending ? t('register.resending') : t('register.resend')}
+            </button>
+            {resend.isSuccess ? (
+              <p className="mt-2 text-success-700">{t('register.resendSuccess')}</p>
+            ) : null}
+            {resend.isError ? (
+              <p className="mt-2 text-error-700">{t('register.resendError')}</p>
+            ) : null}
+          </div>
+
+          <div className="text-center">
+            <BackToLoginLink />
+          </div>
         </div>
       </AuthLayout>
     )

@@ -7,11 +7,13 @@ export function AuthLayout({
   description,
   children,
   footer,
+  headerIcon,
 }: {
   title: ReactNode
   description: ReactNode
   children: ReactNode
   footer: ReactNode
+  headerIcon?: ReactNode
 }) {
   return (
     <main className="relative grid min-h-screen bg-bg-page lg:h-screen lg:grid-cols-2 lg:overflow-hidden">
@@ -24,6 +26,7 @@ export function AuthLayout({
             <Logo size="lg" alt="SocialOps" />
           </div>
           <div className="mt-6 text-center">
+            {headerIcon ? <div className="mb-6 flex justify-center">{headerIcon}</div> : null}
             <h1 id="auth-title" className="text-heading-1 text-text-primary">
               {title}
             </h1>

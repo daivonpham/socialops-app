@@ -1,5 +1,13 @@
-import { useQuery } from '@tanstack/react-query'
-import { getBrand, getBrands } from './service'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import {
+  completeBrandOnboarding,
+  createBrand,
+  deleteBrand,
+  getBrand,
+  getBrands,
+  updateBrand,
+  uploadBrandAvatar,
+} from './service'
 
 export const BRAND_QUERY_KEYS = {
   list: (workspaceId: string | null) => ['brands', 'list', workspaceId] as const,
@@ -23,4 +31,27 @@ export function useBrand(brandId: string | null) {
     enabled: brandId !== null,
     select: (response) => response.data,
   })
+}
+
+export function useCreateBrand() {
+  return useMutation({ mutationFn: createBrand })
+}
+
+export function useUpdateBrand() {
+  return useMutation({ mutationFn: updateBrand })
+}
+
+export function useDeleteBrand() {
+  return useMutation({ mutationFn: deleteBrand })
+}
+
+export function useUploadBrandAvatar() {
+  return useMutation({
+    mutationFn: ({ brandId, avatar }: { brandId: string; avatar: File }) =>
+      uploadBrandAvatar(brandId, avatar),
+  })
+}
+
+export function useCompleteBrandOnboarding() {
+  return useMutation({ mutationFn: completeBrandOnboarding })
 }

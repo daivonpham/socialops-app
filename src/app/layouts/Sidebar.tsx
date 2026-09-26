@@ -6,6 +6,7 @@ import { getNavEntries, type NavEntry } from '@/app/router/routes'
 import { PlatformNavList } from '@/features/social-accounts'
 import { WorkspaceSwitcher } from '@/features/workspaces'
 import { allOf, usePermissions } from '@/shared/permissions'
+import { useActiveBrand } from '@/shared/scope'
 import { Divider, NavItem, SectionLabel, Spin } from '@/shared/ui'
 
 const summaryNav = getNavEntries('summary')
@@ -31,9 +32,11 @@ export function Sidebar({
 }) {
   const { t } = useTranslation('app')
   const { granted, isLoading } = usePermissions()
+  const { brandId } = useActiveBrand()
   const isPlanning = Boolean(useMatch({ path: ROUTES.PLATFORM_PLANNING, end: false }))
   const platformPath = isPlanning ? ROUTES.PLATFORM_PLANNING : ROUTES.PLATFORM_OVERVIEW
-  const canSee = (entry: NavEntry) => !entry.requires || allOf(granted, entry.requires)
+  const canSee = (entry: NavEntry) =>
+    brandId === null || !entry.requires || allOf(granted, entry.requires)
 
   return (
     <aside
@@ -94,6 +97,7 @@ function renderEntry(entry: NavEntry, collapsed: boolean, label: string) {
       icon={entry.icon}
       label={label}
       collapsed={collapsed}
+      tone="primary"
     />
   )
 }

@@ -10,6 +10,8 @@ export type DropdownMenuItem =
       label: ReactNode
       searchText?: string
       icon?: ReactNode
+      action?: { label: string; icon: ReactNode; onClick: () => void }
+      showSelectedIndicator?: boolean
       disabled?: boolean
       danger?: boolean
     }
@@ -18,6 +20,11 @@ export type DropdownFooter = {
   label: ReactNode
   icon?: ReactNode
   onClick?: () => void
+  trailingAction?: {
+    label: string
+    icon: ReactNode
+    onClick: () => void
+  }
 }
 
 export type DropdownProps = {

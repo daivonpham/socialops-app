@@ -198,18 +198,10 @@ const routes: RouteObject[] = [
   },
   {
     path: ROUTES.GOOGLE_CALLBACK,
-    handle: handle({ auth: 'public' }),
+    handle: handle({ auth: 'required' }),
     lazy: async () => ({
       Component: (await import('@/features/auth/pages/GoogleCallbackPage')).default,
     }),
-  },
-  {
-    path: ROUTES.SELECT_BRAND,
-    handle: handle({ auth: 'required' }),
-    lazy: async () => ({
-      Component: (await import('@/features/brands/pages/BrandPickerPage')).default,
-    }),
-    hydrateFallbackElement: bootFallback,
   },
   {
     path: ROUTES.ROOT,

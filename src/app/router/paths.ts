@@ -11,7 +11,6 @@ export const ROUTES = {
   GOOGLE_CALLBACK: AUTH_ROUTES.GOOGLE_CALLBACK,
   CHANGE_PASSWORD: AUTH_ROUTES.CHANGE_PASSWORD,
   PROFILE: '/profile',
-  SELECT_BRAND: AUTH_ROUTES.POST_AUTH,
   ALL_PLATFORMS: '/all-platforms',
   PLATFORM: '/platforms/:platform',
   PLATFORM_OVERVIEW: '/platforms/:platform/overview',

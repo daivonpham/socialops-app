@@ -12,6 +12,7 @@ export const MOCK_BRANDS: BrandDetailDto[] = [
     id: 'br-aurora',
     workspaceId: 'ws-north',
     name: 'Aurora Coffee',
+    avatarUrl: null,
     permissions: [
       PERMISSIONS.CHANNELS_MANAGE.key,
       PERMISSIONS.PUBLISHING_PUBLISH.key,
@@ -25,6 +26,7 @@ export const MOCK_BRANDS: BrandDetailDto[] = [
     id: 'br-nimbus',
     workspaceId: 'ws-north',
     name: 'Nimbus Wear',
+    avatarUrl: null,
     permissions: [
       PERMISSIONS.CHANNELS_MANAGE.key,
       PERMISSIONS.PUBLISHING_PUBLISH.key,
@@ -37,6 +39,7 @@ export const MOCK_BRANDS: BrandDetailDto[] = [
     id: 'br-solstice',
     workspaceId: 'ws-south',
     name: 'Solstice Spa',
+    avatarUrl: null,
     permissions: [
       PERMISSIONS.CHANNELS_MANAGE.key,
       PERMISSIONS.ANALYTICS_VIEW.key,
@@ -50,7 +53,7 @@ export const brandHandlers = [
   http.get('/api/workspaces/:workspaceId/brands', ({ params }) => {
     const list: BrandDto[] = MOCK_BRANDS.filter(
       (brand) => brand.workspaceId === params.workspaceId,
-    ).map(({ id, workspaceId, name }) => ({ id, workspaceId, name }))
+    ).map(({ id, workspaceId, name, avatarUrl }) => ({ id, workspaceId, name, avatarUrl }))
     return HttpResponse.json(envelope(list, `/workspaces/${String(params.workspaceId)}/brands`))
   }),
   http.get('/api/brands/:brandId', ({ params }) => {

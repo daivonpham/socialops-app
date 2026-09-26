@@ -15,6 +15,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
     queryClient.clear()
     setStatus('anonymous')
+    localStorage.removeItem('socialops.active_workspace_id')
+    localStorage.removeItem('socialops.active_brand_id')
+    localStorage.removeItem('socialops.scope')
   }, [queryClient])
 
   useEffect(() => {
@@ -57,7 +60,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await logout()
         } finally {
           becomeAnonymous()
-          localStorage.removeItem('socialops.scope')
         }
       },
     }),

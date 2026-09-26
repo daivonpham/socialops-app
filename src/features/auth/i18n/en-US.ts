@@ -1,4 +1,7 @@
 export const authEnUS = {
+  common: {
+    backToLogin: 'Back to log in',
+  },
   fields: {
     name: 'Full name',
     namePlaceholder: 'Enter your full name',
@@ -43,10 +46,15 @@ export const authEnUS = {
     google: 'Sign up with Google',
     hasAccount: 'Already have an account?',
     login: 'Sign in',
-    successTitle: 'Verify your email to continue',
-    successDescription: 'We sent a verification link to {{email}}.',
-    checkEmail: 'Check your inbox and open the link to activate your account.',
-    openEmail: 'Open inbox',
+    successTitle: 'Check your email',
+    successDescription: 'We sent a verification link to',
+    openEmail: 'Open email app',
+    resendPrompt: 'Didn’t receive the email?',
+    resend: 'Click to resend',
+    resending: 'Sending…',
+    resendSuccess: 'A new verification email has been sent.',
+    resendError: 'Could not resend the email. Please try again.',
+    backToLogin: 'Back to log in',
   },
   forgot: {
     title: 'Forgot your password?',
@@ -68,7 +76,8 @@ export const authEnUS = {
     title: 'Verify your email',
     description: 'We are confirming your email address.',
     success: 'Your email has been verified. You can now sign in.',
-    failure: 'This verification link is invalid or has expired. Register again to receive a new link.',
+    failure:
+      'This verification link is invalid or has expired. Register again to receive a new link.',
     missingToken: 'This verification link is invalid.',
     login: 'Go to sign in',
     registerAgain: 'Register again',

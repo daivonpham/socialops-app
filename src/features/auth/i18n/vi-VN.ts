@@ -2,6 +2,9 @@ import type { TranslationShape } from '@/shared/i18n'
 import type { authEnUS } from './en-US'
 
 export const authViVN = {
+  common: {
+    backToLogin: 'Quay lại đăng nhập',
+  },
   fields: {
     name: 'Họ và tên',
     namePlaceholder: 'Nhập họ và tên',
@@ -46,10 +49,15 @@ export const authViVN = {
     google: 'Đăng ký bằng Google',
     hasAccount: 'Đã có tài khoản?',
     login: 'Đăng nhập',
-    successTitle: 'Xác minh email để tiếp tục',
-    successDescription: 'Chúng tôi đã gửi liên kết xác minh đến {{email}}.',
-    checkEmail: 'Kiểm tra hộp thư và nhấn vào liên kết để kích hoạt tài khoản.',
-    openEmail: 'Mở hộp thư',
+    successTitle: 'Kiểm tra email của bạn',
+    successDescription: 'Chúng tôi đã gửi liên kết xác minh đến',
+    openEmail: 'Mở ứng dụng email',
+    resendPrompt: 'Bạn chưa nhận được email?',
+    resend: 'Nhấn để gửi lại',
+    resending: 'Đang gửi…',
+    resendSuccess: 'Email xác minh mới đã được gửi.',
+    resendError: 'Không thể gửi lại email. Vui lòng thử lại.',
+    backToLogin: 'Quay lại đăng nhập',
   },
   forgot: {
     title: 'Quên mật khẩu?',
@@ -71,7 +79,8 @@ export const authViVN = {
     title: 'Xác minh email',
     description: 'Chúng tôi đang xác nhận địa chỉ email của bạn.',
     success: 'Email đã được xác minh. Bạn có thể đăng nhập.',
-    failure: 'Liên kết xác minh không hợp lệ hoặc đã hết hạn. Hãy đăng ký lại để nhận liên kết mới.',
+    failure:
+      'Liên kết xác minh không hợp lệ hoặc đã hết hạn. Hãy đăng ký lại để nhận liên kết mới.',
     missingToken: 'Liên kết xác minh không hợp lệ.',
     login: 'Đi đến đăng nhập',
     registerAgain: 'Đăng ký lại',
