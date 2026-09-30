@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useActiveBrand, useActiveWorkspace } from '@/shared/scope'
-import { getBrands } from '@/features/brands/api/service'
+import { getBrands } from '@/features/brands'
 import {
   Button,
   Dropdown,

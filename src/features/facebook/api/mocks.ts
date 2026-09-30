@@ -194,22 +194,31 @@ const MEDIA_VIEWS_TREND = [
 
 const METRICS = [
   { key: 'mediaViews' as const, value: 124800, change: 12.4 },
-  { key: 'uniqueViewers' as const, value: 84200, change: 8.2, estimated: true },
   { key: 'contentInteractions' as const, value: 18420, change: 5.7 },
   { key: 'followers' as const, value: 80500, change: 2.1 },
   { key: 'published' as const, value: 42, change: -4.3 },
 ]
 
+const ANALYTICS_METRICS: MetricDto[] = [
+  METRICS[0],
+  { key: 'uniqueViewers', value: 84200, change: 8.2, estimated: true },
+  ...METRICS.slice(1),
+  { key: 'profileViews', value: 15600, change: 6.8 },
+  { key: 'netFollows', value: 1280, change: 4.6 },
+  { key: 'engagementRate', value: 14.8, change: 1.2, unit: 'percent' },
+]
+
 const overviewFor = (brandId: string): FacebookOverviewDto => {
   const pages = integrationFor(brandId).pages
   return {
+    insightsAvailable: true,
     metrics: METRICS,
-    mediaViewsTrend: MEDIA_VIEWS_TREND,
+    contentInteractionsTrend: MEDIA_VIEWS_TREND,
     pagePerformance: pages.map((page, index) => ({
       pageId: page.id,
       pageName: page.name,
+      avatarUrl: page.avatarUrl,
       mediaViews: 54800 - index * 9100,
-      uniqueViewers: 38200 - index * 6800,
       contentInteractions: 4280 - index * 630,
       followersCount: page.followersCount,
       publishedPosts: 18 - index * 4,
@@ -222,14 +231,27 @@ const overviewFor = (brandId: string): FacebookOverviewDto => {
 }
 
 function metricsForPage(row: FacebookOverviewDto['pagePerformance'][number]): MetricDto[] {
-  const values: Record<MetricDto['key'], number> = {
+  const values: Partial<Record<MetricDto['key'], number>> = {
     mediaViews: row.mediaViews,
-    uniqueViewers: row.uniqueViewers,
     contentInteractions: row.contentInteractions,
     followers: row.followersCount,
     published: row.publishedPosts,
   }
-  return METRICS.map((metric) => ({ ...metric, value: values[metric.key] }))
+  return METRICS.map((metric) => ({ ...metric, value: values[metric.key] ?? metric.value }))
+}
+
+function analyticsMetricsForPage(row: FacebookOverviewDto['pagePerformance'][number]): MetricDto[] {
+  const values: Partial<Record<MetricDto['key'], number>> = {
+    mediaViews: row.mediaViews,
+    uniqueViewers: Math.round(row.mediaViews * 0.72),
+    contentInteractions: row.contentInteractions,
+    followers: row.followersCount,
+    published: row.publishedPosts,
+  }
+  return ANALYTICS_METRICS.map((metric) => ({
+    ...metric,
+    value: values[metric.key] ?? metric.value,
+  }))
 }
 
 function scaleTrend(points: typeof MEDIA_VIEWS_TREND, ratio: number) {
@@ -241,12 +263,23 @@ function scaleTrend(points: typeof MEDIA_VIEWS_TREND, ratio: number) {
 }
 
 const analyticsFor = (brandId: string): FacebookAnalyticsDto => ({
-  metrics: METRICS,
+  insightsAvailable: true,
+  metrics: ANALYTICS_METRICS,
   mediaViewsTrend: MEDIA_VIEWS_TREND,
+  uniqueViewersTrend: MEDIA_VIEWS_TREND.map((point) => ({
+    ...point,
+    primary: Math.round(point.primary * 0.72),
+    comparison: Math.round(point.comparison * 0.72),
+  })),
   contentInteractionsTrend: MEDIA_VIEWS_TREND.map((point) => ({
     ...point,
     primary: Math.round(point.primary / 10),
     comparison: Math.round(point.comparison / 10),
+  })),
+  followerGrowthTrend: MEDIA_VIEWS_TREND.map((point) => ({
+    ...point,
+    primary: Math.round(point.primary / 300),
+    comparison: Math.round(point.comparison / 300),
   })),
   audience: [
     { label: '18–24', value: 18 },
@@ -254,19 +287,46 @@ const analyticsFor = (brandId: string): FacebookAnalyticsDto => ({
     { label: '35–44', value: 26 },
     { label: '45+', value: 14 },
   ],
+  audienceCountries: [
+    { label: 'VN', value: 88 },
+    { label: 'US', value: 7 },
+    { label: 'Other', value: 5 },
+  ],
+  audienceCities: [
+    { label: 'Ho Chi Minh City', value: 54 },
+    { label: 'Hanoi', value: 28 },
+    { label: 'Other', value: 18 },
+  ],
   contentBreakdown: [
     { label: 'images', value: 48 },
     { label: 'videos', value: 34 },
-    { label: 'text', value: 18 },
+    { label: 'links', value: 10 },
+    { label: 'text', value: 8 },
   ],
   rows: overviewFor(brandId).pagePerformance.map((row) => ({
     pageId: row.pageId,
     pageName: row.pageName,
+    avatarUrl: integrationFor(brandId).pages.find((page) => page.id === row.pageId)?.avatarUrl,
     mediaViews: row.mediaViews,
-    uniqueViewers: row.uniqueViewers,
+    uniqueViewers: Math.round(row.mediaViews * 0.72),
     contentInteractions: row.contentInteractions,
     followersCount: row.followersCount,
+    profileViews: Math.round(row.mediaViews / 8),
+    netFollows: Math.round(row.followersCount / 25),
+    publishedPosts: row.publishedPosts,
+    engagementRate: row.mediaViews
+      ? Math.round((row.contentInteractions / row.mediaViews) * 10_000) / 100
+      : 0,
   })),
+  availableMetrics: [
+    'mediaViews',
+    'uniqueViewers',
+    'contentInteractions',
+    'profileViews',
+    'netFollows',
+  ],
+  unavailableMetrics: [],
+  lastUpdatedAt: new Date().toISOString(),
 })
 
 const ok = async () => delay(350)
@@ -336,11 +396,60 @@ export const facebookHandlers = [
         : {
             ...overview,
             metrics: metricsForPage(selectedPage),
-            mediaViewsTrend: scaleTrend(overview.mediaViewsTrend, ratio),
+            contentInteractionsTrend: scaleTrend(overview.contentInteractionsTrend, ratio),
             pagePerformance: [selectedPage],
             topPosts: overview.topPosts.filter((post) => post.pageId === pageId),
           }
     return HttpResponse.json(envelope(data, `/brands/${String(params.brandId)}/facebook/overview`))
+  }),
+  http.get('/api/brands/:brandId/facebook/overview/summary', async ({ params, request }) => {
+    await ok()
+    const pageId = new URL(request.url).searchParams.get('pageId') ?? 'all'
+    const overview = overviewFor(String(params.brandId))
+    const rows =
+      pageId === 'all'
+        ? overview.pagePerformance
+        : overview.pagePerformance.filter((row) => row.pageId === pageId)
+    return HttpResponse.json(
+      envelope(
+        {
+          insightsAvailable: overview.insightsAvailable,
+          metrics: overview.metrics.filter((metric) => metric.key !== 'published'),
+          contentInteractionsTrend: overview.contentInteractionsTrend,
+          pagePerformance: rows.map((row) => ({
+            pageId: row.pageId,
+            pageName: row.pageName,
+            avatarUrl: row.avatarUrl,
+            mediaViews: row.mediaViews,
+            contentInteractions: row.contentInteractions,
+            followersCount: row.followersCount,
+          })),
+        },
+        `/brands/${String(params.brandId)}/facebook/overview/summary`,
+      ),
+    )
+  }),
+  http.get('/api/brands/:brandId/facebook/overview/details', async ({ params, request }) => {
+    await delay(700)
+    const pageId = new URL(request.url).searchParams.get('pageId') ?? 'all'
+    const overview = overviewFor(String(params.brandId))
+    const rows =
+      pageId === 'all'
+        ? overview.pagePerformance
+        : overview.pagePerformance.filter((row) => row.pageId === pageId)
+    return HttpResponse.json(
+      envelope(
+        {
+          publishedMetric: overview.metrics.find((metric) => metric.key === 'published'),
+          publishedPostsByPage: rows.map((row) => ({
+            pageId: row.pageId,
+            publishedPosts: row.publishedPosts,
+          })),
+          topPosts: overview.topPosts.filter((post) => pageId === 'all' || post.pageId === pageId),
+        },
+        `/brands/${String(params.brandId)}/facebook/overview/details`,
+      ),
+    )
   }),
   http.get('/api/brands/:brandId/facebook/posts', async ({ params, request }) => {
     await ok()
@@ -416,11 +525,98 @@ export const facebookHandlers = [
         ? analytics
         : {
             ...analytics,
-            metrics: metricsForPage(overviewRow),
+            metrics: analyticsMetricsForPage(overviewRow),
             mediaViewsTrend: scaleTrend(analytics.mediaViewsTrend, ratio),
             contentInteractionsTrend: scaleTrend(analytics.contentInteractionsTrend, ratio),
             rows: [selectedRow],
           }
     return HttpResponse.json(envelope(data, `/brands/${String(params.brandId)}/facebook/analytics`))
+  }),
+  http.get('/api/brands/:brandId/facebook/analytics/summary', async ({ params, request }) => {
+    await ok()
+    const pageId = new URL(request.url).searchParams.get('pageId') ?? 'all'
+    const analytics = analyticsFor(String(params.brandId))
+    const rows =
+      pageId === 'all' ? analytics.rows : analytics.rows.filter((row) => row.pageId === pageId)
+    return HttpResponse.json(
+      envelope(
+        {
+          insightsAvailable: analytics.insightsAvailable,
+          metrics: analytics.metrics.filter((metric) => metric.key !== 'published'),
+          mediaViewsTrend: analytics.mediaViewsTrend,
+          uniqueViewersTrend: analytics.uniqueViewersTrend,
+          contentInteractionsTrend: analytics.contentInteractionsTrend,
+          followerGrowthTrend: analytics.followerGrowthTrend,
+          rows: rows.map((row) => ({
+            pageId: row.pageId,
+            pageName: row.pageName,
+            avatarUrl: row.avatarUrl,
+            mediaViews: row.mediaViews,
+            uniqueViewers: row.uniqueViewers,
+            contentInteractions: row.contentInteractions,
+            followersCount: row.followersCount,
+            profileViews: row.profileViews,
+            netFollows: row.netFollows,
+            engagementRate: row.engagementRate,
+          })),
+          availableMetrics: analytics.availableMetrics,
+          unavailableMetrics: analytics.unavailableMetrics,
+          lastUpdatedAt: analytics.lastUpdatedAt,
+        },
+        `/brands/${String(params.brandId)}/facebook/analytics/summary`,
+      ),
+    )
+  }),
+  http.get('/api/brands/:brandId/facebook/analytics/details', async ({ params, request }) => {
+    await delay(700)
+    const pageId = new URL(request.url).searchParams.get('pageId') ?? 'all'
+    const analytics = analyticsFor(String(params.brandId))
+    const rows =
+      pageId === 'all' ? analytics.rows : analytics.rows.filter((row) => row.pageId === pageId)
+    return HttpResponse.json(
+      envelope(
+        {
+          publishedMetric: analytics.metrics.find((metric) => metric.key === 'published'),
+          audienceCountries: analytics.audienceCountries,
+          audienceCities: analytics.audienceCities,
+          contentBreakdown: analytics.contentBreakdown,
+          publishedPostsByPage: rows.map((row) => ({
+            pageId: row.pageId,
+            publishedPosts: row.publishedPosts,
+          })),
+        },
+        `/brands/${String(params.brandId)}/facebook/analytics/details`,
+      ),
+    )
+  }),
+  http.get('/api/brands/:brandId/facebook/details', async ({ params, request }) => {
+    await delay(700)
+    const pageId = new URL(request.url).searchParams.get('pageId') ?? 'all'
+    const brandId = String(params.brandId)
+    const analytics = analyticsFor(brandId)
+    const overview = overviewFor(brandId)
+    const rows =
+      pageId === 'all' ? analytics.rows : analytics.rows.filter((row) => row.pageId === pageId)
+
+    return HttpResponse.json(
+      envelope(
+        {
+          publishedMetric: analytics.metrics.find((metric) => metric.key === 'published') ?? {
+            key: 'published',
+            value: 0,
+            change: 0,
+          },
+          audienceCountries: analytics.audienceCountries,
+          audienceCities: analytics.audienceCities,
+          contentBreakdown: analytics.contentBreakdown,
+          publishedPostsByPage: rows.map((row) => ({
+            pageId: row.pageId,
+            publishedPosts: row.publishedPosts,
+          })),
+          topPosts: overview.topPosts.filter((post) => pageId === 'all' || post.pageId === pageId),
+        },
+        `/brands/${brandId}/facebook/details`,
+      ),
+    )
   }),
 ]

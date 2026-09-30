@@ -2,13 +2,17 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { hasPermission, usePermissions } from '@/shared/permissions'
 import { Button, IconCalendar, IconFacebook, IconImage, IconInfo, IconReports } from '@/shared/ui'
-import { useConnectFacebook } from '../api'
 import { FACEBOOK_ACCESS } from '../config/facebook-access'
 
-export function FacebookDisconnected({ brandId }: { brandId: string }) {
+export function FacebookDisconnected({
+  isConnecting,
+  onConnect,
+}: {
+  isConnecting: boolean
+  onConnect: () => void
+}) {
   const { t } = useTranslation('facebook')
   const { granted } = usePermissions()
-  const connect = useConnectFacebook(brandId)
   const canManageConnection = hasPermission(granted, FACEBOOK_ACCESS.manageConnection[0])
 
   return (
@@ -36,11 +40,11 @@ export function FacebookDisconnected({ brandId }: { brandId: string }) {
             size="lg"
             variant="primary"
             icon={<IconFacebook />}
-            loading={connect.isPending}
+            loading={isConnecting}
             disabled={!canManageConnection}
-            onClick={() => connect.mutate({ brandId })}
+            onClick={onConnect}
           >
-            {connect.isPending ? t('connection.connecting') : t('connection.connect')}
+            {isConnecting ? t('connection.connecting') : t('connection.connect')}
           </Button>
           {!canManageConnection ? (
             <p className="mt-2 max-w-56 text-caption text-error-700">

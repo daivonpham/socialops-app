@@ -44,6 +44,42 @@
 
 /* Optional elevated close treatment for prominent detail modals. */
 @layer components {
+  .app-date-range-picker-popup .ant-picker-panel-container {
+    @apply overflow-hidden rounded-2xl border border-border-subtle bg-bg-surface shadow-lg;
+  }
+
+  .app-date-range-picker-popup .ant-picker-presets {
+    @apply border-e border-border-subtle p-3;
+  }
+
+  .app-date-range-picker-popup .ant-picker-presets ul {
+    @apply grid gap-1;
+  }
+
+  .app-date-range-picker-popup .ant-picker-presets li {
+    @apply m-0 rounded-lg px-3 py-2 text-body-sm text-text-secondary transition-colors;
+  }
+
+  .app-date-range-picker-popup .ant-picker-presets li:hover {
+    @apply bg-bg-surface-muted text-text-primary;
+  }
+
+  .app-date-range-picker-popup .ant-picker-header {
+    @apply border-border-subtle px-4 py-3;
+  }
+
+  .app-date-range-picker-popup .ant-picker-body {
+    @apply px-5 py-4;
+  }
+
+  .app-date-range-picker-popup .ant-picker-cell-inner {
+    @apply rounded-full;
+  }
+
+  .app-date-range-picker-popup .ant-picker-footer {
+    @apply border-border-subtle px-4 py-3;
+  }
+
   .app-button-layered {
     display: inline-grid;
     box-sizing: border-box;

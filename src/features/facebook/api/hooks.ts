@@ -6,24 +6,46 @@ import {
   disconnectFacebook,
   disconnectFacebookPage,
   getFacebookAnalytics,
+  getFacebookAnalyticsDetails,
+  getFacebookAnalyticsSummary,
+  getFacebookDetails,
+  getAvailableFacebookPages,
   getFacebookIntegration,
   getFacebookOverview,
+  getFacebookOverviewDetails,
+  getFacebookOverviewSummary,
   getFacebookPosts,
   reconnectFacebookPage,
+  selectFacebookPages,
   startFacebookConnect,
 } from './service'
-import type { FacebookPostQuery, FacebookQuery } from './types'
+import type {
+  ConnectFacebookInput,
+  FacebookPostQuery,
+  FacebookQuery,
+  SelectFacebookPagesInput,
+} from './types'
 
 export const FACEBOOK_QUERY_KEYS = {
   root: (brandId: string | null) => ['facebook', brandId] as const,
   integration: (brandId: string | null) => ['facebook', brandId, 'integration'] as const,
+  details: (brandId: string | null, query: FacebookQuery) =>
+    ['facebook', brandId, 'details', query] as const,
 
   overview: (brandId: string | null, query: FacebookQuery) =>
     ['facebook', brandId, 'overview', query] as const,
+  overviewSummary: (brandId: string | null, query: FacebookQuery) =>
+    ['facebook', brandId, 'overview', 'summary', query] as const,
+  overviewDetails: (brandId: string | null, query: FacebookQuery) =>
+    ['facebook', brandId, 'overview', 'details', query] as const,
   posts: (brandId: string | null, query: FacebookPostQuery) =>
     ['facebook', brandId, 'posts', query] as const,
   analytics: (brandId: string | null, query: FacebookQuery) =>
     ['facebook', brandId, 'analytics', query] as const,
+  analyticsSummary: (brandId: string | null, query: FacebookQuery) =>
+    ['facebook', brandId, 'analytics', 'summary', query] as const,
+  analyticsDetails: (brandId: string | null, query: FacebookQuery) =>
+    ['facebook', brandId, 'analytics', 'details', query] as const,
 }
 
 export function useFacebookIntegration(brandId: string | null) {
@@ -44,6 +66,33 @@ export function useFacebookOverview(brandId: string | null, query: FacebookQuery
   })
 }
 
+export function useFacebookOverviewSummary(brandId: string | null, query: FacebookQuery) {
+  return useQuery({
+    queryKey: FACEBOOK_QUERY_KEYS.overviewSummary(brandId, query),
+    queryFn: () => getFacebookOverviewSummary(brandId!, query),
+    enabled: brandId !== null,
+    select: (response) => response.data,
+  })
+}
+
+export function useFacebookDetails(brandId: string | null, query: FacebookQuery) {
+  return useQuery({
+    queryKey: FACEBOOK_QUERY_KEYS.details(brandId, query),
+    queryFn: () => getFacebookDetails(brandId!, query),
+    enabled: brandId !== null,
+    select: (response) => response.data,
+  })
+}
+
+export function useFacebookOverviewDetails(brandId: string | null, query: FacebookQuery) {
+  return useQuery({
+    queryKey: FACEBOOK_QUERY_KEYS.overviewDetails(brandId, query),
+    queryFn: () => getFacebookOverviewDetails(brandId!, query),
+    enabled: brandId !== null,
+    select: (response) => response.data,
+  })
+}
+
 export function useFacebookPosts(brandId: string | null, query: FacebookPostQuery) {
   return useQuery({
     queryKey: FACEBOOK_QUERY_KEYS.posts(brandId, query),
@@ -58,6 +107,24 @@ export function useFacebookAnalytics(brandId: string | null, query: FacebookQuer
   return useQuery({
     queryKey: FACEBOOK_QUERY_KEYS.analytics(brandId, query),
     queryFn: () => getFacebookAnalytics(brandId!, query),
+    enabled: brandId !== null,
+    select: (response) => response.data,
+  })
+}
+
+export function useFacebookAnalyticsSummary(brandId: string | null, query: FacebookQuery) {
+  return useQuery({
+    queryKey: FACEBOOK_QUERY_KEYS.analyticsSummary(brandId, query),
+    queryFn: () => getFacebookAnalyticsSummary(brandId!, query),
+    enabled: brandId !== null,
+    select: (response) => response.data,
+  })
+}
+
+export function useFacebookAnalyticsDetails(brandId: string | null, query: FacebookQuery) {
+  return useQuery({
+    queryKey: FACEBOOK_QUERY_KEYS.analyticsDetails(brandId, query),
+    queryFn: () => getFacebookAnalyticsDetails(brandId!, query),
     enabled: brandId !== null,
     select: (response) => response.data,
   })
@@ -86,8 +153,52 @@ function useFacebookMutation<TVariables>(
   })
 }
 
-export function useConnectFacebook(brandId: string | null) {
-  return useFacebookMutation(startFacebookConnect, brandId)
+export function useConnectFacebook() {
+  return useMutation({
+    mutationFn: async (input: ConnectFacebookInput) => {
+      const width = 720
+      const height = 760
+      const left = Math.max(0, window.screenX + (window.outerWidth - width) / 2)
+      const top = Math.max(0, window.screenY + (window.outerHeight - height) / 2)
+      const popup = window.open(
+        'about:blank',
+        'socialops-facebook-oauth',
+        `popup=yes,width=${width},height=${height},left=${left},top=${top}`,
+      )
+      try {
+        const result = await startFacebookConnect(input)
+        return { ...result, popup }
+      } catch (error) {
+        popup?.close()
+        throw error
+      }
+    },
+    onSuccess: ({ authorizationUrl, popup }) => {
+      if (popup) popup.location.href = authorizationUrl
+      else window.location.assign(authorizationUrl)
+    },
+  })
+}
+
+export function useAvailableFacebookPages(brandId: string | null, connectionId: string | null) {
+  return useQuery({
+    queryKey: ['facebook', brandId, 'available-pages', connectionId],
+    queryFn: () => getAvailableFacebookPages(brandId!, connectionId!),
+    enabled: brandId !== null && connectionId !== null,
+  })
+}
+
+export function useSelectFacebookPages(brandId: string | null) {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: (input: SelectFacebookPagesInput) => selectFacebookPages(input),
+    onSuccess: () => {
+      void Promise.all([
+        client.invalidateQueries({ queryKey: FACEBOOK_QUERY_KEYS.integration(brandId) }),
+        client.invalidateQueries({ queryKey: SOCIAL_ACCOUNT_QUERY_KEYS.counts(brandId) }),
+      ])
+    },
+  })
 }
 
 export function useReconnectFacebookPage(brandId: string | null) {

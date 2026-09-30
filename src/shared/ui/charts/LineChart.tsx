@@ -16,6 +16,7 @@ export type LineChartSeries = {
   label: string
   tone?: 'primary' | 'neutral' | 'facebook'
   dashed?: boolean
+  opacity?: number
 }
 
 export type LineChartProps = {
@@ -49,6 +50,7 @@ export function LineChart({ data, xAxisKey, series, ariaLabel, valueFormatter }:
               style={{
                 borderColor: STROKE_BY_TONE[item.tone ?? 'primary'],
                 borderTopStyle: item.dashed ? 'dashed' : 'solid',
+                opacity: item.opacity,
               }}
             />
             {item.label}
@@ -100,11 +102,13 @@ export function LineChart({ data, xAxisKey, series, ariaLabel, valueFormatter }:
                   name={item.label}
                   stroke={stroke}
                   strokeWidth={componentToken.chart.lineWidth}
+                  strokeOpacity={item.opacity}
                   strokeDasharray={item.dashed ? componentToken.chart.gridDash : undefined}
                   dot={false}
                   activeDot={{
                     r: componentToken.chart.pointRadius + componentToken.chart.lineWidth,
                     fill: stroke,
+                    fillOpacity: item.opacity,
                     stroke: semanticColor.bg.surface,
                     strokeWidth: componentToken.chart.lineWidth,
                   }}

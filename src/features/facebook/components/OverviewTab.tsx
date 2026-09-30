@@ -1,30 +1,38 @@
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { formatNumber, type AppLocale } from '@/shared/i18n'
+import { formatDateTime, formatNumber, type AppLocale } from '@/shared/i18n'
 import {
+  Avatar,
   Card,
   DataTable,
-  EmptyState,
+  IconComment,
   IconFacebook,
+  IconHeart,
   IconImage,
+  IconLink,
+  IconShare,
+  IconView,
+  Image,
   SectionError,
   SectionSkeleton,
   type DataTableColumn,
 } from '@/shared/ui'
 import {
-  useFacebookOverview,
-  type FacebookOverviewDto,
+  useFacebookDetails,
+  useFacebookOverviewSummary,
+  type FacebookOverviewSummaryDto,
   type FacebookPostDto,
   type FacebookQuery,
 } from '../api'
 import { MetricCards, TrendChart } from './FacebookVisuals'
 
-type PageRow = FacebookOverviewDto['pagePerformance'][number]
+type PageRow = FacebookOverviewSummaryDto['pagePerformance'][number] & { publishedPosts: number }
 
 export function OverviewTab({ brandId, query }: { brandId: string; query: FacebookQuery }) {
   const { t, i18n } = useTranslation('facebook')
   const locale = i18n.resolvedLanguage as AppLocale
-  const overview = useFacebookOverview(brandId, query)
+  const summary = useFacebookOverviewSummary(brandId, query)
+  const details = useFacebookDetails(brandId, query)
   const columns = useMemo<DataTableColumn<PageRow>[]>(
     () => [
       {
@@ -32,18 +40,14 @@ export function OverviewTab({ brandId, query }: { brandId: string; query: Facebo
         dataIndex: 'pageName',
         title: t('overview.pageName'),
         width: 'wide',
-        sortable: true,
         render: (_, row) => (
           <span className="flex min-w-0 items-center gap-3">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-info-50 text-platform-facebook">
-              <IconFacebook />
-            </span>
+            <Avatar name={row.pageName} src={row.avatarUrl} size="sm" />
             <span className="truncate text-label-md text-text-primary">{row.pageName}</span>
           </span>
         ),
       },
       numberColumn('mediaViews', t('overview.mediaViews'), locale),
-      numberColumn('uniqueViewers', t('overview.uniqueViewers'), locale),
       numberColumn('contentInteractions', t('overview.contentInteractions'), locale),
       numberColumn('followersCount', t('overview.followers'), locale),
       numberColumn('publishedPosts', t('overview.posts'), locale),
@@ -51,55 +55,71 @@ export function OverviewTab({ brandId, query }: { brandId: string; query: Facebo
     [locale, t],
   )
 
-  if (overview.isPending)
+  if (summary.isPending)
     return (
       <div className="grid gap-6">
         <SectionSkeleton rows={3} />
         <SectionSkeleton rows={6} />
       </div>
     )
-  if (overview.isError)
+  if (summary.isError)
     return (
       <SectionError
         title={t('common.loadError')}
         retryLabel={t('common.retry')}
-        onRetry={() => void overview.refetch()}
+        onRetry={() => void summary.refetch()}
       />
     )
 
-  const data = overview.data
+  const data = summary.data
   if (!data) return null
-  if (!data.metrics.length)
-    return (
-      <EmptyState title={t('overview.noDataTitle')} description={t('overview.noDataDescription')} />
-    )
-
+  const publishedByPage = new Map(
+    details.data?.publishedPostsByPage.map((item) => [item.pageId, item.publishedPosts]) ?? [],
+  )
+  const pagePerformance = data.pagePerformance.map((row) => ({
+    ...row,
+    publishedPosts: publishedByPage.get(row.pageId) ?? 0,
+  }))
+  const metrics = details.data ? [...data.metrics, details.data.publishedMetric] : data.metrics
   return (
     <div className="grid gap-6">
-      <MetricCards metrics={data.metrics} />
+      <MetricCards metrics={metrics} />
 
-      <Card title={t('overview.trendTitle')}>
+      <Card title={t('overview.interactionsTrendTitle')}>
         <div className="p-5">
           <TrendChart
-            ariaLabel={t('overview.trendTitle')}
-            points={data.mediaViewsTrend}
+            ariaLabel={t('overview.interactionsTrendTitle')}
+            points={data.contentInteractionsTrend}
             currentLabel={t('overview.current')}
             comparisonLabel={query.compare === 'previous' ? t('overview.comparison') : undefined}
           />
         </div>
       </Card>
 
-      <Card title={t('overview.pagePerformance')} background="white">
-        <DataTable data={data.pagePerformance} columns={columns} getRowId={(row) => row.pageId} />
-      </Card>
+      {details.isPending ? <SectionSkeleton rows={4} /> : null}
+      {details.isError ? (
+        <SectionError
+          title={t('common.loadError')}
+          retryLabel={t('common.retry')}
+          onRetry={() => void details.refetch()}
+        />
+      ) : null}
 
-      <Card title={t('overview.topPosts')}>
-        <div className="divide-y divide-border-subtle">
-          {data.topPosts.map((post, index) => (
-            <TopPost key={post.id} post={post} rank={index + 1} locale={locale} />
-          ))}
-        </div>
-      </Card>
+      {query.pageId === 'all' && details.data ? (
+        <Card title={t('overview.pagePerformance')} background="white">
+          <DataTable data={pagePerformance} columns={columns} getRowId={(row) => row.pageId} />
+        </Card>
+      ) : null}
+
+      {details.data ? (
+        <Card title={t('overview.topPosts')}>
+          <div className="divide-y divide-border-subtle">
+            {details.data.topPosts.map((post, index) => (
+              <TopPost key={post.id} post={post} rank={index + 1} locale={locale} />
+            ))}
+          </div>
+        </Card>
+      ) : null}
     </div>
   )
 }
@@ -115,7 +135,6 @@ function numberColumn(
     title,
     width: 'default',
     align: 'end',
-    sortable: true,
     render: (value) => (
       <span className="text-body-sm tabular-nums text-text-primary">
         {formatNumber(Number(value), locale)}
@@ -135,41 +154,84 @@ function TopPost({
 }) {
   const { t } = useTranslation('facebook')
   return (
-    <article className="grid gap-4 px-5 py-4 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center">
-      <div className="flex items-center gap-3">
-        <span className="w-5 text-center text-label-sm tabular-nums text-text-tertiary">
-          {rank}
-        </span>
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-bg-surface-muted text-text-tertiary">
+    <article className="grid gap-4 px-5 py-4 sm:grid-cols-[auto_112px_minmax(0,1fr)] sm:items-center">
+      <span className="w-5 text-center text-label-sm tabular-nums text-text-tertiary">{rank}</span>
+      <div className="flex h-20 w-28 items-center justify-center overflow-hidden rounded-lg bg-bg-surface-muted text-icon-md text-text-tertiary">
+        {post.thumbnailUrl ? (
+          <Image
+            src={post.thumbnailUrl}
+            alt={post.message || post.pageName}
+            preview={false}
+            className="h-20 w-28 object-cover"
+            wrapperClassName="h-20 w-28"
+          />
+        ) : (
           <IconImage />
-        </span>
+        )}
       </div>
       <div className="min-w-0">
-        <p className="line-clamp-2 text-body-sm text-text-primary">{post.message}</p>
-        <p className="mt-1 flex items-center gap-2 text-caption text-text-tertiary">
-          <IconFacebook className="text-platform-facebook" />
-          {post.pageName}
+        <div className="flex items-start justify-between gap-4">
+          <p className="line-clamp-2 text-body-sm text-text-primary">
+            {post.message || t('overview.noPostMessage')}
+          </p>
+          {post.permalinkUrl ? (
+            <a
+              href={post.permalinkUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex shrink-0 items-center gap-1 text-label-sm text-action-primary hover:text-action-primary-hover"
+            >
+              <IconLink />
+              {t('overview.openPost')}
+            </a>
+          ) : null}
+        </div>
+        <p className="mt-1 flex flex-wrap items-center gap-x-2 text-caption text-text-tertiary">
+          <span className="flex items-center gap-1">
+            <IconFacebook className="text-platform-facebook" />
+            {post.pageName}
+          </span>
+          <span aria-hidden>·</span>
+          <span>{formatDateTime(post.publishedAt ?? post.createdAt, locale)}</span>
         </p>
-      </div>
-      <div className="flex gap-6 ps-8 sm:ps-0">
-        <MetricValue
-          label={t('overview.mediaViews')}
-          value={formatNumber(post.mediaViews, locale)}
-        />
-        <MetricValue
-          label={t('overview.contentInteractions')}
-          value={formatNumber(post.contentInteractions, locale)}
-        />
+        <div className="mt-3 flex flex-wrap gap-x-8 gap-y-3">
+          <PostMetric
+            icon={<IconView />}
+            label={t('overview.mediaViews')}
+            value={post.mediaViews}
+          />
+          <PostMetric
+            icon={<IconHeart />}
+            label={t('overview.reactions')}
+            value={post.reactions ?? 0}
+          />
+          <PostMetric
+            icon={<IconComment />}
+            label={t('overview.comments')}
+            value={post.comments ?? 0}
+          />
+          <PostMetric icon={<IconShare />} label={t('overview.shares')} value={post.shares ?? 0} />
+          <PostMetric
+            icon={<IconHeart />}
+            label={t('overview.contentInteractions')}
+            value={post.contentInteractions}
+          />
+        </div>
       </div>
     </article>
   )
 }
 
-function MetricValue({ label, value }: { label: string; value: string }) {
+function PostMetric({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
+  const { i18n } = useTranslation('facebook')
+  const locale = i18n.resolvedLanguage as AppLocale
   return (
-    <div className="text-end">
-      <strong className="block text-label-md tabular-nums text-text-primary">{value}</strong>
-      <span className="text-caption text-text-tertiary">{label}</span>
-    </div>
+    <span className="flex items-center gap-2 text-caption text-text-tertiary">
+      <span className="text-text-disabled">{icon}</span>
+      <strong className="text-label-sm tabular-nums text-text-primary">
+        {formatNumber(value, locale)}
+      </strong>
+      {label}
+    </span>
   )
 }

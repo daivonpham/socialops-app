@@ -15,7 +15,6 @@ import {
 import {
   useDisconnectFacebook,
   useDisconnectFacebookPage,
-  useReconnectFacebookPage,
   type FacebookIntegrationDto,
   type FacebookPageDto,
 } from '../api'
@@ -38,7 +37,6 @@ export function ManageFacebookPagesDrawer({
 }) {
   const { t, i18n } = useTranslation('facebook')
   const locale = i18n.resolvedLanguage as AppLocale
-  const reconnect = useReconnectFacebookPage(brandId)
   const disconnectPage = useDisconnectFacebookPage(brandId)
   const disconnectAll = useDisconnectFacebook(brandId)
   const [pageToDisconnect, setPageToDisconnect] = useState<FacebookPageDto | null>(null)
@@ -95,7 +93,8 @@ export function ManageFacebookPagesDrawer({
                         </StatusTag>
                       </div>
                       <p className="mt-1 text-caption text-text-tertiary">
-                        @{page.username} · {formatNumber(page.followersCount, locale)}{' '}
+                        {page.username ? `@${page.username} · ` : ''}
+                        {formatNumber(page.followersCount, locale)}{' '}
                         {t('metrics.followers').toLowerCase()}
                       </p>
                     </div>
@@ -105,8 +104,8 @@ export function ManageFacebookPagesDrawer({
                       <Button
                         size="sm"
                         icon={<IconRefresh />}
-                        loading={reconnect.isPending && reconnect.variables?.pageId === page.id}
-                        onClick={() => reconnect.mutate({ brandId, pageId: page.id })}
+                        loading={isAddingPage}
+                        onClick={onAddPage}
                       >
                         {t('connection.reconnect')}
                       </Button>

@@ -204,6 +204,14 @@ const routes: RouteObject[] = [
     }),
   },
   {
+    path: ROUTES.FACEBOOK_CALLBACK,
+    handle: handle({ auth: 'required' }),
+    lazy: async () => ({
+      Component: (await import('@/features/facebook/pages/FacebookCallbackPage')).default,
+    }),
+    hydrateFallbackElement: bootFallback,
+  },
+  {
     path: ROUTES.ROOT,
     handle: handle({ auth: 'required' }),
     // The layout is lazy too: it keeps the entry chunk small and breaks the
