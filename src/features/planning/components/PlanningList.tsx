@@ -17,30 +17,35 @@ import {
   useUpdatePlanningApproval,
   type PlanningApprovalStatus,
   type PlanningContent,
-  type PlanningStatus,
+  type PlanningPostType,
 } from '../api'
 import {
   PLANNING_FILTER_APPROVAL_STATUSES,
-  PLANNING_FILTER_STATUSES,
+  PLANNING_FILTER_STATUS_GROUPS,
+  type PlanningStatusGroup,
 } from '../config/planning.filters'
-import { PLANNING_STATUS_TONE } from '../model'
+import { planningStatusGroup } from '../model/planning-status-group'
 import { ApprovalStatusSelect } from './ApprovalStatusSelect'
 
 export function PlanningList({
   brandId,
   contents,
-  status,
+  statusGroup,
   approvalStatus,
+  hasActiveFilters,
+  onClearFilters,
   onFiltersChange,
   onSelectContent,
   onEditContent,
 }: {
   brandId: string
   contents: PlanningContent[]
-  status: 'all' | PlanningStatus
+  statusGroup: 'all' | PlanningStatusGroup
   approvalStatus: 'all' | PlanningApprovalStatus
+  hasActiveFilters: boolean
+  onClearFilters: () => void
   onFiltersChange: (filters: {
-    status?: 'all' | PlanningStatus
+    statusGroup?: 'all' | PlanningStatusGroup
     approvalStatus?: 'all' | PlanningApprovalStatus
   }) => void
   onSelectContent: (content: PlanningContent) => void
@@ -70,8 +75,16 @@ export function PlanningList({
                 <IconImage />
               </span>
             )}
-            <span className="line-clamp-2 min-w-0 text-body-sm leading-relaxed text-text-primary">
-              {row.caption}
+            <span className="min-w-0">
+              <span className="line-clamp-2 text-body-sm leading-relaxed text-text-primary">
+                {row.caption || t(`postType.${getPostType(row)}`)}
+              </span>
+              <span className="mt-1 block text-caption text-text-tertiary">
+                {t(`postType.${getPostType(row)}`)}
+                {getPostType(row) === 'facebook_feed'
+                  ? ` · ${t(`mediaKind.${row.mediaType}`)}`
+                  : ''}
+              </span>
             </span>
           </div>
         ),
@@ -81,8 +94,8 @@ export function PlanningList({
         title: t('list.accounts'),
         width: 'wide',
         render: (_, row) => {
-          const [firstTarget] = row.targets
-          const remainingCount = Math.max(0, row.targets.length - 1)
+          const visibleTargets = row.targets.slice(0, 3)
+          const remainingCount = Math.max(0, row.targets.length - visibleTargets.length)
           return (
             <Tooltip title={row.targets.map((target) => target.name).join(', ')} placement="top">
               <div className="flex min-w-0 items-center gap-3">
@@ -98,8 +111,8 @@ export function PlanningList({
                   ))}
                 </div>
                 <span className="min-w-0">
-                  <strong className="block truncate text-label-md text-text-secondary">
-                    {firstTarget?.name ?? '—'}
+                  <strong className="line-clamp-2 text-label-md text-text-secondary">
+                    {visibleTargets.map((target) => target.name).join(', ') || '—'}
                   </strong>
                   <span className="block text-caption text-text-tertiary">
                     {remainingCount > 0
@@ -123,19 +136,52 @@ export function PlanningList({
         dataIndex: 'status',
         title: t('list.status'),
         width: 'default',
-        filterValue: status,
+        filterValue: statusGroup,
         filterDefaultValue: 'all',
         filterOptions: [
           { value: 'all', label: t('filters.allStatuses') },
-          ...PLANNING_FILTER_STATUSES.map((item) => ({
+          ...PLANNING_FILTER_STATUS_GROUPS.map((item) => ({
             value: item,
-            label: t(`status.${item}`),
+            label: t(`statusGroup.${item}`),
           })),
         ],
-        onFilterChange: (value) => onFiltersChange({ status: value as 'all' | PlanningStatus }),
-        render: (_, row) => (
-          <StatusTag tone={PLANNING_STATUS_TONE[row.status]}>{t(`status.${row.status}`)}</StatusTag>
-        ),
+        onFilterChange: (value) =>
+          onFiltersChange({ statusGroup: value as 'all' | PlanningStatusGroup }),
+        render: (_, row) => {
+          const publications = row.publications ?? []
+          const published = publications.filter((item) => item.status === 'published').length
+          const needsAction =
+            publications.some((item) =>
+              ['failed', 'unknown', 'edit_unknown', 'delete_unknown'].includes(item.status),
+            ) || ['failed', 'unknown', 'edit_unknown', 'delete_unknown'].includes(row.status)
+          const group = planningStatusGroup(row)
+          return (
+            <div className="grid gap-1">
+              <StatusTag
+                tone={
+                  group === 'published'
+                    ? 'success'
+                    : group === 'needs_action'
+                      ? 'error'
+                      : group === 'scheduled' || group === 'in_progress'
+                        ? 'info'
+                        : 'neutral'
+                }
+              >
+                {t(`statusGroup.${group}`)}
+              </StatusTag>
+              {publications.length > 1 &&
+                !['draft', 'scheduled', 'cancelled'].includes(row.status) && (
+                  <span className="text-caption text-text-secondary">
+                    {t('list.pagesPublished', { published, total: publications.length })}
+                  </span>
+                )}
+              {needsAction && (
+                <span className="text-caption text-error-700">{t('list.needsAction')}</span>
+              )}
+            </div>
+          )
+        },
       },
       {
         key: 'approvalStatus',
@@ -170,11 +216,29 @@ export function PlanningList({
         dataIndex: 'scheduledAt',
         title: t('list.scheduledAt'),
         width: 'wide',
-        render: (_, row) => (
-          <span className="whitespace-nowrap text-body-sm tabular-nums text-text-secondary">
-            {row.scheduledAt ? formatDateTime(row.scheduledAt, locale) : '—'}
-          </span>
-        ),
+        render: (_, row) => {
+          const latestPublishedAt = row.publications
+            ?.map((item) => item.publishedAt)
+            .filter((value): value is string => Boolean(value))
+            .sort()
+            .at(-1)
+          const isScheduled =
+            Boolean(row.scheduledAt) && !['draft', 'cancelled'].includes(row.status)
+          const label = latestPublishedAt
+            ? 'timePublished'
+            : isScheduled
+              ? 'timeScheduled'
+              : 'timeCreated'
+          const value = latestPublishedAt ?? (isScheduled ? row.scheduledAt : row.createdAt)
+          return (
+            <span className="grid whitespace-nowrap tabular-nums">
+              <span className="text-caption text-text-tertiary">{t(`list.${label}`)}</span>
+              <span className="text-body-sm text-text-secondary">
+                {formatDateTime(value!, locale)}
+              </span>
+            </span>
+          )
+        },
       },
       {
         key: 'createdBy',
@@ -197,6 +261,7 @@ export function PlanningList({
               size="sm"
               variant="ghost"
               icon={<IconEdit />}
+              disabled={!['draft', 'scheduled', 'failed', 'cancelled'].includes(row.status)}
               aria-label={t('list.editContent', { title: row.title ?? row.caption })}
               onClick={(event) => {
                 event.stopPropagation()
@@ -224,7 +289,7 @@ export function PlanningList({
       onEditContent,
       onFiltersChange,
       onSelectContent,
-      status,
+      statusGroup,
       t,
       updateApproval,
     ],
@@ -238,7 +303,15 @@ export function PlanningList({
       title={t('list.title')}
       onRowClick={onSelectContent}
       emptyState={
-        <EmptyState title={t('states.emptyTitle')} description={t('states.emptyDescription')} />
+        <EmptyState
+          title={t('states.emptyTitle')}
+          description={t('states.emptyDescription')}
+          action={
+            hasActiveFilters ? (
+              <Button onClick={onClearFilters}>{t('filters.clear')}</Button>
+            ) : undefined
+          }
+        />
       }
       ariaLabel={t('list.ariaLabel')}
       showColumnSettings
@@ -246,4 +319,10 @@ export function PlanningList({
       stickyHeader
     />
   )
+}
+
+function getPostType(row: PlanningContent): PlanningPostType {
+  if (row.type) return row.type
+  if (row.platform === 'facebook') return 'facebook_feed'
+  return row.mediaType === 'image' ? 'tiktok_photo' : 'tiktok_video'
 }

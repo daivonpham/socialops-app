@@ -1,6 +1,23 @@
 export type PlanningPlatform = 'facebook' | 'tiktok'
 
-export type PlanningStatus = 'draft' | 'scheduled' | 'publishing' | 'published' | 'failed'
+export type PlanningStatus =
+  | 'draft'
+  | 'scheduled'
+  | 'queued'
+  | 'publishing'
+  | 'processing'
+  | 'verifying'
+  | 'published'
+  | 'editing'
+  | 'deleting'
+  | 'deleted'
+  | 'edit_unknown'
+  | 'delete_unknown'
+  | 'failed'
+  | 'partial'
+  | 'unknown'
+  | 'cancelled'
+  | 'retry_wait'
 
 export type PlanningApprovalStatus = 'none' | 'pending' | 'approved' | 'rejected'
 
@@ -22,8 +39,17 @@ export type PlanningTarget = {
   avatarUrl?: string
 }
 
+export type PlanningAccountDto = PlanningTarget & {
+  platform: PlanningPlatform
+}
+
+export type PlanningAccountsResponse = {
+  items: PlanningAccountDto[]
+}
+
 export type PlanningContent = {
   id: string
+  version: number
   caption: string
   title?: string
   thumbnailUrl?: string
@@ -42,10 +68,14 @@ export type PlanningContent = {
   createdBy: string
 }
 
+import type { PlanningStatusGroup } from '../config/planning.filters'
+
 export type PlanningQuery = {
   platform: 'all' | PlanningPlatform
+  type: 'all' | PlanningPostType
   accountId: 'all' | string
-  status: 'all' | PlanningStatus
+  statusGroup: 'all' | PlanningStatusGroup
+  attention: 'all' | 'needs_action'
   approvalStatus?: 'all' | PlanningApprovalStatus
   from?: string
   to?: string
@@ -69,8 +99,21 @@ export type PlanningPublication = {
   errorMessage?: string
 }
 
+export type PlanningRetryResult = {
+  publicationId: string
+  socialAccountId: string
+  outcome: 'queued' | 'skipped'
+  reason?: string
+}
+
+export type PlanningRetryBatchResponse = {
+  content: PlanningContent
+  results: PlanningRetryResult[]
+}
+
 export type CreatePlanningContentInput = {
   brandId: string
+  idempotencyKey?: string
   platform: PlanningPlatform
   type: PlanningPostType
   caption: string
@@ -99,6 +142,5 @@ export type UpdatePlanningApprovalInput = {
 
 export type UpdatePlanningContentInput = CreatePlanningContentInput & {
   contentId: string
-  status: PlanningStatus
-  approvalStatus: PlanningApprovalStatus
+  version: number
 }

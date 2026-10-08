@@ -1,4 +1,9 @@
 export const commonEnUS = {
+  videoPreview: {
+    play: 'Play video',
+    pause: 'Pause video',
+    seek: 'Seek video',
+  },
   dropdown: {
     noMatches: 'No matches.',
   },
@@ -16,6 +21,7 @@ export const commonEnUS = {
     sortDescending: 'Sort descending',
     clearSorting: 'Clear sorting',
     filterColumn: 'Filter {{column}}',
+    clearColumnFilter: 'Clear {{column}} filter',
     reorderColumn: 'Reorder {{column}}',
     reorderHint: 'Drag to reorder.',
     resizeColumn: 'Resize {{column}}',

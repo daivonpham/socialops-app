@@ -83,6 +83,10 @@ export default function FacebookPage() {
         ])
         return
       }
+      queryClient.removeQueries({
+        queryKey: FACEBOOK_QUERY_KEYS.availablePages(message.brandId, message.connectionId),
+        exact: true,
+      })
       setOauthResult({ brandId: message.brandId, connectionId: message.connectionId })
     }
     window.addEventListener('message', receiveOAuthResult)

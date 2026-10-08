@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { SocialAccountLabel } from '@/features/social-accounts'
-import { Avatar, Button, Checkbox, IconChevronDown, Popover } from '@/shared/ui'
+import { Avatar, Button, Checkbox, IconChevronDown, IconCloseCompact, Popover } from '@/shared/ui'
 import type { PlanningAccount } from '../../model'
 
 export function PlanningAccountMultiSelect({
@@ -16,14 +16,16 @@ export function PlanningAccountMultiSelect({
   const { t } = useTranslation('planning')
   const selectedAccounts = accounts.filter((account) => selectedIds.includes(account.id))
   const onlyAccountId = accounts.length === 1 ? accounts[0].id : undefined
+  const selectionChangedByUser = useRef(false)
 
   useEffect(() => {
-    if (onlyAccountId && !selectedIds.includes(onlyAccountId)) {
+    if (onlyAccountId && !selectedIds.includes(onlyAccountId) && !selectionChangedByUser.current) {
       onChange([onlyAccountId])
     }
   }, [onlyAccountId, onChange, selectedIds])
 
   const toggleAccount = (accountId: string, checked: boolean) => {
+    selectionChangedByUser.current = true
     onChange(
       checked
         ? [...selectedIds, accountId]
@@ -62,6 +64,8 @@ export function PlanningAccountMultiSelect({
           <ResponsiveAccountSummary
             accounts={selectedAccounts}
             placeholder={t('composer.accounts.placeholder')}
+            onRemove={(accountId) => toggleAccount(accountId, false)}
+            removeLabel={(name) => t('composer.accounts.remove', { name })}
           />
           <IconChevronDown aria-hidden className="shrink-0 text-icon-sm text-text-tertiary" />
         </span>
@@ -73,9 +77,13 @@ export function PlanningAccountMultiSelect({
 function ResponsiveAccountSummary({
   accounts,
   placeholder,
+  onRemove,
+  removeLabel,
 }: {
   accounts: PlanningAccount[]
   placeholder: string
+  onRemove: (accountId: string) => void
+  removeLabel: (name: string) => string
 }) {
   const containerRef = useRef<HTMLSpanElement>(null)
   const measurementRef = useRef<HTMLSpanElement>(null)
@@ -146,7 +154,12 @@ function ResponsiveAccountSummary({
       {accounts.length > 0 ? (
         <>
           {visibleAccounts.map((account) => (
-            <AccountChip key={account.id} account={account} />
+            <AccountChip
+              key={account.id}
+              account={account}
+              onRemove={onRemove}
+              removeLabel={removeLabel(account.name)}
+            />
           ))}
           {hiddenCount > 0 ? <AccountCounter count={hiddenCount} /> : null}
           <span ref={measurementRef} className="invisible absolute flex items-center gap-2">
@@ -166,9 +179,13 @@ function ResponsiveAccountSummary({
 function AccountChip({
   account,
   measure = false,
+  onRemove,
+  removeLabel,
 }: {
   account: PlanningAccount
   measure?: boolean
+  onRemove?: (accountId: string) => void
+  removeLabel?: string
 }) {
   return (
     <span
@@ -177,6 +194,31 @@ function AccountChip({
     >
       <Avatar name={account.name} src={account.avatarUrl} size="xs" />
       <span className="truncate text-body-sm text-text-primary">{account.name}</span>
+      {measure ? (
+        <span className="flex size-5 shrink-0 items-center justify-center">
+          <IconCloseCompact aria-hidden className="size-3.5" />
+        </span>
+      ) : (
+        <span
+          role="button"
+          tabIndex={0}
+          aria-label={removeLabel}
+          title={removeLabel}
+          className="flex size-5 shrink-0 items-center justify-center rounded-full text-text-tertiary hover:bg-bg-surface hover:text-text-primary focus-visible:focus-ring"
+          onClick={(event) => {
+            event.stopPropagation()
+            onRemove?.(account.id)
+          }}
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return
+            event.preventDefault()
+            event.stopPropagation()
+            onRemove?.(account.id)
+          }}
+        >
+          <IconCloseCompact aria-hidden className="size-3.5" />
+        </span>
+      )}
     </span>
   )
 }

@@ -1,3 +1,4 @@
+import { planningStatusGroup } from '../model/planning-status-group'
 import { http, HttpResponse } from 'msw'
 import { envelope } from '@/mocks/envelope'
 import type {
@@ -6,6 +7,7 @@ import type {
   PlanningApprovalStatus,
   PlanningContentsResponse,
   PlanningPlatform,
+  PlanningPostType,
   PlanningStatus,
   PlanningTarget,
   UpdatePlanningContentInput,
@@ -26,10 +28,12 @@ const target = (id: string) => TARGETS[id] ?? { id, name: id }
 export const MOCK_PLANNING_CONTENTS: PlanningContent[] = [
   {
     id: 'content-001',
+    version: 1,
     caption: 'September blend launch across all our local pages.',
     title: 'September blend launch',
     thumbnailUrl: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085',
     mediaType: 'image',
+    type: 'facebook_feed',
     platform: 'facebook',
     targets: ['fb-main', 'fb-roastery', 'fb-hanoi', 'fb-danang', 'fb-saigon'].map(target),
     status: 'scheduled',
@@ -40,8 +44,10 @@ export const MOCK_PLANNING_CONTENTS: PlanningContent[] = [
   },
   {
     id: 'content-002',
+    version: 1,
     caption: 'Three ways to make cold brew at home.',
     mediaType: 'video',
+    type: 'tiktok_video',
     platform: 'tiktok',
     targets: [target('tt-main')],
     status: 'scheduled',
@@ -52,8 +58,10 @@ export const MOCK_PLANNING_CONTENTS: PlanningContent[] = [
   },
   {
     id: 'content-003',
+    version: 1,
     caption: 'Meet the growers behind this month’s beans.',
     mediaType: 'image',
+    type: 'facebook_story',
     platform: 'facebook',
     targets: [target('fb-main')],
     status: 'draft',
@@ -64,8 +72,10 @@ export const MOCK_PLANNING_CONTENTS: PlanningContent[] = [
   },
   {
     id: 'content-004',
+    version: 1,
     caption: 'Barista speed challenge.',
     mediaType: 'video',
+    type: 'tiktok_video',
     platform: 'tiktok',
     targets: [target('tt-barista')],
     status: 'draft',
@@ -76,8 +86,10 @@ export const MOCK_PLANNING_CONTENTS: PlanningContent[] = [
   },
   {
     id: 'content-005',
+    version: 1,
     caption: 'Store hours for the holiday weekend.',
     mediaType: 'text',
+    type: 'facebook_feed',
     platform: 'facebook',
     targets: [target('fb-hanoi')],
     status: 'published',
@@ -88,8 +100,10 @@ export const MOCK_PLANNING_CONTENTS: PlanningContent[] = [
   },
   {
     id: 'content-006',
+    version: 1,
     caption: 'Latte art in 20 seconds.',
     mediaType: 'video',
+    type: 'tiktok_video',
     platform: 'tiktok',
     targets: [target('tt-main')],
     status: 'publishing',
@@ -100,8 +114,10 @@ export const MOCK_PLANNING_CONTENTS: PlanningContent[] = [
   },
   {
     id: 'content-007',
+    version: 1,
     caption: 'Behind the scenes at our roastery.',
     mediaType: 'video',
+    type: 'facebook_reel',
     platform: 'facebook',
     targets: [target('fb-roastery')],
     status: 'failed',
@@ -112,8 +128,10 @@ export const MOCK_PLANNING_CONTENTS: PlanningContent[] = [
   },
   {
     id: 'content-008',
+    version: 1,
     caption: 'First draft of the autumn menu teaser.',
     mediaType: 'image',
+    type: 'facebook_feed',
     platform: 'facebook',
     targets: [target('fb-main')],
     status: 'draft',
@@ -124,8 +142,10 @@ export const MOCK_PLANNING_CONTENTS: PlanningContent[] = [
   },
   {
     id: 'content-009',
+    version: 1,
     caption: 'Coffee tasting vocabulary, part one.',
     mediaType: 'video',
+    type: 'tiktok_video',
     platform: 'tiktok',
     targets: [target('tt-barista')],
     status: 'scheduled',
@@ -136,8 +156,10 @@ export const MOCK_PLANNING_CONTENTS: PlanningContent[] = [
   },
   {
     id: 'content-010',
+    version: 1,
     caption: 'Weekend pour-over workshop registration.',
     mediaType: 'image',
+    type: 'facebook_feed',
     platform: 'facebook',
     targets: [target('fb-danang'), target('fb-saigon')],
     status: 'scheduled',
@@ -148,8 +170,10 @@ export const MOCK_PLANNING_CONTENTS: PlanningContent[] = [
   },
   {
     id: 'content-011',
+    version: 1,
     caption: 'POV: your first coffee of the day.',
     mediaType: 'video',
+    type: 'tiktok_video',
     platform: 'tiktok',
     targets: [target('tt-main')],
     status: 'published',
@@ -160,8 +184,10 @@ export const MOCK_PLANNING_CONTENTS: PlanningContent[] = [
   },
   {
     id: 'content-012',
+    version: 1,
     caption: 'October campaign concept.',
     mediaType: 'text',
+    type: 'facebook_feed',
     platform: 'facebook',
     targets: [target('fb-main')],
     status: 'draft',
@@ -184,11 +210,23 @@ function dateInRange(content: PlanningContent, from: string | null, to: string |
 }
 
 export const planningHandlers = [
+  http.get('/api/brands/:brandId/planning/accounts', ({ params }) => {
+    const brandId = String(params.brandId)
+    const items = Object.values(TARGETS)
+      .filter((item) => (brandId === 'br-nimbus' ? item.id.startsWith('tt-') : true))
+      .map((item) => ({
+        ...item,
+        platform: item.id.startsWith('tt-') ? ('tiktok' as const) : ('facebook' as const),
+      }))
+    return HttpResponse.json(envelope({ items }, `/brands/${brandId}/planning/accounts`))
+  }),
   http.get('/api/brands/:brandId/planning', ({ params, request }) => {
     const search = new URL(request.url).searchParams
     const platform = (search.get('platform') ?? 'all') as 'all' | PlanningPlatform
+    const type = (search.get('type') ?? 'all') as 'all' | PlanningPostType
     const accountId = search.get('accountId') ?? 'all'
-    const status = (search.get('status') ?? 'all') as 'all' | PlanningStatus
+    const statusGroup = search.get('statusGroup') ?? 'all'
+    const attention = search.get('attention') ?? 'all'
     const approvalStatus = (search.get('approvalStatus') ?? 'all') as 'all' | PlanningApprovalStatus
     const brandId = String(params.brandId)
     const brandContents =
@@ -201,8 +239,15 @@ export const planningHandlers = [
       items: brandContents.filter(
         (content) =>
           (platform === 'all' || content.platform === platform) &&
+          (type === 'all' || content.type === type) &&
           (accountId === 'all' || content.targets.some((item) => item.id === accountId)) &&
-          (status === 'all' || content.status === status) &&
+          !['cancelled', 'deleted'].includes(content.status) &&
+          (statusGroup === 'all' || planningStatusGroup(content) === statusGroup) &&
+          (attention === 'all' ||
+            content.publications?.some((item) =>
+              ['failed', 'unknown', 'edit_unknown', 'delete_unknown'].includes(item.status),
+            ) ||
+            ['failed', 'unknown', 'edit_unknown', 'delete_unknown'].includes(content.status)) &&
           (approvalStatus === 'all' || content.approvalStatus === approvalStatus) &&
           dateInRange(content, search.get('from'), search.get('to')),
       ),
@@ -231,6 +276,7 @@ export const planningHandlers = [
     const targets = body.publications.map((publication) => target(publication.socialAccountId))
     const content: PlanningContent = {
       id: `content-created-${createdCount}`,
+      version: 1,
       caption: body.caption,
       thumbnailUrl: body.media[0]?.url,
       mediaType: body.media[0]?.type ?? 'text',
@@ -266,8 +312,16 @@ export const planningHandlers = [
     if (!content) return new HttpResponse(null, { status: 404 })
 
     const targets = body.publications.map((publication) => target(publication.socialAccountId))
+    const status: PlanningStatus =
+      body.intent === 'schedule'
+        ? 'scheduled'
+        : body.intent === 'publish_now'
+          ? 'publishing'
+          : 'draft'
+    const approvalStatus: PlanningApprovalStatus = body.intent === 'approval' ? 'pending' : 'none'
     const updated: PlanningContent = {
       ...content,
+      version: content.version + 1,
       caption: body.caption,
       thumbnailUrl: body.media[0]?.url,
       mediaType: body.media[0]?.type ?? 'text',
@@ -282,10 +336,10 @@ export const planningHandlers = [
         target: targets[index]!,
         captionOverride: publication.captionOverride,
         scheduledAt: publication.scheduledAt,
-        status: body.status,
+        status,
       })),
-      status: body.status,
-      approvalStatus: body.approvalStatus,
+      status,
+      approvalStatus,
       scheduledAt: body.publications[0]?.scheduledAt ?? content.scheduledAt,
     }
     contents = contents.map((item) => (item.id === updated.id ? updated : item))
@@ -325,4 +379,103 @@ export const planningHandlers = [
       ),
     )
   }),
+  http.delete('/api/brands/:brandId/planning/:contentId', ({ params }) => {
+    const content = contents.find((item) => item.id === params.contentId)
+    if (!content) return new HttpResponse(null, { status: 404 })
+    const updated: PlanningContent = {
+      ...content,
+      status: 'cancelled',
+      publications: content.publications?.map((item) => ({ ...item, status: 'cancelled' })),
+    }
+    contents = contents.map((item) => (item.id === updated.id ? updated : item))
+    return HttpResponse.json(
+      envelope(updated, `/brands/${String(params.brandId)}/planning/${updated.id}`),
+    )
+  }),
+  http.post('/api/brands/:brandId/planning/publications/:publicationId/retry', ({ params }) => {
+    const content = contents.find((item) =>
+      item.publications?.some((row) => row.id === params.publicationId),
+    )
+    if (!content) return new HttpResponse(null, { status: 404 })
+    const updated: PlanningContent = {
+      ...content,
+      status: 'publishing',
+      publications: content.publications?.map((row) =>
+        row.id === params.publicationId
+          ? { ...row, status: 'queued', errorCode: undefined, errorMessage: undefined }
+          : row,
+      ),
+    }
+    contents = contents.map((item) => (item.id === updated.id ? updated : item))
+    return HttpResponse.json(
+      envelope(updated, `/brands/${String(params.brandId)}/planning/${updated.id}`),
+    )
+  }),
+  http.post('/api/brands/:brandId/planning/:contentId/retry-failed', ({ params }) => {
+    const content = contents.find((item) => item.id === params.contentId)
+    if (!content) return new HttpResponse(null, { status: 404 })
+    const results = (content.publications ?? []).map((row) => ({
+      publicationId: row.id,
+      socialAccountId: row.socialAccountId,
+      outcome: row.status === 'failed' ? ('queued' as const) : ('skipped' as const),
+      ...(row.status !== 'failed' ? { reason: 'PUBLICATION_NOT_RETRYABLE' } : {}),
+    }))
+    const updated: PlanningContent = {
+      ...content,
+      status: results.some((item) => item.outcome === 'queued') ? 'publishing' : content.status,
+      publications: content.publications?.map((row) =>
+        row.status === 'failed'
+          ? { ...row, status: 'queued', errorCode: undefined, errorMessage: undefined }
+          : row,
+      ),
+    }
+    contents = contents.map((item) => (item.id === updated.id ? updated : item))
+    return HttpResponse.json(
+      envelope(
+        { content: updated, results },
+        `/brands/${String(params.brandId)}/planning/${updated.id}/retry-failed`,
+      ),
+    )
+  }),
+  http.patch(
+    '/api/brands/:brandId/planning/publications/:publicationId/caption',
+    async ({ params, request }) => {
+      const body = (await request.json()) as { caption: string }
+      const content = contents.find((item) =>
+        item.publications?.some((row) => row.id === params.publicationId),
+      )
+      if (!content) return new HttpResponse(null, { status: 404 })
+      const updated: PlanningContent = {
+        ...content,
+        publications: content.publications?.map((row) =>
+          row.id === params.publicationId ? { ...row, captionOverride: body.caption } : row,
+        ),
+      }
+      contents = contents.map((item) => (item.id === updated.id ? updated : item))
+      return HttpResponse.json(
+        envelope(updated, `/brands/${String(params.brandId)}/planning/${updated.id}`),
+      )
+    },
+  ),
+  http.delete(
+    '/api/brands/:brandId/planning/publications/:publicationId/published',
+    ({ params }) => {
+      const content = contents.find((item) =>
+        item.publications?.some((row) => row.id === params.publicationId),
+      )
+      if (!content) return new HttpResponse(null, { status: 404 })
+      const publications = content.publications?.map((row) =>
+        row.id === params.publicationId ? { ...row, status: 'deleted' as const } : row,
+      )
+      const updated: PlanningContent = {
+        ...content,
+        status: publications?.every((row) => row.status === 'deleted') ? 'deleted' : 'partial',
+        publications,
+      }
+      contents = contents.map((item) => (item.id === updated.id ? updated : item))
+      return HttpResponse.json(
+        envelope(updated, `/brands/${String(params.brandId)}/planning/${updated.id}`),
+      )
+    },
+  ),
 ]

@@ -1,11 +1,26 @@
-import type { ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FaRegComment } from 'react-icons/fa'
 import { IoClose } from 'react-icons/io5'
 import { TbShare3 } from 'react-icons/tb'
 import { VscEllipsis } from 'react-icons/vsc'
 import likeReactionUrl from '@/assets/reaction/like.svg'
 import loveReactionUrl from '@/assets/reaction/tym.svg'
-import { Avatar, IconGlobe, IconHeart, IconImage, IconLike, IconPlay } from '@/shared/ui'
+import {
+  Avatar,
+  IconDot,
+  IconGlobe,
+  IconHeart,
+  IconImage,
+  IconLike,
+  IconPublic,
+  IconPauseStory,
+  IconPlaySolid,
+  IconSpeakerHigh,
+  IconSpeakerMuted,
+  VideoPreview,
+  type VideoPreviewHandle,
+} from '@/shared/ui'
 import type { PlanningPostType } from '../../api'
 import type { PlanningAccount } from '../../model'
 import type { ComposerMedia, PreviewViewport } from '../../model/composer'
@@ -53,8 +68,7 @@ export function FacebookPostPreview({
       </p>
       {video ? (
         <div className="relative flex aspect-[6/5] items-center justify-center overflow-hidden bg-neutral-200">
-          <video src={video.url} className="h-full w-full object-contain" muted />
-          <PlayButton />
+          <VideoPreview key={video.id} src={video.url} className="h-full w-full object-contain" />
         </div>
       ) : imageMedia.length > 0 ? (
         <div
@@ -119,38 +133,102 @@ function FacebookVerticalPreview({
   story: boolean
   fluid: boolean
 }) {
+  const { t } = useTranslation('planning')
   const primaryMedia = media[0]
+  const pageName = account?.name ?? 'Facebook Page'
+  const storyVideoRef = useRef<VideoPreviewHandle>(null)
+  const [storyPlaying, setStoryPlaying] = useState(false)
+  const [storyMuted, setStoryMuted] = useState(false)
+  const storyHasVideo = story && primaryMedia?.type === 'video'
   return (
     <div
       className={`relative aspect-[9/16] w-full shrink-0 overflow-hidden rounded-xl bg-neutral-950 text-text-inverse shadow-md transition-[max-width] duration-base ${fluid ? 'max-w-full' : viewport === 'mobile' ? 'max-w-[18rem]' : 'max-w-[24rem]'}`}
     >
       {primaryMedia?.type === 'video' ? (
-        <video src={primaryMedia.url} className="h-full w-full object-cover" muted />
+        <VideoPreview
+          key={`${story ? 'story' : 'reel'}-${primaryMedia.id}`}
+          ref={story ? storyVideoRef : undefined}
+          src={primaryMedia.url}
+          className="h-full w-full object-cover"
+          progressPosition={story ? 'top' : 'bottom'}
+          onPlayingChange={story ? setStoryPlaying : undefined}
+        />
       ) : primaryMedia ? (
         <img src={primaryMedia.url} alt="" className="h-full w-full object-cover" />
       ) : (
         <EmptyMedia className="h-full text-neutral-400" dark />
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/80 via-transparent to-neutral-950/50" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-neutral-950/80 via-transparent to-neutral-950/50" />
+      {story && !storyHasVideo ? (
+        <div className="pointer-events-none absolute left-3 right-3 top-3 h-1 rounded-pill bg-bg-surface/80" />
+      ) : null}
       {story ? (
-        <div className="absolute left-3 right-3 top-3 h-1 rounded-pill bg-bg-surface/80" />
-      ) : null}
-      <div className="absolute left-4 right-4 top-6 flex items-center gap-2">
-        <Avatar name={account?.name ?? 'Facebook Page'} src={account?.avatarUrl} size="sm" />
-        <strong className="text-label-sm">{account?.name ?? 'Facebook Page'}</strong>
-        <span className="text-caption text-neutral-300">Just now</span>
-        <VscEllipsis aria-hidden className="ms-auto" />
-      </div>
-      <p className="absolute bottom-6 left-4 right-14 max-h-24 overflow-hidden whitespace-pre-wrap text-body-sm">
-        {caption || 'Your caption will appear here.'}
-      </p>
-      {!story ? (
-        <div className="absolute bottom-5 right-3 grid gap-4 text-center text-label-md">
-          <PreviewAction icon={<IconHeart />} />
-          <PreviewAction icon={<FaRegComment />} />
-          <PreviewAction icon={<TbShare3 />} />
-        </div>
-      ) : null}
+        <>
+          <div className="pointer-events-none absolute left-3 right-3 top-8 z-header flex items-center gap-2">
+            <Avatar name={pageName} src={account?.avatarUrl} size="sm" />
+            <strong className="min-w-0 truncate text-label-sm">{pageName}</strong>
+            <span className="flex shrink-0 items-center gap-1 text-caption text-neutral-100">
+              {t('composer.preview.storyTime')}
+              <IconGlobe aria-hidden />
+            </span>
+            <span className="ms-auto flex shrink-0 items-center gap-1">
+              {storyHasVideo ? (
+                <>
+                  <button
+                    type="button"
+                    className="pointer-events-auto flex size-8 items-center justify-center rounded-pill focus-visible:focus-ring"
+                    aria-label={t(storyMuted ? 'composer.preview.unmute' : 'composer.preview.mute')}
+                    onClick={() => setStoryMuted(storyVideoRef.current?.toggleMuted() ?? false)}
+                  >
+                    {storyMuted ? (
+                      <IconSpeakerMuted aria-hidden className="size-4" />
+                    ) : (
+                      <IconSpeakerHigh aria-hidden className="size-4" />
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    className="pointer-events-auto flex size-8 items-center justify-center rounded-pill focus-visible:focus-ring"
+                    aria-label={t(
+                      storyPlaying ? 'composer.preview.pause' : 'composer.preview.play',
+                    )}
+                    onClick={() => storyVideoRef.current?.togglePlayback()}
+                  >
+                    {storyPlaying ? (
+                      <IconPauseStory aria-hidden className="size-4" />
+                    ) : (
+                      <IconPlaySolid aria-hidden className="size-4" />
+                    )}
+                  </button>
+                </>
+              ) : null}
+              <VscEllipsis aria-hidden className="text-icon-md" />
+            </span>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="pointer-events-none absolute bottom-8 left-4 right-16 grid min-w-0 gap-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <Avatar name={pageName} src={account?.avatarUrl} size="sm" />
+              <strong className="min-w-0 truncate text-label-md">{pageName}</strong>
+              <span className="flex shrink-0 items-center gap-0.5 text-caption text-neutral-100">
+                <IconPublic aria-hidden className="size-4" />
+                <IconDot aria-hidden className="size-4" />
+                {t('composer.preview.following')}
+              </span>
+            </div>
+            <p className="max-h-24 overflow-hidden whitespace-pre-wrap text-body-sm">
+              {caption || 'Your caption will appear here.'}
+            </p>
+          </div>
+          <div className="pointer-events-none absolute bottom-8 right-3 grid gap-4 text-center text-label-md">
+            <PreviewAction icon={<IconHeart />} value="1.2K" />
+            <PreviewAction icon={<FaRegComment />} value="84" />
+            <PreviewAction icon={<TbShare3 />} value="26" />
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -191,14 +269,6 @@ function FacebookIdentity({
   )
 }
 
-function PlayButton() {
-  return (
-    <span className="absolute flex size-12 items-center justify-center rounded-pill bg-bg-surface/90 text-heading-3 text-text-primary shadow-md backdrop-blur-sm">
-      <IconPlay aria-hidden />
-    </span>
-  )
-}
-
 function EngagementMetric({ icon, value }: { icon: ReactNode; value: string }) {
   return (
     <span className="flex items-center gap-2 text-body-sm">
@@ -210,13 +280,13 @@ function EngagementMetric({ icon, value }: { icon: ReactNode; value: string }) {
   )
 }
 
-function PreviewAction({ icon }: { icon: ReactNode }) {
+function PreviewAction({ icon, value }: { icon: ReactNode; value: string }) {
   return (
     <span>
       <span aria-hidden className="flex justify-center text-icon-sm">
         {icon}
       </span>
-      <small className="block text-caption">0</small>
+      <small className="block text-caption">{value}</small>
     </span>
   )
 }

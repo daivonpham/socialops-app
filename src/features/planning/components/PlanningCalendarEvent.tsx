@@ -5,9 +5,21 @@ import type { PlanningContent, PlanningStatus } from '../api'
 const STATUS_CLASS: Record<PlanningStatus, string> = {
   draft: 'border-border-subtle bg-bg-surface-subtle',
   scheduled: 'border-info-100 bg-info-50',
+  queued: 'border-info-100 bg-info-50',
   publishing: 'border-warning-100 bg-warning-50',
+  processing: 'border-warning-100 bg-warning-50',
+  verifying: 'border-warning-100 bg-warning-50',
   published: 'border-success-100 bg-success-50',
+  editing: 'border-info-100 bg-info-50',
+  deleting: 'border-warning-100 bg-warning-50',
+  deleted: 'border-border-subtle bg-bg-surface-subtle',
+  edit_unknown: 'border-warning-100 bg-warning-50',
+  delete_unknown: 'border-warning-100 bg-warning-50',
   failed: 'border-error-100 bg-error-50',
+  partial: 'border-warning-100 bg-warning-50',
+  unknown: 'border-warning-100 bg-warning-50',
+  cancelled: 'border-border-subtle bg-bg-surface-subtle',
+  retry_wait: 'border-warning-100 bg-warning-50',
 }
 
 export function PlanningCalendarEvent({

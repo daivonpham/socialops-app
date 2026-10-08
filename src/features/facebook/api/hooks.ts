@@ -29,6 +29,8 @@ import type {
 export const FACEBOOK_QUERY_KEYS = {
   root: (brandId: string | null) => ['facebook', brandId] as const,
   integration: (brandId: string | null) => ['facebook', brandId, 'integration'] as const,
+  availablePages: (brandId: string | null, connectionId: string | null) =>
+    ['facebook', brandId, 'available-pages', connectionId] as const,
   details: (brandId: string | null, query: FacebookQuery) =>
     ['facebook', brandId, 'details', query] as const,
 
@@ -182,7 +184,7 @@ export function useConnectFacebook() {
 
 export function useAvailableFacebookPages(brandId: string | null, connectionId: string | null) {
   return useQuery({
-    queryKey: ['facebook', brandId, 'available-pages', connectionId],
+    queryKey: FACEBOOK_QUERY_KEYS.availablePages(brandId, connectionId),
     queryFn: () => getAvailableFacebookPages(brandId!, connectionId!),
     enabled: brandId !== null && connectionId !== null,
   })

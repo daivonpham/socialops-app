@@ -30,7 +30,8 @@ export function FacebookOAuthResultModal({
   const selectPages = useSelectFacebookPages(result?.brandId ?? null)
   const [selected, setSelected] = useState<string[]>([])
   const autoConnectedConnections = useRef(new Set<string>())
-  const selectablePages = pages.data?.filter((page) => !page.isConnected) ?? []
+  const pagesReady = !pages.isFetching && pages.isSuccess
+  const selectablePages = pagesReady ? (pages.data?.filter((page) => !page.isConnected) ?? []) : []
 
   useEffect(() => {
     setSelected([])
@@ -39,6 +40,7 @@ export function FacebookOAuthResultModal({
   useEffect(() => {
     if (
       !result ||
+      !pagesReady ||
       pages.data?.length !== 1 ||
       pages.data[0].isConnected ||
       autoConnectedConnections.current.has(result.connectionId)
@@ -55,10 +57,10 @@ export function FacebookOAuthResultModal({
         onError: () => toast.error({ title: t('oauth.selectError') }),
       },
     )
-  }, [onConnected, pages.data, result, selectPages, t, toast])
+  }, [onConnected, pages.data, pagesReady, result, selectPages, t, toast])
 
   const connectSelected = () => {
-    if (!result || selected.length === 0) return
+    if (!result || !pagesReady || selected.length === 0) return
     selectPages.mutate(
       { ...result, pageIds: selected },
       {
@@ -105,22 +107,24 @@ export function FacebookOAuthResultModal({
         ) : null
       }
     >
-      {pages.isPending || (pages.data?.length === 1 && selectPages.isPending) ? (
+      {pages.isFetching ||
+      pages.isPending ||
+      (pages.data?.length === 1 && selectPages.isPending) ? (
         <div className="flex items-center justify-center gap-3 py-10 text-body-sm text-text-secondary">
           <Spin size="lg" />
           {t('oauth.loadingPages')}
         </div>
       ) : null}
 
-      {pages.isError ? (
+      {!pages.isFetching && pages.isError ? (
         <Alert variant="soft" tone="error" title={t('oauth.loadError')} />
       ) : null}
 
-      {pages.data?.length === 0 ? (
+      {pagesReady && pages.data?.length === 0 ? (
         <Alert variant="soft" tone="warning" title={t('oauth.noPages')} />
       ) : null}
 
-      {pages.data?.length ? (
+      {pagesReady && pages.data?.length ? (
         <div className="grid max-h-80 gap-2 overflow-y-auto">
           {pages.data.map((page) => (
             <label
@@ -132,15 +136,15 @@ export function FacebookOAuthResultModal({
                 disabled={page.isConnected}
                 onChange={({ target }) =>
                   setSelected((current) =>
-                    target.checked
-                      ? [...current, page.id]
-                      : current.filter((id) => id !== page.id),
+                    target.checked ? [...current, page.id] : current.filter((id) => id !== page.id),
                   )
                 }
               />
               <Avatar name={page.name} src={page.avatarUrl} size="md" />
               <span className="min-w-0">
-                <strong className="block truncate text-label-md text-text-primary">{page.name}</strong>
+                <strong className="block truncate text-label-md text-text-primary">
+                  {page.name}
+                </strong>
               </span>
               {page.isConnected ? (
                 <StatusTag tone="success">{t('oauth.alreadyConnected')}</StatusTag>

@@ -2,6 +2,11 @@ import type { TranslationShape } from './types'
 import type { commonEnUS } from './en-US'
 
 export const commonViVN = {
+  videoPreview: {
+    play: 'Phát video',
+    pause: 'Tạm dừng video',
+    seek: 'Tua video',
+  },
   dropdown: {
     noMatches: 'Không có kết quả.',
   },
@@ -19,6 +24,7 @@ export const commonViVN = {
     sortDescending: 'Sắp xếp giảm dần',
     clearSorting: 'Bỏ sắp xếp',
     filterColumn: 'Lọc {{column}}',
+    clearColumnFilter: 'Bỏ lọc {{column}}',
     reorderColumn: 'Đổi vị trí cột {{column}}',
     reorderHint: 'Kéo để đổi vị trí.',
     resizeColumn: 'Đổi độ rộng cột {{column}}',

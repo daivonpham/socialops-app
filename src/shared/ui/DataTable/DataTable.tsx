@@ -38,6 +38,7 @@ import {
   IconCaretUpDown,
   IconDrag,
   IconFilter,
+  IconFilterClear,
   IconRefresh,
   IconSettings,
 } from '../primitives/icons'
@@ -608,31 +609,54 @@ export function DataTable<T extends object>({
                             </span>
                           )}
                           {sourceColumn?.filterOptions?.length ? (
-                            <Dropdown
-                              placement={meta?.align === 'end' ? 'bottomRight' : 'bottomLeft'}
-                              selectedKey={sourceColumn.filterValue}
-                              items={sourceColumn.filterOptions.map((option) => ({
-                                key: option.value,
-                                label: option.label,
-                              }))}
-                              onSelect={(value) => sourceColumn.onFilterChange?.(value)}
-                            >
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                icon={
-                                  <IconFilter
-                                    className={filterActive ? 'text-action-text' : undefined}
-                                  />
-                                }
-                                aria-label={t('dataTable.filterColumn', {
-                                  column: meta?.label ?? header.column.id,
-                                })}
-                                title={t('dataTable.filterColumn', {
-                                  column: meta?.label ?? header.column.id,
-                                })}
-                              />
-                            </Dropdown>
+                            <span className="relative inline-flex shrink-0">
+                              <Dropdown
+                                placement={meta?.align === 'end' ? 'bottomRight' : 'bottomLeft'}
+                                selectedKey={sourceColumn.filterValue}
+                                items={sourceColumn.filterOptions.map((option) => ({
+                                  key: option.value,
+                                  label: option.label,
+                                }))}
+                                onSelect={(value) => sourceColumn.onFilterChange?.(value)}
+                              >
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className={filterActive ? 'bg-action-subtle' : undefined}
+                                  icon={
+                                    <IconFilter
+                                      className={filterActive ? 'text-action-text' : undefined}
+                                    />
+                                  }
+                                  aria-label={t('dataTable.filterColumn', {
+                                    column: meta?.label ?? header.column.id,
+                                  })}
+                                  title={t('dataTable.filterColumn', {
+                                    column: meta?.label ?? header.column.id,
+                                  })}
+                                />
+                              </Dropdown>
+                              {filterActive ? (
+                                <button
+                                  type="button"
+                                  className="absolute -right-1 -top-1 z-base flex size-4 items-center justify-center rounded-full border border-border-subtle bg-bg-surface text-action-text shadow-sm hover:bg-bg-surface-muted focus-visible:focus-ring"
+                                  aria-label={t('dataTable.clearColumnFilter', {
+                                    column: meta?.label ?? header.column.id,
+                                  })}
+                                  title={t('dataTable.clearColumnFilter', {
+                                    column: meta?.label ?? header.column.id,
+                                  })}
+                                  onClick={(event) => {
+                                    event.stopPropagation()
+                                    sourceColumn.onFilterChange?.(
+                                      sourceColumn.filterDefaultValue ?? '',
+                                    )
+                                  }}
+                                >
+                                  <IconFilterClear aria-hidden className="text-icon-sm" />
+                                </button>
+                              ) : null}
+                            </span>
                           ) : null}
                         </div>
                       )}

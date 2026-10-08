@@ -10,7 +10,7 @@ import type {
 
 export type PreviewViewport = 'mobile' | 'desktop'
 export type ScheduleMode = 'same_time' | 'by_account'
-export type ComposerMedia = PlanningMedia
+export type ComposerMedia = PlanningMedia & { file?: File }
 
 export type PlanningComposerDraft = {
   platform: PlanningPlatform
@@ -42,7 +42,7 @@ export function createComposerDraft(platform: PlanningPlatform): PlanningCompose
     accountSchedules: {},
     platformSettings:
       platform === 'facebook'
-        ? { allowComments: true, shareToFeed: true }
+        ? {}
         : {
             visibility: 'public',
             allowComments: true,
@@ -107,16 +107,35 @@ export function createComposerDraftFromContent(content: PlanningContent): Planni
 
 export function getPlanningContentIntent(content: PlanningContent): PlanningPublishIntent {
   if (content.approvalStatus === 'pending') return 'approval'
-  if (content.status === 'draft') return 'draft'
+  if (['draft', 'failed', 'cancelled'].includes(content.status)) return 'draft'
   if (content.status === 'scheduled') return 'schedule'
   return 'publish_now'
 }
 
 export function canSubmitComposer(draft: PlanningComposerDraft): boolean {
-  if (draft.targetIds.length === 0 || draft.caption.trim().length === 0) return false
+  if (draft.targetIds.length === 0 || !hasValidContentForPostType(draft)) return false
   if (draft.publishMode !== 'schedule') return true
   if (draft.scheduleMode === 'same_time') return Boolean(draft.scheduledAt)
   return draft.targetIds.every((accountId) => Boolean(draft.accountSchedules[accountId]))
+}
+
+function hasValidContentForPostType(draft: PlanningComposerDraft): boolean {
+  const caption = draft.caption.trim()
+  if (draft.postType === 'facebook_feed') {
+    if (draft.link.trim() && draft.media.length) return false
+    if (draft.media.some((item) => item.type === 'video') && draft.media.length !== 1) return false
+    return Boolean(caption || draft.link.trim() || draft.media.length)
+  }
+  if (draft.postType === 'facebook_reel' || draft.postType === 'tiktok_video') {
+    return draft.media.length === 1 && draft.media[0]?.type === 'video'
+  }
+  if (draft.postType === 'facebook_story') {
+    return draft.media.length === 1
+  }
+  if (draft.postType === 'tiktok_photo') {
+    return draft.media.length > 0 && draft.media.every((media) => media.type === 'image')
+  }
+  return false
 }
 
 export function toCreatePlanningContentInput(
@@ -128,14 +147,17 @@ export function toCreatePlanningContentInput(
     brandId,
     platform: draft.platform,
     type: draft.postType,
-    caption: draft.caption.trim(),
-    link: draft.link.trim() || undefined,
-    media: draft.media,
+    caption: draft.postType === 'facebook_story' ? '' : draft.caption.trim(),
+    link: draft.postType === 'facebook_story' ? undefined : draft.link.trim() || undefined,
+    media: draft.media.map(({ id, type, url, name }) => ({ id, type, url, name })),
     intent,
     platformSettings: draft.platformSettings,
     publications: draft.targetIds.map((socialAccountId) => ({
       socialAccountId,
-      captionOverride: draft.captionOverrides[socialAccountId]?.trim() || undefined,
+      captionOverride:
+        draft.postType === 'facebook_story'
+          ? undefined
+          : draft.captionOverrides[socialAccountId]?.trim() || undefined,
       scheduledAt:
         intent === 'schedule'
           ? draft.scheduleMode === 'same_time'
@@ -155,8 +177,7 @@ export function toUpdatePlanningContentInput(
   return {
     ...toCreatePlanningContentInput(brandId, draft, intent),
     contentId: content.id,
-    status: content.status,
-    approvalStatus: content.approvalStatus,
+    version: content.version,
   }
 }
 

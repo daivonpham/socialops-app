@@ -1,4 +1,4 @@
-import { useRef, type Dispatch, type ReactNode, type SetStateAction } from 'react'
+import { useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FaImages, FaLink } from 'react-icons/fa6'
 import { SocialAccountLabel } from '@/features/social-accounts'
@@ -42,6 +42,8 @@ export function PlanningPostEditor({
 }) {
   const { t } = useTranslation('planning')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [captionFocused, setCaptionFocused] = useState(false)
+  const [mediaPopoverOpen, setMediaPopoverOpen] = useState(false)
   const selectedAccounts = accounts.filter((account) => draft.targetIds.includes(account.id))
 
   const setSetting = (key: string, value: boolean | string) =>
@@ -57,6 +59,7 @@ export function PlanningPostEditor({
       name: file.name,
       type: file.type.startsWith('video/') ? ('video' as const) : ('image' as const),
       url: URL.createObjectURL(file),
+      file,
     }))
     setDraft((current) => ({ ...current, media: [...current.media, ...media].slice(0, 10) }))
   }
@@ -124,19 +127,33 @@ export function PlanningPostEditor({
 
         <Divider />
 
-        <FieldGroup label={t('composer.content.caption')}>
-          <div className="overflow-hidden rounded-xl border border-border bg-bg-surface focus-within:border-border-focus focus-within:ring-2 focus-within:ring-brand-100">
-            <Textarea
-              value={draft.caption}
-              rows={7}
-              maxLength={2200}
-              placeholder={t('composer.content.captionPlaceholder')}
-              className="border-0 shadow-none"
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, caption: event.target.value }))
-              }
-            />
-            <div className="flex items-center gap-1 border-t border-border-subtle px-2 py-1.5">
+        <FieldGroup
+          label={
+            draft.postType === 'facebook_story'
+              ? t('composer.media.title')
+              : t('composer.content.caption')
+          }
+        >
+          <div
+            className={`overflow-hidden rounded-xl border bg-bg-surface ${draft.postType !== 'facebook_story' && captionFocused ? 'border-border-focus ring-2 ring-brand-100' : 'border-border'}`}
+          >
+            {draft.postType !== 'facebook_story' ? (
+              <Textarea
+                value={draft.caption}
+                rows={7}
+                maxLength={2200}
+                placeholder={t('composer.content.captionPlaceholder')}
+                className="border-0 shadow-none"
+                onFocus={() => setCaptionFocused(true)}
+                onBlur={() => setCaptionFocused(false)}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, caption: event.target.value }))
+                }
+              />
+            ) : null}
+            <div
+              className={`flex items-center gap-1 px-2 py-1.5 ${draft.postType === 'facebook_story' ? '' : 'border-t border-border-subtle'}`}
+            >
               <input
                 ref={fileInputRef}
                 type="file"
@@ -151,11 +168,14 @@ export function PlanningPostEditor({
                 }
                 onChange={(event) => {
                   addMedia(event.target.files)
+                  if (event.target.files?.length) setMediaPopoverOpen(false)
                   event.target.value = ''
                 }}
               />
               <Popover
                 placement="bottomLeft"
+                open={mediaPopoverOpen}
+                onOpenChange={setMediaPopoverOpen}
                 content={
                   <div className="grid w-56 gap-2 p-3">
                     <p className="text-label-sm text-text-primary">{t('composer.media.add')}</p>
@@ -198,9 +218,11 @@ export function PlanningPostEditor({
                 </Popover>
               ) : null}
               <span className="flex-1" />
-              <span className="px-2 text-caption tabular-nums text-text-tertiary">
-                {draft.caption.length.toLocaleString()}/2,200
-              </span>
+              {draft.postType !== 'facebook_story' ? (
+                <span className="px-2 text-caption tabular-nums text-text-tertiary">
+                  {draft.caption.length.toLocaleString()}/2,200
+                </span>
+              ) : null}
             </div>
           </div>
         </FieldGroup>
@@ -300,7 +322,7 @@ export function PlanningPostEditor({
         </details>
       ) : null}
 
-      {selectedAccounts.length > 0 ? (
+      {selectedAccounts.length > 0 && draft.postType !== 'facebook_story' ? (
         <details className="group border-t border-border-subtle">
           <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-4 text-label-md text-text-secondary outline-none hover:bg-bg-surface-subtle focus-visible:focus-ring">
             <span>{t('composer.customization.title')}</span>

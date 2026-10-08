@@ -1,4 +1,4 @@
-import { useCallback, useState, type Dispatch, type SetStateAction } from 'react'
+import { useCallback, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { SocialAccountLabel } from '@/features/social-accounts'
@@ -15,14 +15,15 @@ import {
 } from '@/shared/ui'
 import {
   useCreatePlanningContent,
+  usePlanningAccounts,
   usePlanningContent,
-  usePlanningContents,
   useUpdatePlanningContent,
   type PlanningContent,
   type PlanningPlatform,
   type PlanningPostType,
   type PlanningPublishIntent,
 } from '../api'
+import { uploadPlanningMedia } from '../api/service'
 import { PlanningPostEditor } from '../components/composer/PlanningPostEditor'
 import { getPlanningPath } from '../config/planning.routes'
 import { PlanningPostPreview } from '../components/preview/PlanningPostPreview'
@@ -54,17 +55,13 @@ export default function CreatePlanningPostPage() {
   const requestedPostType = isEditing
     ? null
     : getRequestedPostType(searchParams.get('postType'), platform)
-  const catalogQuery = usePlanningContents(brandId, {
-    platform: 'all',
-    accountId: 'all',
-    status: 'all',
-  })
+  const accountsQuery = usePlanningAccounts(brandId)
   const contentQuery = usePlanningContent(brandId, contentId ?? null)
   const planningPath = getPlanningPath(platform)
 
   if (!isValidPlatform || !brandId) return <Navigate to="/" replace />
 
-  if (catalogQuery.isPending || (isEditing && contentQuery.isPending)) {
+  if (accountsQuery.isPending || (isEditing && contentQuery.isPending)) {
     return (
       <div className="grid gap-6">
         <SectionSkeleton rows={2} />
@@ -73,7 +70,7 @@ export default function CreatePlanningPostPage() {
     )
   }
 
-  if (catalogQuery.isError || (isEditing && (contentQuery.isError || !contentQuery.data))) {
+  if (accountsQuery.isError || (isEditing && (contentQuery.isError || !contentQuery.data))) {
     return (
       <div className="grid gap-5">
         <Button
@@ -95,9 +92,7 @@ export default function CreatePlanningPostPage() {
 
   const content = contentQuery.data
   if (content && content.platform !== platform) return <Navigate to={planningPath} replace />
-  const accounts = collectAccounts(catalogQuery.data?.items ?? []).filter(
-    (account) => account.platform === platform,
-  )
+  const accounts = (accountsQuery.data ?? []).filter((account) => account.platform === platform)
 
   return (
     <PlanningComposerWorkspace
@@ -152,6 +147,9 @@ function PlanningComposerWorkspace({
     }
   })
   const [previewViewport, setPreviewViewport] = useState<PreviewViewport>('mobile')
+  const [uploading, setUploading] = useState(false)
+  const [uploadFailed, setUploadFailed] = useState(false)
+  const createKey = useRef(crypto.randomUUID())
   const [previewAccountId, setPreviewAccountId] = useState('')
   const [publishIntent, setPublishIntent] = useState<PlanningPublishIntent>(() =>
     content ? getPlanningContentIntent(content) : shouldSchedule ? 'schedule' : 'publish_now',
@@ -160,15 +158,33 @@ function PlanningComposerWorkspace({
   const updateContent = useUpdatePlanningContent(brandId)
   const setPreviewAccount = useCallback((accountId: string) => setPreviewAccountId(accountId), [])
 
-  const submit = (intent: 'draft' | 'approval' | 'publish_now' | 'schedule') => {
-    const options = {
-      onSuccess: () => navigate(planningPath),
+  const submit = async (intent: 'draft' | 'approval' | 'publish_now' | 'schedule') => {
+    setUploading(true)
+    setUploadFailed(false)
+    try {
+      const media = await Promise.all(
+        draft.media.map(async (item) =>
+          item.file ? uploadPlanningMedia(brandId, item.file) : item,
+        ),
+      )
+      const submittedDraft = { ...draft, media }
+      setDraft(submittedDraft)
+      if (content) {
+        await updateContent.mutateAsync(
+          toUpdatePlanningContentInput(brandId, content, submittedDraft, intent),
+        )
+      } else {
+        await createContent.mutateAsync({
+          ...toCreatePlanningContentInput(brandId, submittedDraft, intent),
+          idempotencyKey: createKey.current,
+        })
+      }
+      navigate(planningPath)
+    } catch {
+      setUploadFailed(true)
+    } finally {
+      setUploading(false)
     }
-    if (content) {
-      updateContent.mutate(toUpdatePlanningContentInput(brandId, content, draft, intent), options)
-      return
-    }
-    createContent.mutate(toCreatePlanningContentInput(brandId, draft, intent), options)
   }
 
   const canSubmit = canSubmitComposer(draft)
@@ -193,7 +209,7 @@ function PlanningComposerWorkspace({
         </div>
       </header>
 
-      {saveContent.isError ? (
+      {saveContent.isError || uploadFailed ? (
         <Alert
           variant="soft"
           tone="error"
@@ -209,7 +225,7 @@ function PlanningComposerWorkspace({
             accounts={accounts}
             intent={publishIntent}
             isEditing={Boolean(content)}
-            loading={saveContent.isPending}
+            loading={saveContent.isPending || uploading}
             canSubmit={publishIntent === 'draft' || canSubmit}
             onIntentChange={(intent) => {
               setPublishIntent(intent)
@@ -460,14 +476,4 @@ function PublishOption({ title, description }: { title: string; description: str
       <span className="text-caption text-text-tertiary">{description}</span>
     </span>
   )
-}
-
-function collectAccounts(contents: PlanningContent[]): PlanningAccount[] {
-  const accounts = new Map<string, PlanningAccount>()
-  for (const content of contents) {
-    for (const target of content.targets) {
-      accounts.set(`${content.platform}:${target.id}`, { ...target, platform: content.platform })
-    }
-  }
-  return [...accounts.values()]
 }

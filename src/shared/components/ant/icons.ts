@@ -50,10 +50,20 @@ export {
 
 export { PiCaretUpDownLight as IconCaretUpDown } from 'react-icons/pi'
 export { IoFilter as IconFilter } from 'react-icons/io5'
+export { IoIosClose as IconFilterClear } from 'react-icons/io'
+export { IoIosClose as IconCloseCompact } from 'react-icons/io'
 export { IoSettingsOutline as IconSettingsOutline } from 'react-icons/io5'
 export { MdFacebook as IconFacebook } from 'react-icons/md'
 export { MdOutlineWorkspaces as IconWorkspaces } from 'react-icons/md'
 export { FaTiktok as IconTikTok } from 'react-icons/fa6'
+export { FaPlay as IconPlaySolid } from 'react-icons/fa'
+export { FaEarthAsia as IconPublic } from 'react-icons/fa6'
+export { BsDot as IconDot } from 'react-icons/bs'
+export { IoIosPause as IconPauseStory } from 'react-icons/io'
+export {
+  PiSpeakerHighFill as IconSpeakerHigh,
+  PiSpeakerSlashFill as IconSpeakerMuted,
+} from 'react-icons/pi'
 export { TbBrandAirtable as IconBrandManagement } from 'react-icons/tb'
 export { BsUpload as IconUpload } from 'react-icons/bs'
 export { FcGoogle as IconGoogle } from 'react-icons/fc'

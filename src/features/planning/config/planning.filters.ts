@@ -1,14 +1,17 @@
-import type { PlanningApprovalStatus, PlanningStatus } from '../api'
+import type { PlanningApprovalStatus, PlanningPostType } from '../api'
 
 export type PlanningView = 'calendar' | 'list'
 export type PlanningCalendarView = 'month' | 'week'
 
-export const PLANNING_FILTER_STATUSES: PlanningStatus[] = [
+export type PlanningStatusGroup =
+  'draft' | 'scheduled' | 'in_progress' | 'published' | 'needs_action'
+
+export const PLANNING_FILTER_STATUS_GROUPS: PlanningStatusGroup[] = [
   'draft',
   'scheduled',
-  'publishing',
+  'in_progress',
   'published',
-  'failed',
+  'needs_action',
 ]
 
 export const PLANNING_FILTER_APPROVAL_STATUSES: PlanningApprovalStatus[] = [
@@ -16,6 +19,14 @@ export const PLANNING_FILTER_APPROVAL_STATUSES: PlanningApprovalStatus[] = [
   'pending',
   'approved',
   'rejected',
+]
+
+export const PLANNING_FILTER_POST_TYPES: PlanningPostType[] = [
+  'facebook_feed',
+  'facebook_story',
+  'facebook_reel',
+  'tiktok_video',
+  'tiktok_photo',
 ]
 
 const PLANNING_PREFERRED_VIEW_STORAGE_KEY = 'socialops.planning.preferred-view:v1'
@@ -26,7 +37,9 @@ export type PlanningUrlFilters = {
   date: string
 
   accountId: 'all' | string
-  status: 'all' | PlanningStatus
+  type: 'all' | PlanningPostType
+  statusGroup: 'all' | PlanningStatusGroup
+  attention: 'all' | 'needs_action'
   approvalStatus: 'all' | PlanningApprovalStatus
 }
 
@@ -36,7 +49,9 @@ export const PLANNING_FILTER_DEFAULTS: PlanningUrlFilters = {
   date: '2026-09-08',
 
   accountId: 'all',
-  status: 'all',
+  type: 'all',
+  statusGroup: 'all',
+  attention: 'all',
   approvalStatus: 'all',
 }
 
