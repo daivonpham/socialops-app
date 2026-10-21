@@ -32,6 +32,7 @@ import {
 } from '../components/FacebookOAuthResultModal'
 import { ManageFacebookPagesDrawer } from '../components/ManageFacebookPagesDrawer'
 import { FacebookPageSwitcher } from '../components/FacebookPageSwitcher'
+import { FacebookSyncBanner, FacebookSyncControl } from '../components/FacebookSyncStatus'
 import { OverviewTab } from '../components/OverviewTab'
 import { FACEBOOK_ACCESS } from '../config/facebook-access'
 
@@ -187,6 +188,8 @@ export default function FacebookPage() {
         </div>
       </header>
 
+      <FacebookSyncBanner brandId={brandId} />
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Tabs
           value={tab}
@@ -197,13 +200,16 @@ export default function FacebookPage() {
             { value: 'analytics', label: t('tabs.analytics') },
           ]}
         />
-        <FacebookFilters
-          range={query.range}
-          since={query.since}
-          until={query.until}
-          compare={query.compare}
-          onChange={setFilters}
-        />
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          <FacebookSyncControl brandId={brandId} />
+          <FacebookFilters
+            range={query.range}
+            since={query.since}
+            until={query.until}
+            compare={query.compare}
+            onChange={setFilters}
+          />
+        </div>
       </div>
       {tab === 'overview' ? <OverviewTab brandId={brandId} query={query} /> : null}
       {tab === 'analytics' ? <AnalyticsTab brandId={brandId} query={query} /> : null}

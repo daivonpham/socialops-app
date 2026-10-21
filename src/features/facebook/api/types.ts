@@ -76,6 +76,7 @@ export type FacebookPostDto = {
   id: string
   pageId: string
   pageName: string
+  avatarUrl?: string
   message: string
   mediaType: 'image' | 'video' | 'link' | 'text'
   status: PostStatus
@@ -83,6 +84,7 @@ export type FacebookPostDto = {
   scheduledAt?: string
   publishedAt?: string
   thumbnailUrl?: string
+  mediaUrl?: string
   permalinkUrl?: string
   mediaViews: number
   reactions?: number
@@ -97,6 +99,35 @@ export type FacebookPostsDto = {
   total: number
   page: number
   pageSize: number
+}
+
+export type FacebookRecentPostsQuery = FacebookQuery & {
+  contentType?: 'all' | 'post' | 'reel' | 'story'
+  page: number
+  limit: number
+  search?: string
+  sortBy?:
+    'publishedAt' | 'mediaViews' | 'reactions' | 'comments' | 'shares' | 'contentInteractions'
+  sortOrder?: 'asc' | 'desc'
+}
+
+export type FacebookRecentPostsDto = {
+  items: FacebookRecentPostDto[]
+  total: number
+  page: number
+  limit: number
+}
+
+export type FacebookRecentPostDto = Omit<
+  FacebookPostDto,
+  'mediaViews' | 'reactions' | 'comments' | 'shares' | 'contentInteractions' | 'clicks'
+> & {
+  contentType: 'post' | 'reel' | 'story'
+  mediaViews: number | null
+  reactions: number | null
+  comments: number | null
+  shares: number | null
+  contentInteractions: number | null
 }
 
 export type FacebookAnalyticsDto = {
@@ -190,4 +221,19 @@ export type CreateFacebookPostInput = {
   message: string
   publishNow: boolean
   scheduledAt?: string
+}
+
+export type FacebookSyncStatusDto = {
+  syncing: boolean
+  /** Oldest successful sync across the Brand's Pages; null until every Page has synced once. */
+  lastSyncedAt: string | null
+  refreshAvailableAt: string | null
+  pages: Array<{
+    pageId: string
+    status: 'pending' | 'syncing' | 'idle' | 'error' | 'rate_limited'
+    lastSyncedAt: string | null
+    historyStartAt: string | null
+    backfillCompleted: boolean
+    lastErrorCode: string | null
+  }>
 }

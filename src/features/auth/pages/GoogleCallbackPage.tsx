@@ -18,11 +18,15 @@ export default function GoogleCallbackPage() {
 
   useEffect(() => {
     if (providerError || status === 'anonymous') {
-      navigate(`${AUTH_ROUTES.LOGIN}?oauth=failed`, { replace: true })
+      // Cancelling Google consent is a normal choice, not a failure worth an error message.
+      const cancelled = params.get('error') === 'GOOGLE_AUTH_CANCELLED'
+      navigate(cancelled ? AUTH_ROUTES.LOGIN : `${AUTH_ROUTES.LOGIN}?oauth=failed`, {
+        replace: true,
+      })
       return
     }
     if (status === 'authenticated') navigate(AUTH_ROUTES.POST_AUTH, { replace: true })
-  }, [navigate, providerError, status])
+  }, [navigate, params, providerError, status])
 
   return (
     <AuthLayout title={t('google.title')} description={t('google.description')} footer="">

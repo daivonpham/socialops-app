@@ -45,6 +45,7 @@ import {
 } from '../api'
 import type { PlanningCalendarView } from '../config/planning.filters'
 import { getPlanningDragPolicy } from '../model'
+import { planningCalendarEventDate } from '../model/calendar-event-date'
 import { PlanningCalendarEvent } from './PlanningCalendarEvent'
 import './planning-calendar.css'
 
@@ -109,19 +110,16 @@ export function PlanningCalendar({
   const timeZone = getLocalTimeZone()
   const events = useMemo<EventInput[]>(
     () =>
-      contents.flatMap((content) => {
-        if (!content.scheduledAt) return []
+      contents.map((content) => {
         const policy = getPlanningDragPolicy(content.status)
-        return [
-          {
-            id: content.id,
-            title: content.title ?? content.caption,
-            start: content.scheduledAt,
-            editable: policy.draggable,
-            durationEditable: false,
-            extendedProps: { content } satisfies PlanningEventProperties,
-          },
-        ]
+        return {
+          id: content.id,
+          title: content.title ?? content.caption,
+          start: planningCalendarEventDate(content),
+          editable: policy.draggable,
+          durationEditable: false,
+          extendedProps: { content } satisfies PlanningEventProperties,
+        }
       }),
     [contents],
   )
@@ -316,7 +314,7 @@ export function PlanningCalendar({
               displayValue={calendarHeading.range || t('calendar.today')}
               aria-label={t('calendar.selectDate')}
               suffixIcon={null}
-              className="-ms-px w-[260px] rounded-none z-1"
+              className="-ms-px w-[270px] rounded-none z-1"
               onChange={handleDatePick}
             />
             <Button

@@ -82,16 +82,22 @@ export function createComposerDraftFromContent(content: PlanningContent): Planni
       publications.length > 0
         ? publications.map((publication) => publication.socialAccountId)
         : content.targets.map((target) => target.id),
-    caption: content.caption,
+    caption:
+      publications.length === 1
+        ? (publications[0]?.captionOverride ?? content.caption)
+        : content.caption,
     link: content.link ?? '',
     media: content.media ?? fallbackMedia,
-    captionOverrides: Object.fromEntries(
-      publications.flatMap((publication) =>
-        publication.captionOverride
-          ? [[publication.socialAccountId, publication.captionOverride]]
-          : [],
-      ),
-    ),
+    captionOverrides:
+      publications.length > 1
+        ? Object.fromEntries(
+            publications.flatMap((publication) =>
+              publication.captionOverride
+                ? [[publication.socialAccountId, publication.captionOverride]]
+                : [],
+            ),
+          )
+        : {},
     publishMode: content.status === 'scheduled' ? 'schedule' : 'publish_now',
     scheduleMode: usesAccountSchedules ? 'by_account' : 'same_time',
     scheduledAt,
@@ -155,17 +161,34 @@ export function toCreatePlanningContentInput(
     publications: draft.targetIds.map((socialAccountId) => ({
       socialAccountId,
       captionOverride:
-        draft.postType === 'facebook_story'
+        draft.postType === 'facebook_story' || draft.targetIds.length <= 1
           ? undefined
           : draft.captionOverrides[socialAccountId]?.trim() || undefined,
-      scheduledAt:
-        intent === 'schedule'
-          ? draft.scheduleMode === 'same_time'
-            ? new Date(draft.scheduledAt).toISOString()
-            : new Date(draft.accountSchedules[socialAccountId]).toISOString()
-          : undefined,
+      scheduledAt: plannedAt(draft, socialAccountId, intent),
     })),
   }
+}
+
+/**
+ * A scheduled post must carry its time. Drafts and approval requests keep an optional
+ * planned date so moving them on the calendar is not lost when they are edited.
+ */
+function plannedAt(
+  draft: PlanningComposerDraft,
+  socialAccountId: string,
+  intent: PlanningPublishIntent,
+): string | undefined {
+  if (intent === 'publish_now') return undefined
+  const value =
+    draft.scheduleMode === 'same_time'
+      ? draft.scheduledAt
+      : (draft.accountSchedules[socialAccountId] ?? draft.scheduledAt)
+  if (!value) return undefined
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return undefined
+  // A past planned date is only meaningful for scheduling; drafts silently drop it.
+  if (intent !== 'schedule' && date.getTime() <= Date.now()) return undefined
+  return date.toISOString()
 }
 
 export function toUpdatePlanningContentInput(

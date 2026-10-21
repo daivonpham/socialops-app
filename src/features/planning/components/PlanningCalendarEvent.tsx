@@ -1,25 +1,16 @@
 import { useTranslation } from 'react-i18next'
-import { IconFacebook, IconImage, IconTikTok, Tooltip } from '@/shared/ui'
-import type { PlanningContent, PlanningStatus } from '../api'
+import { IconFacebook, IconTikTok, Tooltip } from '@/shared/ui'
+import type { PlanningContent } from '../api'
+import { planningStatusGroup, type PlanningSummaryStatus } from '../model/planning-status-group'
+import { PlanningMediaThumbnail } from './PlanningMediaThumbnail'
 
-const STATUS_CLASS: Record<PlanningStatus, string> = {
+const STATUS_CLASS: Record<PlanningSummaryStatus, string> = {
   draft: 'border-border-subtle bg-bg-surface-subtle',
   scheduled: 'border-info-100 bg-info-50',
-  queued: 'border-info-100 bg-info-50',
-  publishing: 'border-warning-100 bg-warning-50',
-  processing: 'border-warning-100 bg-warning-50',
-  verifying: 'border-warning-100 bg-warning-50',
+  in_progress: 'border-info-100 bg-info-50',
   published: 'border-success-100 bg-success-50',
-  editing: 'border-info-100 bg-info-50',
-  deleting: 'border-warning-100 bg-warning-50',
+  needs_action: 'border-error-100 bg-error-50',
   deleted: 'border-border-subtle bg-bg-surface-subtle',
-  edit_unknown: 'border-warning-100 bg-warning-50',
-  delete_unknown: 'border-warning-100 bg-warning-50',
-  failed: 'border-error-100 bg-error-50',
-  partial: 'border-warning-100 bg-warning-50',
-  unknown: 'border-warning-100 bg-warning-50',
-  cancelled: 'border-border-subtle bg-bg-surface-subtle',
-  retry_wait: 'border-warning-100 bg-warning-50',
 }
 
 export function PlanningCalendarEvent({
@@ -30,11 +21,12 @@ export function PlanningCalendarEvent({
   timeText: string
 }) {
   const { t } = useTranslation('planning')
+  const summaryStatus = planningStatusGroup(content)
   const label = t('calendar.eventLabel', {
     time: timeText,
     platform: t(`platform.${content.platform}`),
     caption: content.title ?? content.caption,
-    status: t(`status.${content.status}`),
+    status: t(`statusGroup.${summaryStatus}`),
     count: content.targets.length,
   })
 
@@ -42,21 +34,10 @@ export function PlanningCalendarEvent({
     <Tooltip title={content.caption} placement="top">
       <div
         aria-label={label}
-        className={`planning-calendar-event min-w-0 rounded-md border px-2 py-1 shadow-xs transition-shadow duration-fast hover:shadow-md ${STATUS_CLASS[content.status]}`}
+        className={`planning-calendar-event min-w-0 rounded-md border px-2 py-1 shadow-xs transition-shadow duration-fast hover:shadow-md ${STATUS_CLASS[summaryStatus]}`}
       >
         <div className="planning-calendar-event__primary flex min-w-0 items-center gap-2">
-          {content.thumbnailUrl ? (
-            <img
-              src={content.thumbnailUrl}
-              alt=""
-              loading="lazy"
-              className="h-5 w-5 shrink-0 rounded-sm object-cover"
-            />
-          ) : (
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-bg-surface-muted text-text-tertiary">
-              <IconImage />
-            </span>
-          )}
+          <PlanningMediaThumbnail content={content} className="h-5 w-5 shrink-0 rounded-sm" />
           <strong className="min-w-0 flex-1 truncate text-caption font-medium text-text-primary">
             {content.title ?? content.caption}
           </strong>
@@ -70,7 +51,7 @@ export function PlanningCalendarEvent({
               <IconTikTok aria-label={t('platform.tiktok')} className="text-text-primary" />
             )}
           </span>
-          <span className="truncate">{t(`status.${content.status}`)}</span>
+          <span className="truncate">{t(`statusGroup.${summaryStatus}`)}</span>
           <span aria-hidden>·</span>
           <span className="truncate">
             {t(

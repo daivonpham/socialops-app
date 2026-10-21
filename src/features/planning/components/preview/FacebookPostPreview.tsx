@@ -24,6 +24,7 @@ import {
 import type { PlanningPostType } from '../../api'
 import type { PlanningAccount } from '../../model'
 import type { ComposerMedia, PreviewViewport } from '../../model/composer'
+import { CaptionClamp } from '../CaptionClamp'
 
 export function FacebookPostPreview({
   account,
@@ -61,11 +62,15 @@ export function FacebookPostPreview({
       className={`w-full shrink-0 overflow-hidden rounded-xl border border-border-subtle bg-bg-surface text-text-primary shadow-md transition-[max-width] duration-base ${fluid ? 'max-w-full' : viewport === 'mobile' ? 'max-w-[20rem]' : ''}`}
     >
       <FacebookIdentity account={account} compact={viewport === 'mobile'} />
-      <p
-        className={`whitespace-pre-wrap text-text-primary ${viewport === 'mobile' ? 'px-3 pb-3 text-body-sm' : 'px-5 pb-4 text-body-md'}`}
+      <div
+        className={`text-text-primary ${viewport === 'mobile' ? 'px-3 pb-3 text-body-sm' : 'px-5 pb-4 text-body-md'}`}
       >
-        {renderCaption(caption || 'Your caption will appear here.')}
-      </p>
+        <CaptionClamp
+          caption={caption || 'Your caption will appear here.'}
+          lines={4}
+          renderText={renderCaption}
+        />
+      </div>
       {video ? (
         <div className="relative flex aspect-[6/5] items-center justify-center overflow-hidden bg-neutral-200">
           <VideoPreview key={video.id} src={video.url} className="h-full w-full object-contain" />
@@ -218,9 +223,9 @@ function FacebookVerticalPreview({
                 {t('composer.preview.following')}
               </span>
             </div>
-            <p className="max-h-24 overflow-hidden whitespace-pre-wrap text-body-sm">
-              {caption || 'Your caption will appear here.'}
-            </p>
+            <div className="min-w-0 text-body-sm">
+              <CaptionClamp caption={caption || 'Your caption will appear here.'} inverse />
+            </div>
           </div>
           <div className="pointer-events-none absolute bottom-8 right-3 grid gap-4 text-center text-label-md">
             <PreviewAction icon={<IconHeart />} value="1.2K" />

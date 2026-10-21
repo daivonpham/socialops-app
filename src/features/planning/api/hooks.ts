@@ -10,8 +10,13 @@ import {
   cancelPlanningContent,
   retryPlanningPublication,
   retryFailedPlanningPublications,
+  reconcileUnknownPlanningPublications,
   editPublishedPlanningCaption,
   deletePublishedPlanningPublication,
+  discardUnknownPlanningPublication,
+  deleteAllPlanningPublications,
+  dismissUnknownPlanningEdit,
+  getPlanningSummary,
 } from './service'
 import type {
   CreatePlanningContentInput,
@@ -26,6 +31,8 @@ export const PLANNING_QUERY_KEYS = {
   accounts: (brandId: string | null) => [...PLANNING_QUERY_KEYS.root(brandId), 'accounts'] as const,
   contents: (brandId: string | null, query: PlanningQuery) =>
     [...PLANNING_QUERY_KEYS.root(brandId), 'contents', query] as const,
+  summary: (brandId: string | null, range: { since?: string; until?: string }) =>
+    [...PLANNING_QUERY_KEYS.root(brandId), 'summary', range] as const,
   detail: (brandId: string | null, contentId: string | null) =>
     [...PLANNING_QUERY_KEYS.root(brandId), 'detail', contentId] as const,
 }
@@ -55,6 +62,7 @@ export function usePlanningContents(brandId: string | null, query: PlanningQuery
             'processing',
             'verifying',
             'retry_wait',
+            'edit_queued',
             'editing',
             'deleting',
           ].includes(status),
@@ -67,11 +75,27 @@ export function usePlanningContents(brandId: string | null, query: PlanningQuery
   })
 }
 
+export function usePlanningSummary(
+  brandId: string | null,
+  range: { since?: string; until?: string },
+) {
+  return useQuery({
+    queryKey: PLANNING_QUERY_KEYS.summary(brandId, range),
+    queryFn: () => getPlanningSummary(brandId!, range),
+    enabled: brandId !== null,
+    select: (response) => response.data,
+    refetchInterval: 60_000,
+  })
+}
+
 export function usePlanningContent(brandId: string | null, contentId: string | null) {
   return useQuery({
     queryKey: PLANNING_QUERY_KEYS.detail(brandId, contentId),
     queryFn: () => getPlanningContent(brandId!, contentId!),
     enabled: brandId !== null && contentId !== null,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
     select: (response) => response.data,
     refetchInterval: (current) => {
       const content = current.state.data?.data
@@ -82,6 +106,7 @@ export function usePlanningContent(brandId: string | null, contentId: string | n
           'processing',
           'verifying',
           'retry_wait',
+          'edit_queued',
           'editing',
           'deleting',
         ].includes(content.status)
@@ -132,10 +157,26 @@ export function useRetryFailedPlanningPublications(brandId: string | null) {
   return usePlanningMutation(brandId, retryFailedPlanningPublications)
 }
 
+export function useReconcileUnknownPlanningPublications(brandId: string | null) {
+  return usePlanningMutation(brandId, reconcileUnknownPlanningPublications)
+}
+
 export function useEditPublishedPlanningCaption(brandId: string | null) {
   return usePlanningMutation(brandId, editPublishedPlanningCaption)
 }
 
 export function useDeletePublishedPlanningPublication(brandId: string | null) {
   return usePlanningMutation(brandId, deletePublishedPlanningPublication)
+}
+
+export function useDiscardUnknownPlanningPublication(brandId: string | null) {
+  return usePlanningMutation(brandId, discardUnknownPlanningPublication)
+}
+
+export function useDismissUnknownPlanningEdit(brandId: string | null) {
+  return usePlanningMutation(brandId, dismissUnknownPlanningEdit)
+}
+
+export function useDeleteAllPlanningPublications(brandId: string | null) {
+  return usePlanningMutation(brandId, deleteAllPlanningPublications)
 }

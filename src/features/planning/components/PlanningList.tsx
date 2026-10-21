@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { hasPermission, usePermissions } from '@/shared/permissions'
 import { formatDateTime, formatNumber, type AppLocale } from '@/shared/i18n'
 import {
   Avatar,
@@ -7,7 +8,6 @@ import {
   DataTable,
   EmptyState,
   IconEdit,
-  IconImage,
   IconView,
   StatusTag,
   Tooltip,
@@ -24,8 +24,10 @@ import {
   PLANNING_FILTER_STATUS_GROUPS,
   type PlanningStatusGroup,
 } from '../config/planning.filters'
-import { planningStatusGroup } from '../model/planning-status-group'
+import { planningStatusGroup, planningSummaryStatusTone } from '../model/planning-status-group'
 import { ApprovalStatusSelect } from './ApprovalStatusSelect'
+import { PLANNING_ACCESS } from '../config/planning-access'
+import { PlanningMediaThumbnail } from './PlanningMediaThumbnail'
 
 export function PlanningList({
   brandId,
@@ -48,12 +50,18 @@ export function PlanningList({
     statusGroup?: 'all' | PlanningStatusGroup
     approvalStatus?: 'all' | PlanningApprovalStatus
   }) => void
-  onSelectContent: (content: PlanningContent) => void
+  onSelectContent: (content: PlanningContent, action?: 'edit' | 'delete') => void
   onEditContent: (content: PlanningContent) => void
 }) {
   const { t, i18n } = useTranslation('planning')
+  const { granted } = usePermissions()
+  const canApprove = hasPermission(granted, PLANNING_ACCESS.approve[0])
   const locale = i18n.resolvedLanguage as AppLocale
-  const updateApproval = useUpdatePlanningApproval(brandId)
+  const {
+    mutate: updateApproval,
+    isPending: approvalPending,
+    variables: approvalVariables,
+  } = useUpdatePlanningApproval(brandId)
   const columns = useMemo<DataTableColumn<PlanningContent>[]>(
     () => [
       {
@@ -61,33 +69,28 @@ export function PlanningList({
         dataIndex: 'caption',
         title: t('list.content'),
         width: 'content',
-        render: (_, row) => (
-          <div className="grid min-w-64 grid-cols-[3rem_minmax(0,1fr)] items-center gap-3">
-            {row.thumbnailUrl ? (
-              <img
-                src={row.thumbnailUrl}
-                alt=""
-                loading="lazy"
-                className="size-12 rounded-lg object-cover"
-              />
-            ) : (
-              <span className="flex size-12 items-center justify-center rounded-lg bg-bg-surface-muted text-text-tertiary">
-                <IconImage />
+        render: (_, row) => {
+          const pendingPublication = row.publications?.find((item) => item.pendingCaption)
+          return (
+            <div className="grid min-w-64 grid-cols-[3rem_minmax(0,1fr)] items-center gap-3">
+              <PlanningMediaThumbnail content={row} className="size-12 rounded-lg" />
+              <span className="min-w-0">
+                <span className="line-clamp-2 text-body-sm leading-relaxed text-text-primary">
+                  {pendingPublication?.pendingCaption ||
+                    row.caption ||
+                    t(`postType.${getPostType(row)}`)}
+                </span>
+                <span className="mt-1 block text-caption text-text-tertiary">
+                  {t(`postType.${getPostType(row)}`)}
+                  {getPostType(row) === 'facebook_feed'
+                    ? ` · ${t(`mediaKind.${row.mediaType}`)}`
+                    : ''}
+                  {pendingPublication ? ` · ${t(`status.${pendingPublication.status}`)}` : ''}
+                </span>
               </span>
-            )}
-            <span className="min-w-0">
-              <span className="line-clamp-2 text-body-sm leading-relaxed text-text-primary">
-                {row.caption || t(`postType.${getPostType(row)}`)}
-              </span>
-              <span className="mt-1 block text-caption text-text-tertiary">
-                {t(`postType.${getPostType(row)}`)}
-                {getPostType(row) === 'facebook_feed'
-                  ? ` · ${t(`mediaKind.${row.mediaType}`)}`
-                  : ''}
-              </span>
-            </span>
-          </div>
-        ),
+            </div>
+          )
+        },
       },
       {
         key: 'accounts',
@@ -148,7 +151,9 @@ export function PlanningList({
         onFilterChange: (value) =>
           onFiltersChange({ statusGroup: value as 'all' | PlanningStatusGroup }),
         render: (_, row) => {
-          const publications = row.publications ?? []
+          const publications = (row.publications ?? []).filter(
+            (item) => !['cancelled', 'deleted'].includes(item.status),
+          )
           const published = publications.filter((item) => item.status === 'published').length
           const needsAction =
             publications.some((item) =>
@@ -157,17 +162,7 @@ export function PlanningList({
           const group = planningStatusGroup(row)
           return (
             <div className="grid gap-1">
-              <StatusTag
-                tone={
-                  group === 'published'
-                    ? 'success'
-                    : group === 'needs_action'
-                      ? 'error'
-                      : group === 'scheduled' || group === 'in_progress'
-                        ? 'info'
-                        : 'neutral'
-                }
-              >
+              <StatusTag tone={planningSummaryStatusTone(group)}>
                 {t(`statusGroup.${group}`)}
               </StatusTag>
               {publications.length > 1 &&
@@ -201,15 +196,18 @@ export function PlanningList({
           onFiltersChange({
             approvalStatus: value as 'all' | PlanningApprovalStatus,
           }),
-        render: (_, row) => (
-          <ApprovalStatusSelect
-            value={row.approvalStatus}
-            disabled={updateApproval.isPending && updateApproval.variables?.contentId === row.id}
-            onChange={(approvalStatus) => {
-              updateApproval.mutate({ brandId, contentId: row.id, approvalStatus })
-            }}
-          />
-        ),
+        render: (_, row) =>
+          canApprove ? (
+            <ApprovalStatusSelect
+              value={row.approvalStatus}
+              disabled={approvalPending && approvalVariables?.contentId === row.id}
+              onChange={(approvalStatus) => {
+                updateApproval({ brandId, contentId: row.id, approvalStatus })
+              }}
+            />
+          ) : (
+            t(`approvalStatus.${row.approvalStatus}`)
+          ),
       },
       {
         key: 'scheduledAt',
@@ -257,17 +255,20 @@ export function PlanningList({
         resizable: false,
         render: (_, row) => (
           <div className="flex items-center justify-center gap-1">
-            <Button
-              size="sm"
-              variant="ghost"
-              icon={<IconEdit />}
-              disabled={!['draft', 'scheduled', 'failed', 'cancelled'].includes(row.status)}
-              aria-label={t('list.editContent', { title: row.title ?? row.caption })}
-              onClick={(event) => {
-                event.stopPropagation()
-                onEditContent(row)
-              }}
-            />
+            {['draft', 'scheduled', 'failed'].includes(row.status) ||
+            (row.publications?.some((item) => item.status === 'published') &&
+              ['facebook_feed', 'facebook_reel'].includes(row.type ?? '')) ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                icon={<IconEdit />}
+                aria-label={t('list.editContent', { title: row.title ?? row.caption })}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onEditContent(row)
+                }}
+              />
+            ) : null}
             <Button
               size="sm"
               variant="ghost"
@@ -292,6 +293,9 @@ export function PlanningList({
       statusGroup,
       t,
       updateApproval,
+      approvalPending,
+      approvalVariables,
+      canApprove,
     ],
   )
 

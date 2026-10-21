@@ -13,6 +13,7 @@ export const PLANNING_STATUS_META: Record<PlanningStatus, PlanningStatusMetadata
   processing: { tone: 'info' },
   verifying: { tone: 'info' },
   published: { tone: 'success' },
+  edit_queued: { tone: 'info' },
   editing: { tone: 'info' },
   deleting: { tone: 'warning' },
   deleted: { tone: 'neutral' },

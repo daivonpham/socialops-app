@@ -44,6 +44,20 @@ export const facebookViVN = {
     loading: 'Đang tải dữ liệu Facebook',
     loadError: 'Không thể tải mục này.',
   },
+  sync: {
+    updatedAt: 'Cập nhật {{time}}',
+    neverSynced: 'Chưa đồng bộ',
+    syncing: 'Đang đồng bộ…',
+    refresh: 'Làm mới dữ liệu',
+    refreshQueued: 'Đã yêu cầu làm mới. Dữ liệu mới sẽ xuất hiện trong ít phút.',
+    refreshTooSoon: 'Dữ liệu vừa được làm mới. Vui lòng thử lại sau vài phút.',
+    refreshError: 'Không thể yêu cầu làm mới dữ liệu.',
+    initialTitle: 'Đang đồng bộ dữ liệu Facebook lần đầu',
+    initialDescription:
+      'SocialOps đang tải lịch sử cho {{count}} Trang. Số liệu sẽ tự cập nhật khi hoàn tất.',
+    issueTitle: '{{count}} Trang chưa đồng bộ được',
+    issueDescription: 'Số liệu của các Trang này có thể đã cũ. Hãy kết nối lại nếu lỗi tiếp diễn.',
+  },
   connection: {
     disconnectedTitle: 'Kết nối Facebook với SocialOps',
     disconnectedDescription:
@@ -126,6 +140,17 @@ export const facebookViVN = {
     pagePerformance: 'Hiệu suất theo Trang',
 
     topPosts: 'Nội dung nổi bật',
+    recentPosts: 'Nội dung đăng gần đây',
+    allPosts: 'Tất cả nội dung đã đăng',
+    viewAllPosts: 'Xem tất cả',
+    postContent: 'Nội dung',
+    publishedAt: 'Ngày đăng',
+    searchPosts: 'Tìm nội dung hoặc Trang',
+    filterContentType: 'Loại nội dung',
+    contentKind: { all: 'Tất cả loại', post: 'Bài viết', reel: 'Thước phim', story: 'Tin' },
+    fromDate: 'Từ ngày',
+    toDate: 'Đến ngày',
+    mediaKind: { image: 'Ảnh', video: 'Video', link: 'Liên kết', text: 'Chữ' },
     reactions: 'Cảm xúc',
     comments: 'Bình luận',
     shares: 'Chia sẻ',

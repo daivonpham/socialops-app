@@ -4,6 +4,7 @@ import { hasPermission, usePermissions } from '@/shared/permissions'
 import { Button, Dropdown, IconFacebook, IconPlusCircle, IconTikTok } from '@/shared/ui'
 import type { PlanningPlatform } from '../api'
 import { PLANNING_ACCESS } from '../config/planning-access'
+import { canPublishOnPlatform } from '../config/planning-capabilities'
 import { getPlanningCreatePath } from '../config/planning.routes'
 import type { PlanningAccount } from '../model'
 
@@ -27,8 +28,14 @@ export function CreatePostButton({
     <Button
       variant="primary"
       icon={<IconPlusCircle />}
-      disabled={!canCreatePost}
-      title={!canCreatePost ? t('create.noPermission') : undefined}
+      disabled={!canCreatePost || (platform !== 'all' && !canPublishOnPlatform(platform))}
+      title={
+        !canCreatePost
+          ? t('create.noPermission')
+          : platform === 'tiktok'
+            ? t('create.platformUnavailable')
+            : undefined
+      }
       onClick={platform === 'all' ? undefined : () => openComposer(platform)}
     >
       {t('create.button')}
@@ -51,7 +58,9 @@ export function CreatePostButton({
           key: 'tiktok',
           label: t('platform.tiktok'),
           icon: <IconTikTok />,
-          disabled: !accounts.some((account) => account.platform === 'tiktok'),
+          disabled:
+            !canPublishOnPlatform('tiktok') ||
+            !accounts.some((account) => account.platform === 'tiktok'),
         },
       ]}
       onSelect={(key) => openComposer(key as PlanningPlatform)}

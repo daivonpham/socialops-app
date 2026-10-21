@@ -31,6 +31,14 @@ export const PLANNING_FILTER_POST_TYPES: PlanningPostType[] = [
 
 const PLANNING_PREFERRED_VIEW_STORAGE_KEY = 'socialops.planning.preferred-view:v1'
 
+export function getPlanningTodayDateKey(): string {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 export type PlanningUrlFilters = {
   view: PlanningView
   calendarView: PlanningCalendarView
@@ -46,7 +54,7 @@ export type PlanningUrlFilters = {
 export const PLANNING_FILTER_DEFAULTS: PlanningUrlFilters = {
   view: 'calendar',
   calendarView: 'month',
-  date: '2026-09-08',
+  date: getPlanningTodayDateKey(),
 
   accountId: 'all',
   type: 'all',

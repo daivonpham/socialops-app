@@ -66,6 +66,7 @@ export {
 } from 'react-icons/pi'
 export { TbBrandAirtable as IconBrandManagement } from 'react-icons/tb'
 export { BsUpload as IconUpload } from 'react-icons/bs'
+export { FiUploadCloud as IconUploadCloud } from 'react-icons/fi'
 export { FcGoogle as IconGoogle } from 'react-icons/fc'
 export {
   RxPlusCircled as IconPlusCircle,

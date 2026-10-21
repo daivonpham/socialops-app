@@ -7,6 +7,8 @@
 export const PERMISSIONS = {
   CHANNELS_MANAGE: { key: 'channels.manage', labelKey: 'permissions.manageChannels' },
   PUBLISHING_PUBLISH: { key: 'publishing.publish', labelKey: 'permissions.publishContent' },
+  PUBLISHING_APPROVE: { key: 'publishing.approve', labelKey: 'permissions.approveContent' },
+  WORKSPACE_MANAGE: { key: 'workspace.manage', labelKey: 'permissions.manageWorkspace' },
   ANALYTICS_VIEW: { key: 'analytics.view', labelKey: 'permissions.viewAnalytics' },
   REPORTS_VIEW: { key: 'reports.view', labelKey: 'permissions.viewReports' },
   MEMBERS_VIEW: { key: 'members.view', labelKey: 'permissions.viewMembers' },

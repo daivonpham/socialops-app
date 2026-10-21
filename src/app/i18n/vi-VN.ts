@@ -71,6 +71,8 @@ export const appViVN = {
   permissions: {
     manageChannels: 'Quản lý kênh',
     publishContent: 'Xuất bản nội dung',
+    approveContent: 'Duyệt nội dung',
+    manageWorkspace: 'Quản lý không gian làm việc',
     viewAnalytics: 'Xem phân tích',
     viewReports: 'Xem báo cáo',
     viewMembers: 'Xem thành viên',

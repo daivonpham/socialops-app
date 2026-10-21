@@ -8,6 +8,7 @@ export type PlanningStatus =
   | 'processing'
   | 'verifying'
   | 'published'
+  | 'edit_queued'
   | 'editing'
   | 'deleting'
   | 'deleted'
@@ -90,6 +91,7 @@ export type PlanningPublication = {
   socialAccountId: string
   target: PlanningTarget
   captionOverride?: string
+  pendingCaption?: string
   scheduledAt?: string
   status: PlanningStatus
   externalPostId?: string
@@ -109,6 +111,16 @@ export type PlanningRetryResult = {
 export type PlanningRetryBatchResponse = {
   content: PlanningContent
   results: PlanningRetryResult[]
+}
+
+export type PlanningDeleteBatchResponse = {
+  content: PlanningContent
+  results: Array<{
+    publicationId: string
+    socialAccountId: string
+    outcome: 'deleted' | 'skipped' | 'failed'
+    reason?: string
+  }>
 }
 
 export type CreatePlanningContentInput = {
@@ -143,4 +155,16 @@ export type UpdatePlanningApprovalInput = {
 export type UpdatePlanningContentInput = CreatePlanningContentInput & {
   contentId: string
   version: number
+}
+
+export type PlanningSummary = {
+  since: string
+  until: string
+  publishedInRange: number
+  scheduledNext7Days: number
+  nextScheduledAt: string | null
+  needsAction: number
+  inProgress: number
+  drafts: number
+  pendingApproval: number
 }

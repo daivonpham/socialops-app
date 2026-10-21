@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatDateTime, getLocalTimeZone } from '@/shared/i18n'
 import {
@@ -6,16 +6,20 @@ import {
   Button,
   IconCalendar,
   IconClock,
+  IconClose,
   IconEdit,
   IconDelete,
+  IconDesktop,
   IconFacebook,
   IconLink,
+  IconMobile,
   IconProfile,
   IconRefresh,
   IconTikTok,
+  IconWarning,
   Modal,
   StatusTag,
-  Textarea,
+  Tabs,
 } from '@/shared/ui'
 import type {
   PlanningContent,
@@ -31,45 +35,111 @@ import {
   type PlanningAccount,
   type PreviewViewport,
 } from '../model'
+import { planningStatusGroup, planningSummaryStatusTone } from '../model/planning-status-group'
 import { FacebookPostPreview } from './preview/FacebookPostPreview'
 import { TikTokPostPreview } from './preview/TikTokPostPreview'
+import { CaptionClamp } from './CaptionClamp'
 
 export function PlanningPostModal({
   content,
+  initialAction,
   onClose,
   onEdit,
   onCancelContent,
   onRetryPublication,
   onRetryFailed,
+  onDeleteAll,
   retryResults,
-  onEditPublishedCaption,
+  reconciling,
+  onOpenPublishedEditor,
   onDeletePublished,
+  onDiscardUnknown,
+  onRetryEdit,
+  onDismissEdit,
 }: {
   content: PlanningContent | null
+  initialAction?: 'edit' | 'delete'
   onClose: () => void
   onEdit: (content: PlanningContent) => void
   onCancelContent: (content: PlanningContent) => Promise<void>
-  onRetryPublication: (publicationId: string) => Promise<void>
-  onRetryFailed: (contentId: string) => Promise<void>
+  onRetryPublication: (publicationId: string) => void
+  onRetryFailed: (contentId: string) => void
+  onDeleteAll: (contentId: string) => Promise<void>
   retryResults: PlanningRetryResult[]
-  onEditPublishedCaption: (publicationId: string, caption: string) => Promise<void>
+  reconciling: boolean
+  onOpenPublishedEditor: (publication: PlanningPublication) => void
   onDeletePublished: (publicationId: string) => Promise<void>
+  onDiscardUnknown: (publicationId: string) => Promise<void>
+  onRetryEdit: (publication: PlanningPublication) => void
+  onDismissEdit: (publicationId: string) => void
 }) {
   const { t } = useTranslation('planning')
   const timeZone = getLocalTimeZone()
-  const [confirmCancel, setConfirmCancel] = useState(false)
-  const [editPublication, setEditPublication] = useState<PlanningPublication | null>(null)
-  const [editCaption, setEditCaption] = useState('')
-  const [deletePublication, setDeletePublication] = useState<PlanningPublication | null>(null)
+  const firstPublished = content?.publications?.find((item) => item.status === 'published') ?? null
+  const supportsPublishedEdit =
+    content?.platform === 'facebook' &&
+    ['facebook_feed', 'facebook_reel'].includes(content.type ?? '')
+  const [confirmCancel, setConfirmCancel] = useState(
+    initialAction === 'delete' &&
+      content !== null &&
+      ['draft', 'scheduled', 'queued', 'failed', 'retry_wait'].includes(content.status) &&
+      !content?.publications?.some((item) => item.status === 'published'),
+  )
+  const [deletePublication, setDeletePublication] = useState<PlanningPublication | null>(
+    initialAction === 'delete' ? firstPublished : null,
+  )
+  const [discardPublication, setDiscardPublication] = useState<PlanningPublication | null>(null)
+  const [retryTarget, setRetryTarget] = useState<string | 'all' | null>(null)
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false)
+  const [deleting, setDeleting] = useState<'all' | 'publication' | 'unknown' | 'cancel' | null>(
+    null,
+  )
+  const submitDelete = async (
+    action: NonNullable<typeof deleting>,
+    operation: () => Promise<void>,
+    closeConfirmation: () => void,
+  ) => {
+    if (deleting) return
+    setDeleting(action)
+    try {
+      await operation()
+      closeConfirmation()
+    } catch {
+      // The parent shows the request error; keep the confirmation open for retry.
+    } finally {
+      setDeleting(null)
+    }
+  }
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(
+    initialAction ? (firstPublished?.socialAccountId ?? null) : null,
+  )
+  const activePublication =
+    content?.publications?.find((item) => item.socialAccountId === selectedAccountId) ??
+    content?.publications?.[0]
+  const hasMultipleAccounts = (content?.targets.length ?? 0) > 1
+  const retryableCount = content?.publications?.filter(canRetryPublication).length ?? 0
+  const canDeleteAll =
+    hasMultipleAccounts &&
+    content?.platform === 'facebook' &&
+    Boolean(content.publications?.length) &&
+    content.publications!.every((item) =>
+      ['published', 'unknown', 'delete_unknown', 'failed', 'cancelled', 'deleted'].includes(
+        item.status,
+      ),
+    ) &&
+    content.publications!.some((item) => !['cancelled', 'deleted'].includes(item.status))
+  const canEditPublished = supportsPublishedEdit && activePublication?.status === 'published'
   const canCancel =
     content && ['draft', 'scheduled', 'queued', 'failed', 'retry_wait'].includes(content.status)
-  const canEdit = content && ['draft', 'scheduled', 'failed', 'cancelled'].includes(content.status)
+  const canEdit = content && ['draft', 'scheduled', 'failed'].includes(content.status)
 
   return (
     <>
       <Modal
         open={Boolean(content)}
-        onClose={onClose}
+        onClose={() => {
+          if (!deleting) onClose()
+        }}
         width={1120}
         floatingClose
         title={
@@ -84,11 +154,115 @@ export function PlanningPostModal({
         }
         footer={
           content ? (
-            <div className="flex justify-end gap-2">
-              <Button onClick={onClose}>{t('common.close')}</Button>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Button disabled={Boolean(deleting)} onClick={onClose}>
+                {t('common.close')}
+              </Button>
+              {hasMultipleAccounts && retryableCount > 0 ? (
+                <Button
+                  icon={<IconRefresh aria-hidden />}
+                  disabled={reconciling}
+                  onClick={() => setRetryTarget('all')}
+                >
+                  {t('detail.retryAllFailed', { count: retryableCount })}
+                </Button>
+              ) : null}
+              {canDeleteAll ? (
+                <Button
+                  variant="destructive"
+                  icon={<IconDelete aria-hidden />}
+                  disabled={reconciling}
+                  onClick={() => setConfirmDeleteAll(true)}
+                >
+                  {t('detail.deleteAll')}
+                </Button>
+              ) : null}
+              {activePublication?.status === 'unknown' && !hasMultipleAccounts ? (
+                <>
+                  <Button
+                    icon={<IconRefresh aria-hidden />}
+                    disabled={reconciling}
+                    onClick={() => setRetryTarget(activePublication.id)}
+                  >
+                    {t('detail.retry')}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    icon={<IconDelete aria-hidden />}
+                    disabled={reconciling}
+                    onClick={() => setDiscardPublication(activePublication)}
+                  >
+                    {t(
+                      activePublication.externalPostId
+                        ? 'detail.discardUnknown'
+                        : 'detail.cancelUnknown',
+                    )}
+                  </Button>
+                </>
+              ) : null}
+              {activePublication?.status === 'delete_unknown' && !hasMultipleAccounts ? (
+                <Button
+                  variant="destructive"
+                  icon={<IconDelete aria-hidden />}
+                  onClick={() => setDiscardPublication(activePublication)}
+                >
+                  {t(
+                    activePublication.externalPostId
+                      ? 'detail.discardUnknown'
+                      : 'detail.cancelUnknown',
+                  )}
+                </Button>
+              ) : null}
+              {activePublication?.status === 'edit_unknown' && !hasMultipleAccounts ? (
+                <>
+                  <Button onClick={() => onDismissEdit(activePublication.id)}>
+                    {t('detail.dismissEdit')}
+                  </Button>
+                  {activePublication.pendingCaption ? (
+                    <Button
+                      variant="primary"
+                      icon={<IconRefresh aria-hidden />}
+                      onClick={() => onRetryEdit(activePublication)}
+                    >
+                      {t('detail.retryEdit')}
+                    </Button>
+                  ) : null}
+                </>
+              ) : null}
+              {activePublication &&
+              !hasMultipleAccounts &&
+              activePublication.status !== 'unknown' &&
+              canRetryPublication(activePublication) ? (
+                <Button
+                  icon={<IconRefresh aria-hidden />}
+                  onClick={() => void onRetryPublication(activePublication.id)}
+                >
+                  {t('detail.retry')}
+                </Button>
+              ) : null}
+              {activePublication?.status === 'published' &&
+              !hasMultipleAccounts &&
+              content.platform === 'facebook' ? (
+                <Button
+                  variant="destructive"
+                  icon={<IconDelete aria-hidden />}
+                  onClick={() => setDeletePublication(activePublication)}
+                >
+                  {t('detail.deletePublishedConfirm')}
+                </Button>
+              ) : null}
+              {canEditPublished && activePublication ? (
+                <Button
+                  variant="primary"
+                  icon={<IconEdit aria-hidden />}
+                  onClick={() => onOpenPublishedEditor(activePublication)}
+                >
+                  {t('detail.editPublishedTitle')}
+                </Button>
+              ) : null}
               {canCancel ? (
                 <Button
-                  variant="secondary"
+                  variant="destructive"
                   icon={<IconDelete aria-hidden />}
                   onClick={() => setConfirmCancel(true)}
                 >
@@ -113,116 +287,228 @@ export function PlanningPostModal({
             key={content.id}
             content={content}
             timeZone={timeZone}
-            onRetryPublication={onRetryPublication}
-            onRetryFailed={onRetryFailed}
-            retryResults={retryResults}
-            onEditPublished={(publication) => {
-              setEditPublication(publication)
-              setEditCaption(publication.captionOverride ?? content.caption)
+            selectedAccountId={selectedAccountId}
+            onSelectAccount={setSelectedAccountId}
+            onRetryPublication={(id) => {
+              const publication = content.publications?.find((item) => item.id === id)
+              if (publication?.status === 'unknown') setRetryTarget(id)
+              else void onRetryPublication(id)
             }}
+            retryResults={retryResults}
+            reconciling={reconciling}
             onDeletePublished={setDeletePublication}
+            onDiscardUnknown={setDiscardPublication}
+            onRetryEdit={onRetryEdit}
+            onDismissEdit={onDismissEdit}
           />
         ) : null}
       </Modal>
       <Modal
-        open={Boolean(editPublication)}
-        onClose={() => setEditPublication(null)}
-        title={t('detail.editPublishedTitle')}
+        open={confirmDeleteAll}
+        onClose={() => {
+          if (!deleting) setConfirmDeleteAll(false)
+        }}
+        title={t('detail.deleteAllTitle')}
         footer={
           <div className="flex justify-end gap-2">
-            <Button onClick={() => setEditPublication(null)}>{t('common.close')}</Button>
+            <Button disabled={Boolean(deleting)} onClick={() => setConfirmDeleteAll(false)}>
+              {t('common.close')}
+            </Button>
             <Button
-              variant="primary"
-              disabled={!editCaption.trim()}
+              variant="destructive"
+              loading={deleting === 'all'}
               onClick={() => {
-                if (!editPublication) return
-                const id = editPublication.id
-                setEditPublication(null)
-                void onEditPublishedCaption(id, editCaption)
+                if (content)
+                  void submitDelete(
+                    'all',
+                    () => onDeleteAll(content.id),
+                    () => setConfirmDeleteAll(false),
+                  )
               }}
             >
-              {t('detail.savePublishedCaption')}
+              {t(deleting === 'all' ? 'detail.deleting' : 'detail.deleteAll')}
             </Button>
           </div>
         }
       >
-        <Textarea
-          value={editCaption}
-          rows={5}
-          maxLength={2200}
-          onChange={(event) => setEditCaption(event.target.value)}
-        />
+        <DeleteWarning>{t('detail.deleteAllDescription')}</DeleteWarning>
+      </Modal>
+      <Modal
+        open={retryTarget !== null}
+        onClose={() => setRetryTarget(null)}
+        title={t('detail.retryUnknownTitle')}
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button onClick={() => setRetryTarget(null)}>{t('common.close')}</Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                const target = retryTarget
+                setRetryTarget(null)
+                if (target === 'all' && content) void onRetryFailed(content.id)
+                else if (target) void onRetryPublication(target)
+              }}
+            >
+              {t('detail.retryUnknownConfirm')}
+            </Button>
+          </div>
+        }
+      >
+        <p className="text-body-sm text-text-secondary">{t('detail.retryUnknownDescription')}</p>
+      </Modal>
+      <Modal
+        open={Boolean(discardPublication)}
+        onClose={() => {
+          if (!deleting) setDiscardPublication(null)
+        }}
+        title={t(
+          discardPublication?.externalPostId
+            ? 'detail.discardUnknownTitle'
+            : 'detail.cancelUnknownTitle',
+        )}
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button disabled={Boolean(deleting)} onClick={() => setDiscardPublication(null)}>
+              {t('common.close')}
+            </Button>
+            <Button
+              variant="destructive"
+              loading={deleting === 'unknown'}
+              onClick={() => {
+                const id = discardPublication?.id
+                if (id)
+                  void submitDelete(
+                    'unknown',
+                    () => onDiscardUnknown(id),
+                    () => setDiscardPublication(null),
+                  )
+              }}
+            >
+              {deleting === 'unknown'
+                ? t('detail.deleting')
+                : t(
+                    discardPublication?.externalPostId
+                      ? 'detail.discardUnknown'
+                      : 'detail.cancelUnknown',
+                  )}
+            </Button>
+          </div>
+        }
+      >
+        <DeleteWarning>
+          {t(
+            discardPublication?.externalPostId
+              ? 'detail.discardUnknownFacebookDescription'
+              : 'detail.cancelUnknownDescription',
+          )}
+        </DeleteWarning>
       </Modal>
       <Modal
         open={Boolean(deletePublication)}
-        onClose={() => setDeletePublication(null)}
+        onClose={() => {
+          if (!deleting) setDeletePublication(null)
+        }}
         title={t('detail.deletePublishedTitle')}
         footer={
           <div className="flex justify-end gap-2">
-            <Button onClick={() => setDeletePublication(null)}>{t('common.close')}</Button>
+            <Button disabled={Boolean(deleting)} onClick={() => setDeletePublication(null)}>
+              {t('common.close')}
+            </Button>
             <Button
-              variant="primary"
+              variant="destructive"
+              loading={deleting === 'publication'}
               onClick={() => {
                 if (!deletePublication) return
                 const id = deletePublication.id
-                setDeletePublication(null)
-                void onDeletePublished(id)
+                void submitDelete(
+                  'publication',
+                  () => onDeletePublished(id),
+                  () => setDeletePublication(null),
+                )
               }}
             >
-              {t('detail.deletePublishedConfirm')}
+              {t(deleting === 'publication' ? 'detail.deleting' : 'detail.deletePublishedConfirm')}
             </Button>
           </div>
         }
       >
-        <p className="text-body-sm text-text-secondary">{t('detail.deletePublishedDescription')}</p>
+        <p className="mb-3 text-label-md text-text-primary">{deletePublication?.target.name}</p>
+        <DeleteWarning>{t('detail.deletePublishedDescription')}</DeleteWarning>
       </Modal>
       <Modal
         open={confirmCancel && Boolean(content)}
-        onClose={() => setConfirmCancel(false)}
+        onClose={() => {
+          if (!deleting) setConfirmCancel(false)
+        }}
         title={t('detail.cancelTitle')}
         footer={
           <div className="flex justify-end gap-2">
-            <Button onClick={() => setConfirmCancel(false)}>{t('common.close')}</Button>
+            <Button disabled={Boolean(deleting)} onClick={() => setConfirmCancel(false)}>
+              {t('common.close')}
+            </Button>
             <Button
-              variant="primary"
+              variant="destructive"
+              loading={deleting === 'cancel'}
               onClick={() => {
                 if (!content) return
-                setConfirmCancel(false)
-                void onCancelContent(content)
+                void submitDelete(
+                  'cancel',
+                  () => onCancelContent(content),
+                  () => setConfirmCancel(false),
+                )
               }}
             >
-              {t('detail.cancelConfirm')}
+              {t(deleting === 'cancel' ? 'detail.deleting' : 'detail.cancelConfirm')}
             </Button>
           </div>
         }
       >
-        <p className="text-body-sm text-text-secondary">{t('detail.cancelDescription')}</p>
+        <DeleteWarning>{t('detail.cancelDescription')}</DeleteWarning>
       </Modal>
     </>
+  )
+}
+
+function DeleteWarning({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      role="alert"
+      className="flex items-start gap-3 rounded-lg border border-error-100 bg-error-50 p-3 text-body-sm text-error-700"
+    >
+      <IconWarning aria-hidden className="mt-0.5 shrink-0 text-icon-md" />
+      <p>{children}</p>
+    </div>
   )
 }
 
 function PlanningPostModalContent({
   content,
   timeZone,
+  selectedAccountId,
+  onSelectAccount,
   onRetryPublication,
-  onRetryFailed,
   retryResults,
-  onEditPublished,
+  reconciling,
   onDeletePublished,
+  onDiscardUnknown,
+  onRetryEdit,
+  onDismissEdit,
 }: {
   content: PlanningContent
   timeZone: string
-  onRetryPublication: (publicationId: string) => Promise<void>
-  onRetryFailed: (contentId: string) => Promise<void>
+  selectedAccountId: string | null
+  onSelectAccount: (id: string) => void
+  onRetryPublication: (publicationId: string) => void
   retryResults: PlanningRetryResult[]
-  onEditPublished: (publication: PlanningPublication) => void
+  reconciling: boolean
   onDeletePublished: (publication: PlanningPublication) => void
+  onDiscardUnknown: (publication: PlanningPublication) => void
+  onRetryEdit: (publication: PlanningPublication) => void
+  onDismissEdit: (publicationId: string) => void
 }) {
   const { t, i18n } = useTranslation('planning')
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const viewport = useResponsivePreviewViewport()
-  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
+  const [viewport, setViewport] = useState<PreviewViewport>('mobile')
   const draft = createComposerDraftFromContent(content)
   const accounts: PlanningAccount[] = content.targets.map((target) => ({
     ...target,
@@ -233,11 +519,14 @@ function PlanningPostModalContent({
     (item) => item.socialAccountId === previewAccount?.id,
   )
   const previewCaption = previewAccount
-    ? previewPublication?.captionOverride ||
+    ? previewPublication?.pendingCaption ||
+      previewPublication?.captionOverride ||
       draft.captionOverrides[previewAccount.id] ||
       draft.caption
     : draft.caption
-  const failedCount = content.publications?.filter(canRetryPublication).length ?? 0
+  const hasIndividualSchedules =
+    new Set(content.publications?.map((publication) => publication.scheduledAt ?? null)).size > 1
+  const summaryStatus = planningStatusGroup(content)
 
   useLayoutEffect(() => {
     scrollContainerRef.current?.scrollTo({ top: 0, left: 0 })
@@ -248,8 +537,8 @@ function PlanningPostModalContent({
       ref={scrollContainerRef}
       className="app-scrollbar max-h-[74vh] overflow-y-auto overscroll-y-contain py-2 pe-1"
     >
-      <div className="grid items-start gap-6 lg:grid-cols-[22rem_minmax(30rem,1fr)]">
-        <section className="min-w-0 overflow-hidden rounded-xl border border-border-subtle bg-bg-surface">
+      <div className="grid items-start gap-6 lg:grid-cols-[26rem_minmax(0,1fr)]">
+        <section className="min-w-0 overflow-hidden rounded-xl border border-border-subtle bg-bg-surface lg:sticky lg:top-2">
           <header className="flex items-center gap-3 p-5">
             {content.platform === 'facebook' ? (
               <IconFacebook className="shrink-0 text-icon-lg text-platform-facebook" />
@@ -268,8 +557,8 @@ function PlanningPostModalContent({
 
           <div className="grid gap-3 border-t border-border-subtle p-5">
             <StatusRow label={t('detail.postStatus')}>
-              <StatusTag tone={PLANNING_STATUS_TONE[content.status]}>
-                {t(`status.${content.status}`)}
+              <StatusTag tone={planningSummaryStatusTone(summaryStatus)}>
+                {t(`statusGroup.${summaryStatus}`)}
               </StatusTag>
             </StatusRow>
             <StatusRow label={t('detail.approvalStatus')}>
@@ -283,19 +572,14 @@ function PlanningPostModalContent({
             <div className="flex items-center justify-between gap-3">
               <h3 className="text-label-md text-text-primary">{t('detail.accounts')}</h3>
               <div className="flex items-center gap-2">
+                {reconciling ? (
+                  <span className="text-caption text-text-secondary">
+                    {t('detail.reconciling')}
+                  </span>
+                ) : null}
                 <span className="text-caption tabular-nums text-text-tertiary">
                   {t('calendar.targetCount', { count: content.targets.length })}
                 </span>
-                {failedCount > 0 && content.publications && content.publications.length > 1 && (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    icon={<IconRefresh aria-hidden />}
-                    onClick={() => void onRetryFailed(content.id)}
-                  >
-                    {t('detail.retryAllFailed', { count: failedCount })}
-                  </Button>
-                )}
               </div>
             </div>
             <ul className="mt-4 divide-y divide-border-subtle">
@@ -306,17 +590,18 @@ function PlanningPostModalContent({
                       target={publication.target}
                       publication={publication}
                       selected={previewAccount?.id === publication.socialAccountId}
-                      onSelect={() => setSelectedAccountId(publication.socialAccountId)}
+                      onSelect={() => onSelectAccount(publication.socialAccountId)}
+                      multipleAccounts={content.targets.length > 1}
                       retryResult={retryResults.find(
                         (item) => item.publicationId === publication.id,
                       )}
+                      reconciling={reconciling}
+                      showSchedule={hasIndividualSchedules}
                       onRetryPublication={onRetryPublication}
-                      onEditPublished={
-                        content.type === 'facebook_feed' && !content.media?.length
-                          ? onEditPublished
-                          : undefined
-                      }
                       onDeletePublished={onDeletePublished}
+                      onDiscardUnknown={onDiscardUnknown}
+                      onRetryEdit={onRetryEdit}
+                      onDismissEdit={onDismissEdit}
                     />
                   ))
                 : content.targets.map((target) => (
@@ -324,23 +609,38 @@ function PlanningPostModalContent({
                       key={target.id}
                       target={target}
                       selected={previewAccount?.id === target.id}
-                      onSelect={() => setSelectedAccountId(target.id)}
+                      onSelect={() => onSelectAccount(target.id)}
+                      multipleAccounts={content.targets.length > 1}
                     />
                   ))}
             </ul>
           </div>
 
           <dl className="grid gap-4 border-t border-border-subtle p-5">
-            <MetaItem icon={<IconCalendar />} label={t('detail.scheduledAt')}>
-              <span className="block">
-                {content.scheduledAt
-                  ? formatDateTime(content.scheduledAt, i18n.resolvedLanguage)
-                  : '—'}
-              </span>
-              <span className="mt-0.5 block text-caption font-normal text-text-tertiary">
-                {timeZone}
-              </span>
-            </MetaItem>
+            {(!hasIndividualSchedules && content.scheduledAt) ||
+            (content.targets.length === 1 && previewPublication?.publishedAt) ? (
+              <MetaItem
+                icon={<IconCalendar />}
+                label={t(
+                  content.targets.length === 1 && previewPublication?.publishedAt
+                    ? 'detail.accountPublishedAt'
+                    : 'detail.scheduledAt',
+                )}
+              >
+                <span className="block">
+                  {content.scheduledAt || previewPublication?.publishedAt
+                    ? formatDateTime(
+                        (content.targets.length === 1 && previewPublication?.publishedAt) ||
+                          content.scheduledAt!,
+                        i18n.resolvedLanguage,
+                      )
+                    : '—'}
+                </span>
+                <span className="mt-0.5 block text-caption font-normal text-text-tertiary">
+                  {timeZone}
+                </span>
+              </MetaItem>
+            ) : null}
             <MetaItem icon={<IconClock />} label={t('detail.createdAt')}>
               {formatDateTime(content.createdAt, i18n.resolvedLanguage)}
             </MetaItem>
@@ -364,44 +664,57 @@ function PlanningPostModalContent({
           ) : null}
         </section>
 
-        <aside className="flex min-w-0 items-start justify-center">
-          {content.platform === 'facebook' ? (
-            <FacebookPostPreview
-              account={previewAccount}
-              caption={previewCaption}
-              media={draft.media}
-              viewport={viewport}
-              postType={draft.postType}
-              fluid
-            />
-          ) : (
-            <TikTokPostPreview
-              account={previewAccount}
-              caption={previewCaption}
-              media={draft.media}
-              viewport={viewport}
-              fluid
-            />
-          )}
+        <aside className="flex h-[min(70vh,44rem)] min-w-0 flex-col overflow-hidden rounded-xl border border-border-subtle bg-bg-surface lg:sticky lg:top-2">
+          <div className="relative flex min-h-0 min-w-0 flex-1">
+            <div className="absolute end-2 top-3 z-sticky">
+              <Tabs
+                variant="transparent"
+                value={viewport}
+                ariaLabel={t('composer.preview.viewport')}
+                onChange={setViewport}
+                options={[
+                  {
+                    value: 'mobile',
+                    label: (
+                      <span className="flex size-8 items-center justify-center text-icon-md leading-none">
+                        <IconMobile aria-hidden />
+                      </span>
+                    ),
+                  },
+                  {
+                    value: 'desktop',
+                    label: (
+                      <span className="flex size-8 items-center justify-center text-icon-md leading-none">
+                        <IconDesktop aria-hidden />
+                      </span>
+                    ),
+                  },
+                ]}
+              />
+            </div>
+            <div className="app-scrollbar flex min-h-0 min-w-0 flex-1 items-start justify-center overflow-x-hidden overflow-y-auto bg-bg-surface-subtle p-8 sm:p-8">
+              {content.platform === 'facebook' ? (
+                <FacebookPostPreview
+                  account={previewAccount}
+                  caption={previewCaption}
+                  media={draft.media}
+                  viewport={viewport}
+                  postType={draft.postType}
+                />
+              ) : (
+                <TikTokPostPreview
+                  account={previewAccount}
+                  caption={previewCaption}
+                  media={draft.media}
+                  viewport={viewport}
+                />
+              )}
+            </div>
+          </div>
         </aside>
       </div>
     </div>
   )
-}
-
-function useResponsivePreviewViewport(): PreviewViewport {
-  const getViewport = (): PreviewViewport =>
-    window.matchMedia('(max-width: 1023px)').matches ? 'mobile' : 'desktop'
-  const [viewport, setViewport] = useState<PreviewViewport>(getViewport)
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(max-width: 1023px)')
-    const updateViewport = () => setViewport(mediaQuery.matches ? 'mobile' : 'desktop')
-    mediaQuery.addEventListener('change', updateViewport)
-    return () => mediaQuery.removeEventListener('change', updateViewport)
-  }, [])
-
-  return viewport
 }
 
 function StatusRow({ label, children }: { label: string; children: React.ReactNode }) {
@@ -419,77 +732,189 @@ function AccountRow({
   selected,
   onSelect,
   retryResult,
+  reconciling = false,
+  showSchedule,
+  multipleAccounts = false,
   onRetryPublication,
-  onEditPublished,
   onDeletePublished,
+  onDiscardUnknown,
+  onRetryEdit,
+  onDismissEdit,
 }: {
   target: PlanningTarget
   publication?: PlanningPublication
   selected?: boolean
   onSelect?: () => void
   retryResult?: PlanningRetryResult
-  onRetryPublication?: (publicationId: string) => Promise<void>
-  onEditPublished?: (publication: PlanningPublication) => void
+  reconciling?: boolean
+  showSchedule?: boolean
+  multipleAccounts?: boolean
+  onRetryPublication?: (publicationId: string) => void
   onDeletePublished?: (publication: PlanningPublication) => void
+  onDiscardUnknown?: (publication: PlanningPublication) => void
+  onRetryEdit?: (publication: PlanningPublication) => void
+  onDismissEdit?: (publicationId: string) => void
 }) {
-  const { t } = useTranslation('planning')
+  const { t, i18n } = useTranslation('planning')
   return (
-    <li className="flex min-w-0 flex-wrap items-center gap-3 py-3 first:pt-0 last:pb-0">
-      <button
-        type="button"
-        onClick={onSelect}
-        aria-pressed={selected}
-        className={`flex min-w-0 flex-1 items-center gap-3 rounded-lg p-1 text-start focus-visible:focus-ring ${selected ? 'bg-bg-surface-muted' : 'hover:bg-bg-surface-muted'}`}
-      >
-        <Avatar name={target.name} src={target.avatarUrl} size="sm" />
-        <span
-          className="min-w-0 truncate text-body-sm font-medium text-text-primary"
-          title={target.name}
+    <li className="min-w-0 space-y-3 py-4 first:pt-0 last:pb-0">
+      <div className="flex min-w-0 items-center gap-2">
+        <button
+          type="button"
+          onClick={onSelect}
+          aria-pressed={selected}
+          disabled={!multipleAccounts}
+          className={`flex min-w-0 flex-1 items-center gap-3 rounded-lg border p-3 text-start focus-visible:focus-ring ${multipleAccounts && selected ? 'border-border-focus' : multipleAccounts ? 'border-transparent hover:border-border-strong' : 'border-transparent'}`}
         >
-          {target.name}
-        </span>
-      </button>
-      {publication ? (
-        <span className="ms-auto flex shrink-0 items-center gap-2">
-          <StatusTag tone={PLANNING_STATUS_TONE[publication.status]}>
-            {t(`status.${publication.status}`)}
-          </StatusTag>
-          {canRetryPublication(publication) && onRetryPublication ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              icon={<IconRefresh aria-hidden />}
-              aria-label={t('detail.retry')}
-              onClick={() => void onRetryPublication(publication.id)}
-            />
+          <Avatar name={target.name} src={target.avatarUrl} size="md" />
+          <span className="flex min-w-0 flex-col items-start gap-1.5">
+            <span
+              className="w-full truncate text-body-sm font-semibold text-text-primary"
+              title={target.name}
+            >
+              {target.name}
+            </span>
+            {publication && multipleAccounts ? (
+              <span
+                className={`inline-flex max-w-full items-center rounded-pill border px-3 py-1 text-caption font-medium ${accountStatusClass(publication.status)}`}
+              >
+                <span className="truncate">
+                  {['cancelled', 'deleted'].includes(publication.status)
+                    ? t('statusGroup.deleted')
+                    : t(`status.${publication.status}`)}
+                </span>
+              </span>
+            ) : null}
+          </span>
+        </button>
+        {publication ? (
+          <div className="flex shrink-0 items-center gap-1">
+            {publication.status === 'published' && multipleAccounts ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                icon={<IconDelete />}
+                aria-label={t('detail.deletePublishedConfirm')}
+                onClick={() => onDeletePublished?.(publication)}
+              />
+            ) : null}
+            {canRetryPublication(publication) && onRetryPublication ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<IconRefresh aria-hidden />}
+                aria-label={t('detail.retry')}
+                disabled={reconciling && publication.status === 'unknown'}
+                onClick={() => void onRetryPublication(publication.id)}
+              />
+            ) : null}
+            {publication.status === 'edit_unknown' &&
+            multipleAccounts &&
+            publication.pendingCaption &&
+            onRetryEdit ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<IconRefresh aria-hidden />}
+                aria-label={t('detail.retryEdit')}
+                title={t('detail.retryEdit')}
+                onClick={() => onRetryEdit(publication)}
+              />
+            ) : null}
+            {publication.status === 'edit_unknown' && multipleAccounts && onDismissEdit ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<IconClose aria-hidden />}
+                aria-label={t('detail.dismissEdit')}
+                title={t('detail.dismissEdit')}
+                onClick={() => onDismissEdit(publication.id)}
+              />
+            ) : null}
+            {['unknown', 'delete_unknown'].includes(publication.status) && onDiscardUnknown ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<IconDelete aria-hidden />}
+                aria-label={t(
+                  publication.externalPostId ? 'detail.discardUnknown' : 'detail.cancelUnknown',
+                )}
+                disabled={reconciling}
+                onClick={() => onDiscardUnknown(publication)}
+              />
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+      {publication &&
+      ((multipleAccounts && (publication.pendingCaption || publication.captionOverride)) ||
+        (showSchedule && publication.scheduledAt) ||
+        (multipleAccounts && publication.publishedAt) ||
+        publication.externalPostUrl) ? (
+        <dl className="grid gap-2 rounded-lg bg-bg-surface-subtle p-3 text-caption">
+          {multipleAccounts && (publication.pendingCaption || publication.captionOverride) ? (
+            <div className="grid min-w-0 gap-1">
+              <dt className="font-medium text-text-secondary">{t('detail.accountCaption')}</dt>
+              <dd className="min-w-0 text-body-sm font-medium text-text-primary">
+                <CaptionClamp
+                  caption={publication.pendingCaption || publication.captionOverride!}
+                />
+                {publication.pendingCaption ? (
+                  <span className="mt-1 block text-caption font-normal text-text-secondary">
+                    {t(`status.${publication.status}`)}
+                  </span>
+                ) : null}
+              </dd>
+            </div>
           ) : null}
-          {publication.status === 'published' && onEditPublished ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              icon={<IconEdit aria-hidden />}
-              aria-label={t('detail.editPublishedTitle')}
-              onClick={() => onEditPublished(publication)}
-            />
+          {showSchedule && publication.scheduledAt ? (
+            <div className="flex flex-wrap justify-between gap-x-3 gap-y-1">
+              <dt className="text-text-secondary">{t('detail.accountScheduledAt')}</dt>
+              <dd className="font-medium tabular-nums text-text-primary">
+                {formatDateTime(publication.scheduledAt, i18n.resolvedLanguage)}
+              </dd>
+            </div>
           ) : null}
-          {publication.status === 'published' && onDeletePublished ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              icon={<IconDelete aria-hidden />}
-              aria-label={t('detail.deletePublishedTitle')}
-              onClick={() => onDeletePublished(publication)}
-            />
+          {multipleAccounts && publication.publishedAt ? (
+            <div className="flex flex-wrap justify-between gap-x-3 gap-y-1">
+              <dt className="text-text-secondary">{t('detail.accountPublishedAt')}</dt>
+              <dd className="font-medium tabular-nums text-text-primary">
+                {formatDateTime(publication.publishedAt, i18n.resolvedLanguage)}
+              </dd>
+            </div>
           ) : null}
-        </span>
+          {publication.externalPostUrl ? (
+            <div className="flex flex-wrap justify-between gap-x-3 gap-y-1">
+              <dt className="text-text-secondary">{t('detail.accountPostLink')}</dt>
+              <dd>
+                <a
+                  href={publication.externalPostUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-action-text hover:underline"
+                >
+                  {t('detail.openPublishedPost')}
+                </a>
+              </dd>
+            </div>
+          ) : null}
+        </dl>
       ) : null}
-      {publication?.errorCode && (
-        <p className="w-full text-caption text-error-700">
-          {t(`detail.errorReason.${reasonKey(publication.errorCode)}`)}
-        </p>
+      {publication?.errorCode && !['cancelled', 'deleted'].includes(publication.status) && (
+        <div
+          role="status"
+          className="flex items-center gap-3 rounded-lg border border-error-100 bg-error-50 p-3 text-caption text-error-700"
+        >
+          <IconWarning aria-hidden className="shrink-0 text-icon-md" />
+          <p>
+            {publication.status === 'edit_unknown'
+              ? t('detail.editUnknownReason')
+              : t(`detail.errorReason.${reasonKey(publication.errorCode)}`)}
+          </p>
+        </div>
       )}
       {publication?.status === 'failed' && retryResult?.outcome === 'skipped' && (
-        <p className="w-full text-caption text-text-secondary">
+        <p className="text-caption text-text-secondary">
           {t('detail.retrySkipped', {
             reason: t(`detail.retryReason.${reasonKey(retryResult.reason)}`),
           })}
@@ -497,6 +922,16 @@ function AccountRow({
       )}
     </li>
   )
+}
+
+function accountStatusClass(status: PlanningPublication['status']): string {
+  const tone = PLANNING_STATUS_TONE[status]
+  if (tone === 'warning') return 'border-warning-100 bg-warning-50 text-warning-700'
+  if (tone === 'error') return 'border-error-100 bg-error-50 text-error-700'
+  if (tone === 'success') return 'border-success-100 bg-success-50 text-success-700'
+  if (tone === 'brand') return 'border-brand-100 bg-brand-50 text-brand-700'
+  if (tone === 'info') return 'border-info-100 bg-info-50 text-info-700'
+  return 'border-border-subtle bg-bg-surface-subtle text-text-secondary'
 }
 
 function reasonKey(code: string | undefined) {
@@ -524,15 +959,16 @@ function reasonKey(code: string | undefined) {
 
 function canRetryPublication(publication: PlanningPublication): boolean {
   return (
-    publication.status === 'failed' &&
-    ![
-      'FACEBOOK_PERMISSION_MISSING',
-      'FACEBOOK_PUBLISH_PERMISSION_MISSING',
-      'FACEBOOK_TOKEN_EXPIRED',
-      'FACEBOOK_TOKEN_MISSING',
-      'FACEBOOK_REQUEST_FAILED',
-      'INVALID_MEDIA',
-    ].includes(publication.errorCode ?? '')
+    (publication.status === 'failed' || publication.status === 'unknown') &&
+    (publication.status === 'unknown' ||
+      ![
+        'FACEBOOK_PERMISSION_MISSING',
+        'FACEBOOK_PUBLISH_PERMISSION_MISSING',
+        'FACEBOOK_TOKEN_EXPIRED',
+        'FACEBOOK_TOKEN_MISSING',
+        'FACEBOOK_REQUEST_FAILED',
+        'INVALID_MEDIA',
+      ].includes(publication.errorCode ?? ''))
   )
 }
 

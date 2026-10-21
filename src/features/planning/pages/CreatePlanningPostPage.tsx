@@ -11,10 +11,13 @@ import {
   IconChevronDown,
   IconChevronLeft,
   IconSend,
+  Progress,
   SectionSkeleton,
+  useToast,
 } from '@/shared/ui'
 import {
   useCreatePlanningContent,
+  useEditPublishedPlanningCaption,
   usePlanningAccounts,
   usePlanningContent,
   useUpdatePlanningContent,
@@ -26,6 +29,7 @@ import {
 import { uploadPlanningMedia } from '../api/service'
 import { PlanningPostEditor } from '../components/composer/PlanningPostEditor'
 import { getPlanningPath } from '../config/planning.routes'
+import { canPublishOnPlatform } from '../config/planning-capabilities'
 import { PlanningPostPreview } from '../components/preview/PlanningPostPreview'
 import {
   canSubmitComposer,
@@ -61,6 +65,15 @@ export default function CreatePlanningPostPage() {
 
   if (!isValidPlatform || !brandId) return <Navigate to="/" replace />
 
+  if (!canPublishOnPlatform(platform)) {
+    return (
+      <div className="grid gap-4">
+        <Alert variant="soft" tone="warning" title={t('composer.platformUnavailable')} />
+        <Button onClick={() => navigate(planningPath)}>{t('composer.back')}</Button>
+      </div>
+    )
+  }
+
   if (accountsQuery.isPending || (isEditing && contentQuery.isPending)) {
     return (
       <div className="grid gap-6">
@@ -94,6 +107,23 @@ export default function CreatePlanningPostPage() {
   if (content && content.platform !== platform) return <Navigate to={planningPath} replace />
   const accounts = (accountsQuery.data ?? []).filter((account) => account.platform === platform)
 
+  if (
+    content?.publications?.some((publication) =>
+      ['published', 'edit_queued', 'editing', 'edit_unknown'].includes(publication.status),
+    )
+  ) {
+    return (
+      <PublishedPlanningEditor
+        key={content.id}
+        brandId={brandId}
+        content={content}
+        accounts={accounts}
+        planningPath={planningPath}
+        requestedAccountId={searchParams.get('accountId')}
+      />
+    )
+  }
+
   return (
     <PlanningComposerWorkspace
       key={
@@ -108,6 +138,164 @@ export default function CreatePlanningPostPage() {
       requestedDate={requestedDate}
       requestedPostType={requestedPostType}
     />
+  )
+}
+
+function PublishedPlanningEditor({
+  brandId,
+  content,
+  accounts,
+  planningPath,
+  requestedAccountId,
+}: {
+  brandId: string
+  content: PlanningContent
+  accounts: PlanningAccount[]
+  planningPath: string
+  requestedAccountId: string | null
+}) {
+  const { t } = useTranslation('planning')
+  const navigate = useNavigate()
+  const toast = useToast()
+  const posted =
+    content.publications?.filter((publication) =>
+      ['published', 'edit_queued', 'editing', 'edit_unknown'].includes(publication.status),
+    ) ?? []
+  // An uncertain edit can be saved again; writing a caption to Facebook is idempotent.
+  const published = posted.filter((publication) =>
+    ['published', 'edit_unknown'].includes(publication.status),
+  )
+  const publishedAccounts: PlanningAccount[] = posted.map(
+    (publication) =>
+      accounts.find((account) => account.id === publication.socialAccountId) ?? {
+        ...publication.target,
+        platform: content.platform,
+      },
+  )
+  const firstAccountId = posted[0]?.socialAccountId ?? ''
+  const [selectedAccountId, setSelectedAccountId] = useState(
+    posted.some((publication) => publication.socialAccountId === requestedAccountId)
+      ? requestedAccountId!
+      : firstAccountId,
+  )
+  const [draft, setDraft] = useState(() => {
+    const initial = createComposerDraftFromContent(content)
+    return {
+      ...initial,
+      targetIds: posted.map((publication) => publication.socialAccountId),
+      captionOverrides: {
+        ...initial.captionOverrides,
+        ...Object.fromEntries(
+          posted.flatMap((publication) =>
+            publication.pendingCaption
+              ? [[publication.socialAccountId, publication.pendingCaption]]
+              : [],
+          ),
+        ),
+      },
+      caption:
+        posted.length === 1
+          ? (posted[0]?.pendingCaption ?? posted[0]?.captionOverride ?? content.caption)
+          : content.caption,
+    }
+  })
+  const [viewport, setViewport] = useState<PreviewViewport>('mobile')
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState(false)
+  const editCaption = useEditPublishedPlanningCaption(brandId)
+  const supported =
+    content.platform === 'facebook' &&
+    ['facebook_feed', 'facebook_reel'].includes(content.type ?? '')
+  const changes = published
+    .map((publication) => ({
+      publicationId: publication.id,
+      caption: (posted.length === 1
+        ? draft.caption
+        : draft.captionOverrides[publication.socialAccountId] || draft.caption
+      ).trim(),
+      original: (publication.captionOverride ?? content.caption).trim(),
+    }))
+    .filter((item) => item.caption !== item.original)
+  const canSave = supported && changes.length > 0 && changes.every((item) => item.caption)
+
+  const onSave = async () => {
+    if (!canSave || saving) return
+    setSaving(true)
+    setSaveError(false)
+    try {
+      const results = await Promise.allSettled(
+        changes.map((change) =>
+          editCaption.mutateAsync({
+            brandId,
+            publicationId: change.publicationId,
+            caption: change.caption,
+          }),
+        ),
+      )
+      if (results.some((result) => result.status === 'rejected')) {
+        setSaveError(true)
+        return
+      }
+      toast.success({ title: t('detail.editPublishedSuccess') })
+      navigate(planningPath)
+    } catch {
+      setSaveError(true)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="grid min-h-full gap-5">
+      <header className="flex items-center gap-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<IconChevronLeft aria-hidden />}
+          aria-label={t('composer.back')}
+          onClick={() => navigate(planningPath)}
+        />
+        <h1 className="text-heading-2 text-text-primary">{t('detail.editPublishedTitle')}</h1>
+      </header>
+      {saveError ? (
+        <Alert variant="soft" tone="error" title={t('detail.editPublishedError')} />
+      ) : null}
+      {posted.some((publication) => ['edit_queued', 'editing'].includes(publication.status)) ? (
+        <Alert variant="soft" tone="info" title={t('detail.editPublishedPending')} />
+      ) : null}
+      <div className="grid min-h-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(28rem,0.9fr)]">
+        <div className="grid min-w-0 content-start gap-3">
+          <PlanningPostEditor
+            draft={draft}
+            accounts={publishedAccounts}
+            setDraft={setDraft}
+            publishedMode
+          />
+          {supported ? (
+            <div className="flex justify-end border-t border-border-subtle pt-3">
+              <Button
+                variant="primary"
+                loading={saving}
+                disabled={!canSave || saving}
+                onClick={() => void onSave()}
+              >
+                {t('detail.savePublishedCaption')}
+              </Button>
+            </div>
+          ) : null}
+        </div>
+        <aside className="min-w-0 xl:sticky xl:top-0 xl:h-[calc(100vh-7rem)]">
+          <PlanningPostPreview
+            draft={draft}
+            accounts={publishedAccounts}
+            previewAccountId={selectedAccountId}
+            viewport={viewport}
+            onPreviewAccountChange={setSelectedAccountId}
+            onViewportChange={setViewport}
+          />
+        </aside>
+      </div>
+    </div>
   )
 }
 
@@ -148,27 +336,51 @@ function PlanningComposerWorkspace({
   })
   const [previewViewport, setPreviewViewport] = useState<PreviewViewport>('mobile')
   const [uploading, setUploading] = useState(false)
+  const [uploadPercent, setUploadPercent] = useState<number | null>(null)
+  const submitting = useRef(false)
   const [uploadFailed, setUploadFailed] = useState(false)
   const createKey = useRef(crypto.randomUUID())
   const [previewAccountId, setPreviewAccountId] = useState('')
-  const [publishIntent, setPublishIntent] = useState<PlanningPublishIntent>(() =>
+  const [initialIntent] = useState<PlanningPublishIntent>(() =>
     content ? getPlanningContentIntent(content) : shouldSchedule ? 'schedule' : 'publish_now',
   )
+  const [publishIntent, setPublishIntent] = useState<PlanningPublishIntent>(initialIntent)
   const createContent = useCreatePlanningContent(brandId)
   const updateContent = useUpdatePlanningContent(brandId)
   const setPreviewAccount = useCallback((accountId: string) => setPreviewAccountId(accountId), [])
 
   const submit = async (intent: 'draft' | 'approval' | 'publish_now' | 'schedule') => {
+    if (submitting.current) return
+    submitting.current = true
     setUploading(true)
     setUploadFailed(false)
     try {
-      const media = await Promise.all(
+      const files = draft.media.filter((item) => item.file)
+      const totalBytes = files.reduce((sum, item) => sum + item.file!.size, 0)
+      const loaded = new Map<string, number>()
+      if (totalBytes) setUploadPercent(0)
+      const results = await Promise.allSettled(
         draft.media.map(async (item) =>
-          item.file ? uploadPlanningMedia(brandId, item.file) : item,
+          item.file
+            ? uploadPlanningMedia(brandId, item.file, (bytes) => {
+                loaded.set(item.id, bytes)
+                setUploadPercent(
+                  Math.floor(
+                    ([...loaded.values()].reduce((sum, value) => sum + value, 0) * 100) /
+                      totalBytes,
+                  ),
+                )
+              })
+            : item,
         ),
       )
+      const media = results.map((result, index) =>
+        result.status === 'fulfilled' ? result.value : draft.media[index],
+      )
+      setDraft((current) => ({ ...current, media }))
+      if (results.some((result) => result.status === 'rejected'))
+        throw new Error('Media upload failed')
       const submittedDraft = { ...draft, media }
-      setDraft(submittedDraft)
       if (content) {
         await updateContent.mutateAsync(
           toUpdatePlanningContentInput(brandId, content, submittedDraft, intent),
@@ -183,7 +395,9 @@ function PlanningComposerWorkspace({
     } catch {
       setUploadFailed(true)
     } finally {
+      submitting.current = false
       setUploading(false)
+      setUploadPercent(null)
     }
   }
 
@@ -217,6 +431,22 @@ function PlanningComposerWorkspace({
         />
       ) : null}
 
+      {uploadPercent !== null ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="rounded-lg border border-border-subtle bg-bg-surface p-4"
+        >
+          <p className="mb-2 text-body-sm text-text-secondary">
+            {t('composer.media.uploadProgress', { percent: uploadPercent })}
+          </p>
+          <Progress
+            percent={uploadPercent}
+            ariaLabel={t('composer.media.uploadProgress', { percent: uploadPercent })}
+          />
+        </div>
+      ) : null}
+
       <div className="grid min-h-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(28rem,0.9fr)]">
         <div className="grid min-w-0 content-start gap-3">
           <PlanningPostEditor draft={draft} accounts={accounts} setDraft={setDraft} />
@@ -225,6 +455,7 @@ function PlanningComposerWorkspace({
             accounts={accounts}
             intent={publishIntent}
             isEditing={Boolean(content)}
+            initialIntent={initialIntent}
             loading={saveContent.isPending || uploading}
             canSubmit={publishIntent === 'draft' || canSubmit}
             onIntentChange={(intent) => {
@@ -284,6 +515,7 @@ function PublishingActionBar({
   accounts,
   intent,
   isEditing,
+  initialIntent,
   loading,
   canSubmit,
   onIntentChange,
@@ -294,6 +526,7 @@ function PublishingActionBar({
   accounts: PlanningAccount[]
   intent: PlanningPublishIntent
   isEditing: boolean
+  initialIntent: PlanningPublishIntent
   loading: boolean
   canSubmit: boolean
   onIntentChange: (intent: PlanningPublishIntent) => void
@@ -302,17 +535,19 @@ function PublishingActionBar({
 }) {
   const { t } = useTranslation('planning')
   const selectedAccounts = accounts.filter((account) => draft.targetIds.includes(account.id))
-  const actionLabel = isEditing
-    ? t('composer.actions.saveChanges')
-    : {
-        draft: t('composer.actions.saveDraft'),
-        approval: t('composer.actions.submitApproval'),
-        schedule:
-          draft.scheduleMode === 'by_account'
-            ? t('composer.actions.scheduleByAccount')
-            : t('composer.actions.schedule'),
-        publish_now: t('composer.actions.publish'),
-      }[intent]
+  // Editing keeps "Save changes" until the user picks a different action (e.g. schedule a draft).
+  const actionLabel =
+    isEditing && intent === initialIntent
+      ? t('composer.actions.saveChanges')
+      : {
+          draft: t('composer.actions.saveDraft'),
+          approval: t('composer.actions.submitApproval'),
+          schedule:
+            draft.scheduleMode === 'by_account'
+              ? t('composer.actions.scheduleByAccount')
+              : t('composer.actions.schedule'),
+          publish_now: t('composer.actions.publish'),
+        }[intent]
   const selectedActionKey =
     intent === 'schedule' && draft.scheduleMode === 'by_account' ? 'schedule_by_account' : intent
   const usesSharedSchedule = intent === 'schedule' && draft.scheduleMode === 'same_time'
@@ -396,12 +631,12 @@ function PublishingActionBar({
             icon={<IconSend aria-hidden />}
             loading={loading}
             disabled={!canSubmit}
-            className={isEditing ? undefined : 'rounded-e-none'}
+            className="rounded-e-none border-[2px] border-e-bg-surface"
             onClick={onSubmit}
           >
             {actionLabel}
           </Button>
-          {isEditing ? null : (
+          {
             <Dropdown
               placement="topRight"
               selectedKey={selectedActionKey}
@@ -462,7 +697,7 @@ function PublishingActionBar({
                 className="-ms-px rounded-s-none px-2"
               />
             </Dropdown>
-          )}
+          }
         </div>
       </div>
     </div>

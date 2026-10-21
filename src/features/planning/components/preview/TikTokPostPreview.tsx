@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Avatar, IconComment, IconHeart, IconShare } from '@/shared/ui'
 import type { PlanningAccount } from '../../model'
 import type { ComposerMedia, PreviewViewport } from '../../model/composer'
+import { CaptionClamp } from '../CaptionClamp'
 
 export function TikTokPostPreview({
   account,
@@ -40,9 +41,9 @@ export function TikTokPostPreview({
 
       <div className="absolute bottom-5 left-4 right-16">
         <strong className="text-label-md">@{account?.name ?? 'tiktok_account'}</strong>
-        <p className="mt-2 max-h-16 overflow-hidden whitespace-pre-wrap text-body-sm">
-          {caption || 'Your caption will appear here.'}
-        </p>
+        <div className="mt-2 text-body-sm">
+          <CaptionClamp caption={caption || 'Your caption will appear here.'} inverse />
+        </div>
         <p className="mt-2 text-caption">♫ Original sound</p>
       </div>
 

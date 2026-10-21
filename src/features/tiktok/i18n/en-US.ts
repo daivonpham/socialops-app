@@ -1,0 +1,23 @@
+export const tiktokEnUS = {
+  title: 'TikTok',
+  description: 'Manage the TikTok account connected to this brand.',
+  connect: 'Connect TikTok',
+  connecting: 'Connecting…',
+  disconnect: 'Disconnect',
+  disconnectTitle: 'Disconnect TikTok?',
+  disconnectDescription: 'This account will no longer be available in this brand.',
+  cancel: 'Cancel',
+  connected: 'Connected',
+  disconnected: 'No TikTok account is connected to this brand.',
+  unavailable:
+    'TikTok publishing is not available yet. You can connect an account, but creating or scheduling TikTok posts is disabled.',
+  retry: 'Retry',
+  loadError: 'Could not load the TikTok connection.',
+  startError: 'Could not start TikTok connection.',
+  oauthFailed: 'TikTok connection failed.',
+  connectSuccess: 'TikTok account connected.',
+  disconnectSuccess: 'TikTok account disconnected.',
+  disconnectError: 'Could not disconnect TikTok.',
+  completing: 'Completing TikTok connection…',
+  back: 'Back to TikTok',
+} as const

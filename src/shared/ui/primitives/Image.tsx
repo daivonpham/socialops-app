@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { lazy, Suspense, type ReactNode } from 'react'
 
 /** Platform-owned image API implemented by the active component adapter. */
 export type ImageProps = {
@@ -9,4 +9,14 @@ export type ImageProps = {
   preview?: boolean | { mask?: ReactNode }
 }
 
-export { Image } from '@/shared/components/ant/Image'
+const LazyImage = lazy(() =>
+  import('@/shared/components/ant/Image').then(({ Image }) => ({ default: Image })),
+)
+
+export function Image(props: ImageProps) {
+  return (
+    <Suspense fallback={<span className={props.wrapperClassName} aria-busy="true" />}>
+      <LazyImage {...props} />
+    </Suspense>
+  )
+}

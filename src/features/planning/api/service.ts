@@ -8,6 +8,8 @@ import type {
   PlanningContentsResponse,
   PlanningQuery,
   PlanningRetryBatchResponse,
+  PlanningSummary,
+  PlanningDeleteBatchResponse,
   ReschedulePlanningContentInput,
   UpdatePlanningContentInput,
 } from './types'
@@ -76,19 +78,34 @@ export async function updatePlanningContent(input: UpdatePlanningContentInput) {
   ).data
 }
 
-export async function uploadPlanningMedia(brandId: string, file: File) {
+export async function uploadPlanningMedia(
+  brandId: string,
+  file: File,
+  onProgress?: (loaded: number) => void,
+) {
   const started = (
     await apiClient.post<CommonApiResponse<{ id: string; uploadUrl: string }>>(
       `/brands/${brandId}/planning/media`,
       { name: file.name, mimeType: file.type, sizeBytes: file.size },
     )
   ).data.data
-  const upload = await fetch(started.uploadUrl, {
-    method: 'PUT',
-    headers: { 'Content-Type': file.type },
-    body: file,
+  await new Promise<void>((resolve, reject) => {
+    const upload = new XMLHttpRequest()
+    upload.open('PUT', started.uploadUrl)
+    upload.setRequestHeader('Content-Type', file.type)
+    upload.upload.onprogress = (event) => {
+      if (event.lengthComputable) onProgress?.(event.loaded)
+    }
+    upload.onload = () => {
+      if (upload.status >= 200 && upload.status < 300) {
+        onProgress?.(file.size)
+        resolve()
+      } else reject(new Error('Media upload failed'))
+    }
+    upload.onerror = () => reject(new Error('Media upload failed'))
+    upload.onabort = () => reject(new Error('Media upload aborted'))
+    upload.send(file)
   })
-  if (!upload.ok) throw new Error('Media upload failed')
   return (
     await apiClient.post<
       CommonApiResponse<{ id: string; type: 'image' | 'video'; name: string; url: string }>
@@ -125,15 +142,38 @@ export async function retryFailedPlanningPublications(input: {
   ).data
 }
 
+export async function reconcileUnknownPlanningPublications(input: {
+  brandId: string
+  contentId: string
+}) {
+  return (
+    await apiClient.post<CommonApiResponse<PlanningContent>>(
+      `/brands/${input.brandId}/planning/${input.contentId}/reconcile-unknown`,
+      {},
+    )
+  ).data
+}
+
 export async function editPublishedPlanningCaption(input: {
   brandId: string
   publicationId: string
   caption: string
 }) {
   return (
-    await apiClient.patch<CommonApiResponse<PlanningContent>>(
-      `/brands/${input.brandId}/planning/publications/${input.publicationId}/caption`,
+    await apiClient.post<CommonApiResponse<PlanningContent>>(
+      `/brands/${input.brandId}/planning/publications/${input.publicationId}/caption-edit`,
       { caption: input.caption },
+    )
+  ).data
+}
+
+export async function dismissUnknownPlanningEdit(input: {
+  brandId: string
+  publicationId: string
+}) {
+  return (
+    await apiClient.delete<CommonApiResponse<PlanningContent>>(
+      `/brands/${input.brandId}/planning/publications/${input.publicationId}/pending-edit`,
     )
   ).data
 }
@@ -146,5 +186,35 @@ export async function deletePublishedPlanningPublication(input: {
     await apiClient.delete<CommonApiResponse<PlanningContent>>(
       `/brands/${input.brandId}/planning/publications/${input.publicationId}/published`,
     )
+  ).data
+}
+
+export async function discardUnknownPlanningPublication(input: {
+  brandId: string
+  publicationId: string
+}) {
+  return (
+    await apiClient.delete<CommonApiResponse<PlanningContent>>(
+      `/brands/${input.brandId}/planning/publications/${input.publicationId}/unknown`,
+    )
+  ).data
+}
+
+export async function deleteAllPlanningPublications(input: { brandId: string; contentId: string }) {
+  return (
+    await apiClient.delete<CommonApiResponse<PlanningDeleteBatchResponse>>(
+      `/brands/${input.brandId}/planning/${input.contentId}/all`,
+    )
+  ).data
+}
+
+export async function getPlanningSummary(
+  brandId: string,
+  range: { since?: string; until?: string },
+) {
+  return (
+    await apiClient.get<CommonApiResponse<PlanningSummary>>(`/brands/${brandId}/planning/summary`, {
+      params: range,
+    })
   ).data
 }

@@ -2,6 +2,28 @@ import type { TranslationShape } from '@/shared/i18n'
 import type { workspacesEnUS } from './en-US'
 
 export const workspacesViVN = {
+  members: {
+    title: 'Thành viên',
+    noWorkspace: 'Chọn không gian làm việc',
+    loadError: 'Không tải được thành viên.',
+    empty: 'Không tìm thấy thành viên',
+    invite: 'Mời thành viên',
+    email: 'Email',
+    role: 'Vai trò',
+    roleFor: 'Vai trò của {{name}}',
+    brands: 'Thương hiệu',
+    brandsFor: 'Thương hiệu của {{name}}',
+    remove: 'Xóa',
+    removeConfirm: 'Xóa {{name}} khỏi không gian làm việc?',
+    close: 'Đóng',
+    previous: 'Trước',
+    next: 'Tiếp',
+    saved: 'Đã cập nhật thành viên.',
+    saveError: 'Không thể cập nhật thành viên.',
+    removed: 'Đã xóa thành viên.',
+    invited: 'Đã gửi lời mời.',
+    inviteError: 'Không thể gửi lời mời.',
+  },
   switcher: {
     searchPlaceholder: 'Tìm workspace...',
     create: 'Tạo workspace',

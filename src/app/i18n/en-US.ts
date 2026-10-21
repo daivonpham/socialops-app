@@ -68,6 +68,8 @@ export const appEnUS = {
   permissions: {
     manageChannels: 'Manage channels',
     publishContent: 'Publish content',
+    approveContent: 'Approve content',
+    manageWorkspace: 'Manage workspace',
     viewAnalytics: 'View analytics',
     viewReports: 'View reports',
     viewMembers: 'View members',

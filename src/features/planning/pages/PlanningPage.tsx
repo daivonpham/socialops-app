@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
@@ -22,8 +22,12 @@ import {
   useCancelPlanningContent,
   useRetryPlanningPublication,
   useRetryFailedPlanningPublications,
-  useEditPublishedPlanningCaption,
   useDeletePublishedPlanningPublication,
+  useDiscardUnknownPlanningPublication,
+  useDeleteAllPlanningPublications,
+  useReconcileUnknownPlanningPublications,
+  useEditPublishedPlanningCaption,
+  useDismissUnknownPlanningEdit,
   type PlanningContent,
   type PlanningRetryResult,
   type PlanningApprovalStatus,
@@ -34,6 +38,7 @@ import {
 import {
   PLANNING_FILTER_DEFAULTS,
   PLANNING_FILTER_STATUS_GROUPS,
+  getPlanningTodayDateKey,
   type PlanningStatusGroup,
   persistPreferredPlanningView,
   readPreferredPlanningView,
@@ -41,6 +46,7 @@ import {
   type PlanningView,
 } from '../config/planning.filters'
 import { PLANNING_ACCESS } from '../config/planning-access'
+import { canPublishOnPlatform } from '../config/planning-capabilities'
 import { getPlanningCreatePath, getPlanningEditPath } from '../config/planning.routes'
 
 import { CreatePostButton } from '../components/CreatePostButton'
@@ -60,18 +66,25 @@ export default function PlanningPage() {
   const routePlatform = isPlanningPlatform(routePlatformParam) ? routePlatformParam : 'all'
   const [preferredView] = useState(readPreferredPlanningView)
   const planningFilterDefaults = useMemo(
-    () => ({ ...PLANNING_FILTER_DEFAULTS, view: preferredView }),
+    () => ({ ...PLANNING_FILTER_DEFAULTS, view: preferredView, date: getPlanningTodayDateKey() }),
     [preferredView],
   )
   const [urlFilters, setUrlFilters] = useUrlFilters(planningFilterDefaults)
   const [selectedContent, setSelectedContent] = useState<PlanningContent | null>(null)
+  const reconciliationStarted = useRef(new Set<string>())
+  const [detailAction, setDetailAction] = useState<'edit' | 'delete'>()
+  const openDetails = useCallback((content: PlanningContent, action?: 'edit' | 'delete') => {
+    reconciliationStarted.current.delete(content.id)
+    setDetailAction(action)
+    setSelectedContent(content)
+  }, [])
   const [retryResults, setRetryResults] = useState<PlanningRetryResult[]>([])
 
   const view = isPlanningView(urlFilters.view) ? urlFilters.view : preferredView
   const calendarView = isPlanningCalendarView(urlFilters.calendarView)
     ? urlFilters.calendarView
     : 'month'
-  const selectedDate = isDateKey(urlFilters.date) ? urlFilters.date : PLANNING_FILTER_DEFAULTS.date
+  const selectedDate = isDateKey(urlFilters.date) ? urlFilters.date : planningFilterDefaults.date
   const platform = routePlatform
   const statusGroup = isPlanningStatusGroup(urlFilters.statusGroup) ? urlFilters.statusGroup : 'all'
   const type = isPlanningPostType(urlFilters.type) ? urlFilters.type : 'all'
@@ -111,11 +124,34 @@ export default function PlanningPage() {
   const cancelContent = useCancelPlanningContent(brandId)
   const retryPublication = useRetryPlanningPublication(brandId)
   const retryFailed = useRetryFailedPlanningPublications(brandId)
-  const editPublishedCaption = useEditPublishedPlanningCaption(brandId)
   const deletePublished = useDeletePublishedPlanningPublication(brandId)
+  const discardUnknown = useDiscardUnknownPlanningPublication(brandId)
+  const deleteAll = useDeleteAllPlanningPublications(brandId)
+  const reconcileUnknown = useReconcileUnknownPlanningPublications(brandId)
+  const retryEdit = useEditPublishedPlanningCaption(brandId)
+  const dismissEdit = useDismissUnknownPlanningEdit(brandId)
+  useEffect(() => {
+    if (!brandId || !selectedContent?.publications?.some((item) => item.status === 'unknown'))
+      return
+    const contentId = selectedContent.id
+    if (reconciliationStarted.current.has(contentId)) return
+    reconciliationStarted.current.add(contentId)
+    void reconcileUnknown
+      .mutateAsync({ brandId, contentId })
+      .then((response) =>
+        setSelectedContent((current) => (current?.id === contentId ? response.data : current)),
+      )
+      .catch(() => {
+        // Manual recovery remains available if Facebook cannot be read.
+      })
+  }, [brandId, selectedContent?.id, selectedContent?.publications, reconcileUnknown.mutateAsync])
   const accounts = accountsQuery.data ?? []
   const createPlatform =
-    platform === 'all' ? accounts.find((account) => account.platform)?.platform : platform
+    platform === 'all'
+      ? accounts.find((account) => canPublishOnPlatform(account.platform))?.platform
+      : canPublishOnPlatform(platform)
+        ? platform
+        : undefined
   const canCreatePost = hasPermission(granted, PLANNING_ACCESS.publish[0])
   const contents = contentsQuery.data?.items ?? []
   const editContent = useCallback(
@@ -220,7 +256,7 @@ export default function PlanningPage() {
           selectedDate={selectedDate}
           onCalendarViewChange={(nextView) => setUrlFilters({ calendarView: nextView })}
           onDateChange={(date) => setUrlFilters({ date })}
-          onSelectContent={setSelectedContent}
+          onSelectContent={openDetails}
           onCreatePost={(date, postType) => {
             if (!createPlatform) return
             navigate(getPlanningCreatePath(createPlatform, { date, postType }))
@@ -235,15 +271,19 @@ export default function PlanningPage() {
           hasActiveFilters={hasActiveFilters}
           onClearFilters={clearFilters}
           onFiltersChange={setUrlFilters}
-          onSelectContent={setSelectedContent}
+          onSelectContent={openDetails}
           onEditContent={editContent}
         />
       )}
 
       <PlanningPostModal
+        key={`${selectedContent?.id ?? ''}:${detailAction ?? ''}`}
+        initialAction={detailAction}
         content={selectedContent}
         retryResults={retryResults}
+        reconciling={reconcileUnknown.isPending}
         onClose={() => {
+          if (selectedContent) reconciliationStarted.current.delete(selectedContent.id)
           setSelectedContent(null)
           setRetryResults([])
         }}
@@ -254,8 +294,9 @@ export default function PlanningPage() {
             await cancelContent.mutateAsync({ brandId, contentId: content.id })
             setSelectedContent(null)
             toast.success({ title: t('detail.cancelSuccess') })
-          } catch {
+          } catch (error) {
             toast.error({ title: t('detail.cancelError') })
+            throw error
           }
         }}
         onRetryPublication={async (publicationId) => {
@@ -281,19 +322,32 @@ export default function PlanningPage() {
             toast.error({ title: t('detail.retryError') })
           }
         }}
-        onEditPublishedCaption={async (publicationId, caption) => {
+        onDeleteAll={async (contentId) => {
           if (!brandId) return
           try {
-            const response = await editPublishedCaption.mutateAsync({
-              brandId,
-              publicationId,
-              caption,
-            })
-            setSelectedContent(response.data)
-            toast.success({ title: t('detail.editPublishedSuccess') })
-          } catch {
-            toast.error({ title: t('detail.editPublishedError') })
+            const response = await deleteAll.mutateAsync({ brandId, contentId })
+            const failed = response.data.results.filter((item) => item.outcome === 'failed').length
+            const deleted = response.data.results.filter(
+              (item) => item.outcome === 'deleted',
+            ).length
+            setSelectedContent(
+              ['cancelled', 'deleted'].includes(response.data.content.status)
+                ? null
+                : response.data.content,
+            )
+            if (failed) toast.error({ title: t('detail.deleteAllPartial', { deleted, failed }) })
+            else toast.success({ title: t('detail.deleteAllSuccess', { deleted }) })
+          } catch (error) {
+            toast.error({ title: t('detail.deleteAllError') })
+            throw error
           }
+        }}
+        onOpenPublishedEditor={(publication) => {
+          if (!selectedContent) return
+          setSelectedContent(null)
+          navigate(
+            `${getPlanningEditPath(selectedContent.platform, selectedContent.id)}?accountId=${encodeURIComponent(publication.socialAccountId)}`,
+          )
         }}
         onDeletePublished={async (publicationId) => {
           if (!brandId) return
@@ -303,8 +357,54 @@ export default function PlanningPage() {
               ['cancelled', 'deleted'].includes(response.data.status) ? null : response.data,
             )
             toast.success({ title: t('detail.deletePublishedSuccess') })
-          } catch {
+          } catch (error) {
             toast.error({ title: t('detail.deletePublishedError') })
+            throw error
+          }
+        }}
+        onRetryEdit={async (publication) => {
+          if (!brandId || !publication.pendingCaption) return
+          try {
+            const response = await retryEdit.mutateAsync({
+              brandId,
+              publicationId: publication.id,
+              caption: publication.pendingCaption,
+            })
+            setSelectedContent(response.data)
+            toast.success({ title: t('detail.retryEditSuccess') })
+          } catch {
+            toast.error({ title: t('detail.editActionError') })
+          }
+        }}
+        onDismissEdit={async (publicationId) => {
+          if (!brandId) return
+          try {
+            const response = await dismissEdit.mutateAsync({ brandId, publicationId })
+            setSelectedContent(response.data)
+            toast.success({ title: t('detail.dismissEditSuccess') })
+          } catch {
+            toast.error({ title: t('detail.editActionError') })
+          }
+        }}
+        onDiscardUnknown={async (publicationId) => {
+          if (!brandId) return
+          const hasFacebookPostId = Boolean(
+            selectedContent?.publications?.find((item) => item.id === publicationId)
+              ?.externalPostId,
+          )
+          try {
+            const response = await discardUnknown.mutateAsync({ brandId, publicationId })
+            setSelectedContent(
+              ['cancelled', 'deleted'].includes(response.data.status) ? null : response.data,
+            )
+            toast.success({
+              title: t(
+                hasFacebookPostId ? 'detail.discardUnknownSuccess' : 'detail.cancelUnknownSuccess',
+              ),
+            })
+          } catch (error) {
+            toast.error({ title: t('detail.discardUnknownError') })
+            throw error
           }
         }}
       />

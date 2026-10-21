@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { lazy, Suspense, type ReactNode } from 'react'
 
 export type DatePickerProps = {
   value?: string
@@ -12,4 +12,18 @@ export type DatePickerProps = {
   'aria-label'?: string
 }
 
-export { DatePicker } from '@/shared/components/ant/DatePicker'
+const LazyDatePicker = lazy(() =>
+  import('@/shared/components/ant/DatePicker').then(({ DatePicker }) => ({ default: DatePicker })),
+)
+
+export function DatePicker(props: DatePickerProps) {
+  return (
+    <Suspense
+      fallback={
+        <span className="block h-10 w-full rounded-lg bg-bg-surface-muted" aria-busy="true" />
+      }
+    >
+      <LazyDatePicker {...props} />
+    </Suspense>
+  )
+}

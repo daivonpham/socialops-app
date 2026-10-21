@@ -39,7 +39,9 @@ const layoutChildren: RouteObject[] = [
   { index: true, element: <Navigate to={ROUTES.ALL_PLATFORMS} replace /> },
   {
     path: ROUTES.ALL_PLATFORMS,
-    lazy: placeholderPage,
+    lazy: async () => ({
+      Component: (await import('@/features/overview/pages/AllPlatformsPage')).default,
+    }),
     handle: handle({
       nav: {
         labelKey: 'navigation.allPlatforms',
@@ -58,6 +60,10 @@ const layoutChildren: RouteObject[] = [
       Component: (await import('@/features/facebook/pages/FacebookPage')).default,
     }),
   },
+  {
+    path: ROUTES.TIKTOK_OVERVIEW,
+    lazy: async () => ({ Component: (await import('@/features/tiktok/pages/TikTokPage')).default }),
+  },
 
   {
     path: ROUTES.PLATFORM_OVERVIEW,
@@ -66,20 +72,22 @@ const layoutChildren: RouteObject[] = [
   },
   {
     path: ROUTES.PLATFORM_PLANNING,
-    lazy: async () => ({ Component: (await import('@/features/planning')).PlanningPage }),
+    lazy: async () => ({
+      Component: (await import('@/features/planning/pages/PlanningPage')).default,
+    }),
     handle: handle({ nav: { labelKey: 'navigation.planning', section: 'top', order: 20 } }),
   },
   {
     path: ROUTES.PLATFORM_PLANNING_CREATE,
     lazy: async () => ({
-      Component: (await import('@/features/planning')).CreatePlanningPostPage,
+      Component: (await import('@/features/planning/pages/CreatePlanningPostPage')).default,
     }),
     handle: handle({ requires: [PERMISSIONS.PUBLISHING_PUBLISH.key] }),
   },
   {
     path: ROUTES.PLATFORM_PLANNING_EDIT,
     lazy: async () => ({
-      Component: (await import('@/features/planning')).CreatePlanningPostPage,
+      Component: (await import('@/features/planning/pages/CreatePlanningPostPage')).default,
     }),
     handle: handle({ requires: [PERMISSIONS.PUBLISHING_PUBLISH.key] }),
   },
@@ -103,7 +111,9 @@ const layoutChildren: RouteObject[] = [
   },
   {
     path: ROUTES.MEMBERS,
-    lazy: placeholderPage,
+    lazy: async () => ({
+      Component: (await import('@/features/workspaces/pages/MembersPage')).default,
+    }),
     handle: handle({
       nav: { labelKey: 'navigation.members', section: 'main', order: 20, icon: <IconMembers /> },
       requires: [PERMISSIONS.MEMBERS_VIEW.key],
@@ -208,6 +218,14 @@ const routes: RouteObject[] = [
     handle: handle({ auth: 'required' }),
     lazy: async () => ({
       Component: (await import('@/features/facebook/pages/FacebookCallbackPage')).default,
+    }),
+    hydrateFallbackElement: bootFallback,
+  },
+  {
+    path: ROUTES.TIKTOK_CALLBACK,
+    handle: handle({ auth: 'required' }),
+    lazy: async () => ({
+      Component: (await import('@/features/tiktok/pages/TikTokCallbackPage')).default,
     }),
     hydrateFallbackElement: bootFallback,
   },

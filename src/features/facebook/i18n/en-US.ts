@@ -41,6 +41,21 @@ export const facebookEnUS = {
     loading: 'Loading Facebook data',
     loadError: "We couldn't load this section.",
   },
+  sync: {
+    updatedAt: 'Updated {{time}}',
+    neverSynced: 'Not synced yet',
+    syncing: 'Syncing…',
+    refresh: 'Refresh data',
+    refreshQueued: 'Refresh requested. New data will appear shortly.',
+    refreshTooSoon: 'Data was refreshed recently. Try again in a few minutes.',
+    refreshError: "We couldn't request a refresh.",
+    initialTitle: 'Syncing Facebook data for the first time',
+    initialDescription:
+      'SocialOps is importing history for {{count}} Page(s). Figures update automatically when it finishes.',
+    issueTitle: '{{count}} Page(s) could not sync',
+    issueDescription:
+      'Figures for these Pages may be out of date. Reconnect them if the problem persists.',
+  },
   connection: {
     disconnectedTitle: 'Connect Facebook to SocialOps',
     disconnectedDescription:
@@ -123,6 +138,17 @@ export const facebookEnUS = {
     pagePerformance: 'Page performance',
 
     topPosts: 'Top content',
+    recentPosts: 'Recently published content',
+    allPosts: 'All published content',
+    viewAllPosts: 'View all',
+    postContent: 'Content',
+    publishedAt: 'Published',
+    searchPosts: 'Search content or Page',
+    filterContentType: 'Content type',
+    contentKind: { all: 'All types', post: 'Post', reel: 'Reel', story: 'Story' },
+    fromDate: 'From date',
+    toDate: 'To date',
+    mediaKind: { image: 'Photo', video: 'Video', link: 'Link', text: 'Text' },
     reactions: 'Reactions',
     comments: 'Comments',
     shares: 'Shares',

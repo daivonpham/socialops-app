@@ -379,6 +379,32 @@ export const planningHandlers = [
       ),
     )
   }),
+  http.delete('/api/brands/:brandId/planning/:contentId/all', ({ params }) => {
+    const content = contents.find((item) => item.id === params.contentId)
+    if (!content) return new HttpResponse(null, { status: 404 })
+    const results = (content.publications ?? []).map((row) => ({
+      publicationId: row.id,
+      socialAccountId: row.socialAccountId,
+      outcome: ['deleted', 'cancelled'].includes(row.status)
+        ? ('skipped' as const)
+        : ('deleted' as const),
+    }))
+    const updated: PlanningContent = {
+      ...content,
+      status: 'deleted',
+      publications: content.publications?.map((row) => ({
+        ...row,
+        status: row.externalPostId ? ('deleted' as const) : ('cancelled' as const),
+      })),
+    }
+    contents = contents.map((item) => (item.id === updated.id ? updated : item))
+    return HttpResponse.json(
+      envelope(
+        { content: updated, results },
+        `/brands/${String(params.brandId)}/planning/${updated.id}/all`,
+      ),
+    )
+  }),
   http.delete('/api/brands/:brandId/planning/:contentId', ({ params }) => {
     const content = contents.find((item) => item.id === params.contentId)
     if (!content) return new HttpResponse(null, { status: 404 })
@@ -417,14 +443,18 @@ export const planningHandlers = [
     const results = (content.publications ?? []).map((row) => ({
       publicationId: row.id,
       socialAccountId: row.socialAccountId,
-      outcome: row.status === 'failed' ? ('queued' as const) : ('skipped' as const),
-      ...(row.status !== 'failed' ? { reason: 'PUBLICATION_NOT_RETRYABLE' } : {}),
+      outcome: ['failed', 'unknown'].includes(row.status)
+        ? ('queued' as const)
+        : ('skipped' as const),
+      ...(!['failed', 'unknown'].includes(row.status)
+        ? { reason: 'PUBLICATION_NOT_RETRYABLE' }
+        : {}),
     }))
     const updated: PlanningContent = {
       ...content,
       status: results.some((item) => item.outcome === 'queued') ? 'publishing' : content.status,
       publications: content.publications?.map((row) =>
-        row.status === 'failed'
+        ['failed', 'unknown'].includes(row.status)
           ? { ...row, status: 'queued', errorCode: undefined, errorMessage: undefined }
           : row,
       ),
@@ -437,8 +467,8 @@ export const planningHandlers = [
       ),
     )
   }),
-  http.patch(
-    '/api/brands/:brandId/planning/publications/:publicationId/caption',
+  http.post(
+    '/api/brands/:brandId/planning/publications/:publicationId/caption-edit',
     async ({ params, request }) => {
       const body = (await request.json()) as { caption: string }
       const content = contents.find((item) =>
@@ -447,13 +477,39 @@ export const planningHandlers = [
       if (!content) return new HttpResponse(null, { status: 404 })
       const updated: PlanningContent = {
         ...content,
+        status: 'editing',
         publications: content.publications?.map((row) =>
-          row.id === params.publicationId ? { ...row, captionOverride: body.caption } : row,
+          row.id === params.publicationId
+            ? { ...row, status: 'edit_queued', pendingCaption: body.caption }
+            : row,
         ),
       }
       contents = contents.map((item) => (item.id === updated.id ? updated : item))
+      setTimeout(() => {
+        contents = contents.map((item) => {
+          if (item.id !== updated.id) return item
+          const publications = item.publications?.map((row) =>
+            row.id === params.publicationId && row.status === 'edit_queued'
+              ? {
+                  ...row,
+                  status: 'published' as const,
+                  captionOverride: body.caption,
+                  pendingCaption: undefined,
+                }
+              : row,
+          )
+          return {
+            ...item,
+            status: publications?.every((row) => row.status === 'published')
+              ? 'published'
+              : item.status,
+            publications,
+          }
+        })
+      }, 800)
       return HttpResponse.json(
         envelope(updated, `/brands/${String(params.brandId)}/planning/${updated.id}`),
+        { status: 202 },
       )
     },
   ),
@@ -478,4 +534,29 @@ export const planningHandlers = [
       )
     },
   ),
+  http.post('/api/brands/:brandId/planning/:contentId/reconcile-unknown', ({ params }) => {
+    const content = contents.find((item) => item.id === params.contentId)
+    if (!content) return new HttpResponse(null, { status: 404 })
+    return HttpResponse.json(
+      envelope(content, `/brands/${String(params.brandId)}/planning/${content.id}`),
+    )
+  }),
+  http.delete('/api/brands/:brandId/planning/publications/:publicationId/unknown', ({ params }) => {
+    const content = contents.find((item) =>
+      item.publications?.some((row) => row.id === params.publicationId),
+    )
+    if (!content) return new HttpResponse(null, { status: 404 })
+    const publications = content.publications?.map((row) =>
+      row.id === params.publicationId ? { ...row, status: 'cancelled' as const } : row,
+    )
+    const updated: PlanningContent = {
+      ...content,
+      status: publications?.every((row) => row.status === 'cancelled') ? 'cancelled' : 'partial',
+      publications,
+    }
+    contents = contents.map((item) => (item.id === updated.id ? updated : item))
+    return HttpResponse.json(
+      envelope(updated, `/brands/${String(params.brandId)}/planning/${updated.id}`),
+    )
+  }),
 ]

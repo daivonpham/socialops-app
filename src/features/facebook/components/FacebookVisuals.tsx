@@ -165,7 +165,7 @@ export function RankedBreakdown({
   const locale = i18n.resolvedLanguage as AppLocale
 
   return (
-    <ol className="grid max-h-[260px] gap-3 overflow-y-auto pr-2" aria-label={ariaLabel}>
+    <ol className="grid max-h-[270px] gap-3 overflow-y-auto pr-2" aria-label={ariaLabel}>
       {items.map((item, index) => {
         const percentage = Math.max(0, Math.min(100, item.value))
         return (

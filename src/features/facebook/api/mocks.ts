@@ -6,6 +6,7 @@ import type {
   FacebookOverviewDto,
   FacebookPageDto,
   FacebookPostDto,
+  FacebookSyncStatusDto,
   MetricDto,
 } from './types'
 
@@ -451,6 +452,46 @@ export const facebookHandlers = [
       ),
     )
   }),
+  http.get('/api/brands/:brandId/facebook/recent-posts', async ({ params, request }) => {
+    await delay(350)
+    const url = new URL(request.url)
+    const pageId = url.searchParams.get('pageId') ?? 'all'
+    const search = (url.searchParams.get('search') ?? '').toLocaleLowerCase()
+    const contentType = url.searchParams.get('contentType') ?? 'all'
+    const since = url.searchParams.get('since')
+    const until = url.searchParams.get('until')
+    const sortBy = url.searchParams.get('sortBy') ?? 'publishedAt'
+    const direction = url.searchParams.get('sortOrder') === 'asc' ? 1 : -1
+    const page = Math.max(1, Number(url.searchParams.get('page') ?? 1))
+    const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit') ?? 20)))
+    const rows = POSTS.filter((post) => post.status === 'published')
+      .map((post) => ({ ...post, contentType: 'post' as const }))
+      .filter((post) => contentType === 'all' || post.contentType === contentType)
+      .filter((post) => pageId === 'all' || post.pageId === pageId)
+      .filter(
+        (post) =>
+          !search || `${post.message} ${post.pageName}`.toLocaleLowerCase().includes(search),
+      )
+      .filter((post) => !since || (post.publishedAt ?? post.createdAt).slice(0, 10) >= since)
+      .filter((post) => !until || (post.publishedAt ?? post.createdAt).slice(0, 10) <= until)
+      .sort((a, b) => {
+        const left =
+          sortBy === 'publishedAt'
+            ? Date.parse(a.publishedAt ?? a.createdAt)
+            : Number(a[sortBy as keyof FacebookPostDto] ?? 0)
+        const right =
+          sortBy === 'publishedAt'
+            ? Date.parse(b.publishedAt ?? b.createdAt)
+            : Number(b[sortBy as keyof FacebookPostDto] ?? 0)
+        return (left - right) * direction
+      })
+    return HttpResponse.json(
+      envelope(
+        { items: rows.slice((page - 1) * limit, page * limit), total: rows.length, page, limit },
+        `/brands/${String(params.brandId)}/facebook/recent-posts`,
+      ),
+    )
+  }),
   http.get('/api/brands/:brandId/facebook/posts', async ({ params, request }) => {
     await ok()
     const url = new URL(request.url)
@@ -619,4 +660,29 @@ export const facebookHandlers = [
       ),
     )
   }),
+  http.get('/api/brands/:brandId/facebook/sync', async ({ params }) => {
+    await ok()
+    return HttpResponse.json(envelope(syncStatusFor(String(params.brandId)), 'facebook/sync'))
+  }),
+  http.post('/api/brands/:brandId/facebook/sync', async ({ params }) => {
+    await ok()
+    return HttpResponse.json(envelope(syncStatusFor(String(params.brandId)), 'facebook/sync'))
+  }),
 ]
+
+function syncStatusFor(brandId: string): FacebookSyncStatusDto {
+  const syncedAt = new Date().toISOString()
+  return {
+    syncing: false,
+    lastSyncedAt: syncedAt,
+    refreshAvailableAt: null,
+    pages: (PAGE_IDS[brandId] ?? []).map((pageId) => ({
+      pageId,
+      status: 'idle',
+      lastSyncedAt: syncedAt,
+      historyStartAt: null,
+      backfillCompleted: true,
+      lastErrorCode: null,
+    })),
+  }
+}

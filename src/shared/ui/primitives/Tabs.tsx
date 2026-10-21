@@ -7,7 +7,7 @@ export type TabsProps<T extends string> = {
   onChange: (value: T) => void
   ariaLabel: string
   /** Neutral segmented tabs are the default product pattern; line is available for dense contexts. */
-  variant?: 'solid' | 'line'
+  variant?: 'solid' | 'line' | 'transparent'
 }
 
 export { Tabs } from '@/shared/components/ant/Tabs'
