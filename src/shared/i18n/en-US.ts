@@ -12,6 +12,11 @@ export const commonEnUS = {
     reset: 'Reset',
     apply: 'Apply',
   },
+  confirmDialog: {
+    cancel: 'Cancel',
+    confirm: 'Confirm',
+    delete: 'Delete',
+  },
   dataTable: {
     selectAllRows: 'Select all rows on this page',
     selectRow: 'Select row',

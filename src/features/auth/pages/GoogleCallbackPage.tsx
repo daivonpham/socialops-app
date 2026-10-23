@@ -5,6 +5,7 @@ import { Alert, Spin } from '@/shared/ui'
 import { useAuth } from '@/shared/auth'
 import { AuthLayout } from '../components/AuthLayout'
 import { AUTH_ROUTES } from '../config/auth.routes'
+import { pendingInvitationPath } from '../model/pending-invitation'
 
 export default function GoogleCallbackPage() {
   const { t } = useTranslation('auth')
@@ -25,7 +26,8 @@ export default function GoogleCallbackPage() {
       })
       return
     }
-    if (status === 'authenticated') navigate(AUTH_ROUTES.POST_AUTH, { replace: true })
+    if (status === 'authenticated')
+      navigate(pendingInvitationPath() ?? AUTH_ROUTES.POST_AUTH, { replace: true })
   }, [navigate, params, providerError, status])
 
   return (

@@ -4,7 +4,7 @@ import { ROUTES } from '@/app/router/paths'
 import { getNavEntries } from '@/app/router/routes'
 import { BrandSwitcher } from '@/features/brands'
 import { PLATFORMS } from '@/features/social-accounts'
-import { WorkspaceSwitcher } from '@/features/workspaces'
+import { InvitationsInbox, WorkspaceSwitcher } from '@/features/workspaces'
 import {
   Avatar,
   Button,
@@ -21,7 +21,7 @@ import { useAuth } from '@/shared/auth'
 const topNav = getNavEntries('top')
 
 /**
- * Chrome only — zero API calls. Data-driven parts (workspace/brand switchers)
+ * Chrome only — zero API calls. Data-driven parts (workspace/brand switchers, invitations inbox)
  * are feature components composed in. Height derives from compact tokens: 32px
  * controls + 8px vertical padding (design.md defines no explicit top bar height);
  * horizontal padding follows the page gutters of §6.1.
@@ -106,6 +106,7 @@ export function TopBar({
             ),
           )}
         </nav>
+        <InvitationsInbox />
         <AccountMenu />
       </div>
     </header>

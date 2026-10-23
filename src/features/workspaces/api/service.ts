@@ -7,6 +7,11 @@ import type {
   WorkspaceMemberDto,
   UpdateWorkspaceMemberInput,
   WorkspaceMemberBrandInput,
+  AccessOptionBrandDto,
+  BrandAccessInput,
+  InvitationPreviewDto,
+  MyInvitationDto,
+  InviteWorkspaceMemberInput,
 } from './types'
 
 export async function getWorkspaces() {
@@ -79,13 +84,61 @@ export async function revokeWorkspaceMemberBrand({
   await apiClient.delete(`/workspaces/${workspaceId}/members/${memberId}/brands/${brandId}`)
 }
 
-export async function inviteWorkspaceMember(input: {
+export async function inviteWorkspaceMember({ workspaceId, ...body }: InviteWorkspaceMemberInput) {
+  await apiClient.post(`/workspaces/${workspaceId}/invitations`, body)
+}
+
+export async function getMemberAccessOptions(workspaceId: string) {
+  const { data } = await apiClient.get<CommonApiResponse<AccessOptionBrandDto[]>>(
+    `/workspaces/${workspaceId}/access-options`,
+  )
+  return data.data
+}
+
+export async function updateWorkspaceMemberAccess(input: {
   workspaceId: string
-  email: string
-  role: 'admin' | 'editor' | 'viewer'
+  memberId: string
+  brands: BrandAccessInput[]
 }) {
-  await apiClient.post(`/workspaces/${input.workspaceId}/invitations`, {
-    email: input.email,
-    role: input.role,
-  })
+  const { data } = await apiClient.put<CommonApiResponse<WorkspaceMemberDto>>(
+    `/workspaces/${input.workspaceId}/members/${input.memberId}/access`,
+    { brands: input.brands },
+  )
+  return data.data
+}
+
+export async function getInvitationPreview(token: string) {
+  const { data } = await apiClient.get<CommonApiResponse<InvitationPreviewDto>>(
+    '/invitations/preview',
+    { params: { token } },
+  )
+  return data.data
+}
+
+export async function acceptInvitation(token: string) {
+  const { data } = await apiClient.post<CommonApiResponse<{ workspaceId: string }>>(
+    '/invitations/accept',
+    { token },
+  )
+  return data.data
+}
+
+export async function declineInvitation(token: string) {
+  await apiClient.post('/invitations/decline', { token })
+}
+
+export async function getMyInvitations() {
+  const { data } = await apiClient.get<CommonApiResponse<MyInvitationDto[]>>('/invitations/mine')
+  return data.data
+}
+
+export async function acceptInvitationById(invitationId: string) {
+  const { data } = await apiClient.post<CommonApiResponse<{ workspaceId: string }>>(
+    `/invitations/${invitationId}/accept`,
+  )
+  return data.data
+}
+
+export async function declineInvitationById(invitationId: string) {
+  await apiClient.post(`/invitations/${invitationId}/decline`)
 }

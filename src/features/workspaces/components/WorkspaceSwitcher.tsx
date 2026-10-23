@@ -2,14 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useActiveBrand, useActiveWorkspace } from '@/shared/scope'
 import { getBrands } from '@/features/brands'
-import {
-  Button,
-  Dropdown,
-  IconCaretUpDown,
-  IconPlus,
-  IconSettingsOutline,
-  Spin,
-} from '@/shared/ui'
+import { Button, Dropdown, IconCaretUpDown, IconPlus, IconSettingsOutline, Spin } from '@/shared/ui'
 import { useWorkspaces } from '../api'
 import { CreateWorkspaceModal } from './CreateWorkspaceModal'
 import { ManageWorkspacesModal } from './ManageWorkspacesModal'

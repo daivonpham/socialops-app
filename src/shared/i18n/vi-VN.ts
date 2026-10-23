@@ -15,6 +15,11 @@ export const commonViVN = {
     reset: 'Đặt lại',
     apply: 'Áp dụng',
   },
+  confirmDialog: {
+    cancel: 'Hủy',
+    confirm: 'Xác nhận',
+    delete: 'Xóa',
+  },
   dataTable: {
     selectAllRows: 'Chọn tất cả hàng trên trang này',
     selectRow: 'Chọn hàng',

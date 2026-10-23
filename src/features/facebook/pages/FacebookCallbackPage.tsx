@@ -48,20 +48,19 @@ export default function FacebookCallbackPage() {
   }, [autoConnected, brandId, callbackError, connectionId, isPopup, pageId])
 
   useEffect(() => {
-    if (
-      isPopup ||
-      !autoConnected ||
-      !brandId ||
-      callbackError ||
-      autoCompletionHandled.current
-    )
+    if (isPopup || !autoConnected || !brandId || callbackError || autoCompletionHandled.current)
       return
     autoCompletionHandled.current = true
     if (workspaceId) selectBrand(workspaceId, brandId)
     toast.success({ title: t('oauth.connected') })
-    navigate(pageId ? `${FACEBOOK_OVERVIEW_PATH}?pageId=${encodeURIComponent(pageId)}` : FACEBOOK_OVERVIEW_PATH, {
-      replace: true,
-    })
+    navigate(
+      pageId
+        ? `${FACEBOOK_OVERVIEW_PATH}?pageId=${encodeURIComponent(pageId)}`
+        : FACEBOOK_OVERVIEW_PATH,
+      {
+        replace: true,
+      },
+    )
   }, [
     autoConnected,
     brandId,
@@ -173,9 +172,7 @@ export default function FacebookCallbackPage() {
                 checked={selected.includes(page.id)}
                 onChange={({ target }) =>
                   setSelected((current) =>
-                    target.checked
-                      ? [...current, page.id]
-                      : current.filter((id) => id !== page.id),
+                    target.checked ? [...current, page.id] : current.filter((id) => id !== page.id),
                   )
                 }
               />

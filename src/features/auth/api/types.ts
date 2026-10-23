@@ -14,6 +14,8 @@ export type RegisterInput = {
   displayName: string
   password: string
   locale?: string
+  /** Proves ownership of an invited email so the account is verified immediately. */
+  invitationToken?: string
 }
 export type RegisterResult = {
   userId: string

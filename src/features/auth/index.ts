@@ -4,3 +4,9 @@ export { default as LoginPage } from './pages/LoginPage'
 export { default as RegisterPage } from './pages/RegisterPage'
 export { default as ChangePasswordPage } from './pages/ChangePasswordPage'
 export * from './api'
+export {
+  invitationPath,
+  forgetPendingInvitation,
+  pendingInvitationPath,
+  rememberPendingInvitation,
+} from './model/pending-invitation'

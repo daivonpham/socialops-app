@@ -1,10 +1,12 @@
-import type { ChangeEventHandler } from 'react'
+import type { ChangeEventHandler, ReactNode } from 'react'
 
 export type InputProps = {
   value?: string
   defaultValue?: string
   onChange?: ChangeEventHandler<HTMLInputElement>
   placeholder?: string
+  /** Leading visual inside the control, e.g. an email icon. */
+  prefix?: ReactNode
   className?: string
   id?: string
   label?: string

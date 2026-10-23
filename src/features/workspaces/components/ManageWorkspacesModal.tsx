@@ -6,6 +6,7 @@ import { useActiveBrand, useActiveWorkspace } from '@/shared/scope'
 import {
   Alert,
   Button,
+  ConfirmDialog,
   IconDelete,
   IconEdit,
   IconPlus,
@@ -15,12 +16,7 @@ import {
   Spin,
   useToast,
 } from '@/shared/ui'
-import {
-  WORKSPACE_QUERY_KEYS,
-  type WorkspaceDto,
-  useDeleteWorkspace,
-  useWorkspaces,
-} from '../api'
+import { WORKSPACE_QUERY_KEYS, type WorkspaceDto, useDeleteWorkspace, useWorkspaces } from '../api'
 import { CreateWorkspaceModal } from './CreateWorkspaceModal'
 import { EditWorkspaceModal } from './EditWorkspaceModal'
 
@@ -147,58 +143,32 @@ export function ManageWorkspacesModal({ open, onClose }: { open: boolean; onClos
         open={editWorkspace !== null}
         onClose={() => setEditWorkspace(null)}
       />
-      <Modal
+      <ConfirmDialog
         open={workspaceToDelete !== null}
         title={t('deleteModal.title')}
-        headerIcon={<IconDelete aria-hidden className="text-error-700" />}
-        headerDescription={t('deleteModal.description', {
-          name: workspaceToDelete?.name ?? '',
-        })}
-        headerLayout="vertical"
-        width={440}
+        description={t('deleteModal.description', { name: workspaceToDelete?.name ?? '' })}
+        confirmLabel={t('deleteModal.confirm')}
+        cancelLabel={t('deleteModal.cancel')}
+        loading={removeWorkspace.isPending}
+        confirmDisabled={deleteConfirmation !== workspaceToDelete?.name}
+        onConfirm={() => void confirmDelete()}
         onClose={() => {
-          if (removeWorkspace.isPending) return
           setDeleteConfirmation('')
           setWorkspaceToDelete(null)
         }}
-        footer={
-          <div className="flex justify-end gap-2">
-            <Button
-              disabled={removeWorkspace.isPending}
-              onClick={() => {
-                setDeleteConfirmation('')
-                setWorkspaceToDelete(null)
-              }}
-            >
-              {t('deleteModal.cancel')}
-            </Button>
-            <Button
-              variant="destructive"
-              loading={removeWorkspace.isPending}
-              disabled={deleteConfirmation !== workspaceToDelete?.name}
-              onClick={() => void confirmDelete()}
-            >
-              {t('deleteModal.confirm')}
-            </Button>
-          </div>
-        }
       >
-        <div>
-          <Input
-            value={deleteConfirmation}
-            label={t('deleteModal.confirmationLabel', { name: workspaceToDelete?.name ?? '' })}
-            placeholder={workspaceToDelete?.name ?? ''}
-            autoComplete="off"
-            disabled={removeWorkspace.isPending}
-            onChange={(event) => setDeleteConfirmation(event.target.value)}
-          />
-        </div>
+        <Input
+          value={deleteConfirmation}
+          label={t('deleteModal.confirmationLabel', { name: workspaceToDelete?.name ?? '' })}
+          placeholder={workspaceToDelete?.name ?? ''}
+          autoComplete="off"
+          disabled={removeWorkspace.isPending}
+          onChange={(event) => setDeleteConfirmation(event.target.value)}
+        />
         {removeWorkspace.isError ? (
-          <div className="mt-4">
-            <Alert variant="soft" tone="error" title={t('deleteModal.error')} />
-          </div>
+          <Alert variant="soft" tone="error" title={t('deleteModal.error')} />
         ) : null}
-      </Modal>
+      </ConfirmDialog>
     </>
   )
 }

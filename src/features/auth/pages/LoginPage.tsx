@@ -1,4 +1,5 @@
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Alert, Button, Form, IconGoogle, Input } from '@/shared/ui'
 import { useAuth } from '@/shared/auth'
@@ -6,23 +7,28 @@ import { useLogin, useStartGoogleAuth } from '../api'
 import { getAuthErrorKey } from '../model/auth-error'
 import { AuthLayout } from '../components/AuthLayout'
 import { AUTH_ROUTES } from '../config/auth.routes'
+import { rememberPendingInvitation } from '../model/pending-invitation'
 
 type LoginFormValues = { email: string; password: string }
 
 export default function LoginPage() {
   const { t } = useTranslation('auth')
-  const navigate = useNavigate()
   const [params] = useSearchParams()
   const { authenticate } = useAuth()
   const login = useLogin()
   const google = useStartGoogleAuth()
+  const invitation = params.get('invitation')
+  const invitedEmail = params.get('email') ?? undefined
+
+  useEffect(() => {
+    if (invitation) rememberPendingInvitation(invitation)
+  }, [invitation])
 
   const submit = (values: LoginFormValues) => {
     login.mutate(values, {
-      onSuccess: (session) => {
-        authenticate(session)
-        navigate(AUTH_ROUTES.POST_AUTH, { replace: true })
-      },
+      // The guest-only guard redirects once authenticated (to a pending invitation if any);
+      // navigating here too would race it and leave a blank screen.
+      onSuccess: (session) => authenticate(session),
     })
   }
 
@@ -39,13 +45,25 @@ export default function LoginPage() {
       footer={
         <>
           {t('login.noAccount')}{' '}
-          <Link className="font-semibold text-link hover:text-link-hover" to={AUTH_ROUTES.REGISTER}>
+          <Link
+            className="font-semibold text-link hover:text-link-hover"
+            to={
+              invitation
+                ? `${AUTH_ROUTES.REGISTER}?${new URLSearchParams({ invitation, ...(invitedEmail ? { email: invitedEmail } : {}) })}`
+                : AUTH_ROUTES.REGISTER
+            }
+          >
             {t('login.register')}
           </Link>
         </>
       }
     >
-      <Form<LoginFormValues> layout="vertical" requiredMark={false} onFinish={submit}>
+      <Form<LoginFormValues>
+        layout="vertical"
+        requiredMark={false}
+        initialValues={{ email: invitedEmail }}
+        onFinish={submit}
+      >
         {params.get('oauth') === 'failed' ? (
           <Alert variant="soft" tone="error" title={t('errors.GOOGLE_AUTH_FAILED')} />
         ) : null}

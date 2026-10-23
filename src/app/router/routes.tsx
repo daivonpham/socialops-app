@@ -207,6 +207,15 @@ const routes: RouteObject[] = [
     }),
   },
   {
+    // Public: shows the invitation before sign-in; the page restores any existing session.
+    path: ROUTES.INVITATION,
+    handle: handle({ auth: 'public' }),
+    lazy: async () => ({
+      Component: (await import('@/features/workspaces/pages/InvitationAcceptPage')).default,
+    }),
+    hydrateFallbackElement: bootFallback,
+  },
+  {
     path: ROUTES.GOOGLE_CALLBACK,
     handle: handle({ auth: 'required' }),
     lazy: async () => ({

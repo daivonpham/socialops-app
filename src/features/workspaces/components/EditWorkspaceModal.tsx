@@ -2,11 +2,7 @@ import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Alert, Button, Form, Input, Modal, useToast } from '@/shared/ui'
-import {
-  WORKSPACE_QUERY_KEYS,
-  type WorkspaceDto,
-  useUpdateWorkspace,
-} from '../api'
+import { WORKSPACE_QUERY_KEYS, type WorkspaceDto, useUpdateWorkspace } from '../api'
 
 type Values = { name: string }
 

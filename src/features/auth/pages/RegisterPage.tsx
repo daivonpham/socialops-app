@@ -1,13 +1,15 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Alert, Button, Form, IconGoogle, Input } from '@/shared/ui'
-import { useRegister, useStartGoogleAuth } from '../api'
+import { useAuth } from '@/shared/auth'
+import { useLogin, useRegister, useStartGoogleAuth } from '../api'
 import type { RegisterInput } from '../api'
 import { getAuthErrorKey } from '../model/auth-error'
 import { AuthLayout } from '../components/AuthLayout'
 import { BackToLoginLink } from '../components/BackToLoginLink'
 import { AUTH_ROUTES } from '../config/auth.routes'
+import { rememberPendingInvitation } from '../model/pending-invitation'
 
 type RegisterFormValues = { name: string; email: string; password: string }
 
@@ -33,16 +35,43 @@ export default function RegisterPage() {
   const register = useRegister()
   const resend = useRegister()
   const google = useStartGoogleAuth()
+  const login = useLogin()
+  const { authenticate } = useAuth()
+  const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const invitation = params.get('invitation')
+  // The invited address is fixed: the invitation link proves ownership of this email only.
+  const invitedEmail = invitation ? (params.get('email') ?? undefined) : undefined
   const [registeredInput, setRegisteredInput] = useState<RegisterInput | null>(null)
 
+  useEffect(() => {
+    if (invitation) rememberPendingInvitation(invitation)
+  }, [invitation])
+
   const submit = (values: RegisterFormValues) => {
-    const input = {
+    const input: RegisterInput = {
       displayName: values.name,
-      email: values.email,
+      email: invitedEmail ?? values.email,
       password: values.password,
       locale: document.documentElement.lang.startsWith('vi') ? 'vi' : 'en',
+      ...(invitation ? { invitationToken: invitation } : {}),
     }
-    register.mutate(input, { onSuccess: () => setRegisteredInput(input) })
+    register.mutate(input, {
+      onSuccess: (result) => {
+        if (result.verificationRequired) {
+          setRegisteredInput(input)
+          return
+        }
+        login.mutate(
+          { email: input.email, password: input.password },
+          {
+            // The guest-only guard redirects once authenticated (see LoginPage).
+            onSuccess: (session) => authenticate(session),
+            onError: () => navigate(AUTH_ROUTES.LOGIN, { replace: true }),
+          },
+        )
+      },
+    })
   }
 
   if (registeredInput) {
@@ -104,13 +133,25 @@ export default function RegisterPage() {
       footer={
         <>
           {t('register.hasAccount')}{' '}
-          <Link className="font-semibold text-link hover:text-link-hover" to={AUTH_ROUTES.LOGIN}>
+          <Link
+            className="font-semibold text-link hover:text-link-hover"
+            to={
+              invitation
+                ? `${AUTH_ROUTES.LOGIN}?${new URLSearchParams({ invitation, ...(invitedEmail ? { email: invitedEmail } : {}) })}`
+                : AUTH_ROUTES.LOGIN
+            }
+          >
             {t('register.login')}
           </Link>
         </>
       }
     >
-      <Form<RegisterFormValues> layout="vertical" requiredMark={false} onFinish={submit}>
+      <Form<RegisterFormValues>
+        layout="vertical"
+        requiredMark={false}
+        initialValues={{ email: invitedEmail }}
+        onFinish={submit}
+      >
         {register.isError ? (
           <Alert variant="soft" tone="error" title={t(getAuthErrorKey(register.error))} />
         ) : null}
@@ -143,7 +184,8 @@ export default function RegisterPage() {
             size="lg"
             placeholder={t('fields.emailPlaceholder')}
             autoComplete="email"
-            allowClear
+            allowClear={!invitedEmail}
+            disabled={Boolean(invitedEmail)}
           />
         </Form.Item>
         <Form.Item
@@ -169,7 +211,7 @@ export default function RegisterPage() {
             size="md"
             htmlType="submit"
             className="w-full"
-            loading={register.isPending}
+            loading={register.isPending || login.isPending}
           >
             {t('register.submit')}
           </Button>

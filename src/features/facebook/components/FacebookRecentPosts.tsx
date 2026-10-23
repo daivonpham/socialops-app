@@ -94,7 +94,8 @@ export function FacebookRecentPosts({ brandId, query }: { brandId: string; query
                 {post.message || t('overview.noPostMessage')}
               </span>
               <span className="text-caption text-text-tertiary">
-                {t(`overview.contentKind.${post.contentType ?? 'post'}`)} · {t(`overview.mediaKind.${post.mediaType}`)}
+                {t(`overview.contentKind.${post.contentType ?? 'post'}`)} ·{' '}
+                {t(`overview.mediaKind.${post.mediaType}`)}
               </span>
             </span>
           </div>

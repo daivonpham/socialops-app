@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from 'react'
 import { Link, Navigate, Outlet, useLocation, useMatches } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { pendingInvitationPath } from '@/features/auth'
 import { allOf, usePermissions } from '@/shared/permissions'
 import { Spin } from '@/shared/ui'
 import { useAuth } from '@/shared/auth'
@@ -40,7 +41,7 @@ export function AuthBoundary() {
     return <Navigate to={ROUTES.LOGIN} replace state={{ from: location.pathname }} />
   }
   if (auth === 'guest-only' && status === 'authenticated') {
-    return <Navigate to={ROUTES.ROOT} replace />
+    return <Navigate to={pendingInvitationPath() ?? ROUTES.ROOT} replace />
   }
   return <Outlet />
 }

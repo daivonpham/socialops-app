@@ -158,7 +158,11 @@ export default function FacebookPage() {
           <div>
             <h1 className="text-heading-2 font-semibold text-text-primary">{t('title')}</h1>
             <p className="mt-1 text-body-sm text-text-secondary">
-              {t('connection.connectedCount', { count: connectedPages.length })} · {t('subtitle')}
+              {t('connection.connectedCount', { count: visiblePages.length })}
+              {unhealthyPages.length
+                ? ` · ${t('connection.needsReconnect', { count: unhealthyPages.length })}`
+                : ''}{' '}
+              · {t('subtitle')}
             </p>
           </div>
         </div>

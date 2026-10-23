@@ -6,5 +6,6 @@ export const AUTH_ROUTES = {
   VERIFY_EMAIL: '/auth/email-verification',
   GOOGLE_CALLBACK: '/auth/google/callback',
   CHANGE_PASSWORD: '/auth/change-password',
+  INVITATION: '/invitations/accept',
   POST_AUTH: '/',
 } as const

@@ -11,10 +11,12 @@ import {
   IconRefresh,
   Modal,
   StatusTag,
+  useToast,
 } from '@/shared/ui'
 import {
   useDisconnectFacebook,
   useDisconnectFacebookPage,
+  useReconnectFacebookPage,
   type FacebookIntegrationDto,
   type FacebookPageDto,
 } from '../api'
@@ -39,6 +41,18 @@ export function ManageFacebookPagesDrawer({
   const locale = i18n.resolvedLanguage as AppLocale
   const disconnectPage = useDisconnectFacebookPage(brandId)
   const disconnectAll = useDisconnectFacebook(brandId)
+  const reconnectPage = useReconnectFacebookPage(brandId)
+  const toast = useToast()
+  // Re-validate the existing grant first; only fall back to Facebook OAuth when the
+  // stored connection can no longer see the Page.
+  const reconnect = (page: FacebookPageDto) =>
+    reconnectPage.mutate(
+      { brandId, pageId: page.id },
+      {
+        onSuccess: () => toast.success({ title: t('connection.reconnected', { page: page.name }) }),
+        onError: onAddPage,
+      },
+    )
   const [pageToDisconnect, setPageToDisconnect] = useState<FacebookPageDto | null>(null)
   const [isDisconnectAllConfirmationOpen, setIsDisconnectAllConfirmationOpen] = useState(false)
 
@@ -104,8 +118,11 @@ export function ManageFacebookPagesDrawer({
                       <Button
                         size="sm"
                         icon={<IconRefresh />}
-                        loading={isAddingPage}
-                        onClick={onAddPage}
+                        loading={
+                          isAddingPage ||
+                          (reconnectPage.isPending && reconnectPage.variables?.pageId === page.id)
+                        }
+                        onClick={() => reconnect(page)}
                       >
                         {t('connection.reconnect')}
                       </Button>

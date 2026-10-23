@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   createWorkspace,
   deleteWorkspace,
@@ -10,12 +10,24 @@ import {
   assignWorkspaceMemberBrand,
   revokeWorkspaceMemberBrand,
   inviteWorkspaceMember,
+  acceptInvitation,
+  acceptInvitationById,
+  declineInvitation,
+  declineInvitationById,
+  getMyInvitations,
+  getInvitationPreview,
+  getMemberAccessOptions,
+  updateWorkspaceMemberAccess,
 } from './service'
 
 export const WORKSPACE_QUERY_KEYS = {
   list: () => ['workspaces'] as const,
   members: (workspaceId: string | null, page: number) =>
     ['workspaces', workspaceId, 'members', page] as const,
+  accessOptions: (workspaceId: string | null) =>
+    ['workspaces', workspaceId, 'access-options'] as const,
+  invitation: (token: string | null) => ['invitations', token] as const,
+  myInvitations: () => ['invitations', 'mine'] as const,
 }
 
 export function useWorkspaces() {
@@ -64,4 +76,78 @@ export function useRevokeWorkspaceMemberBrand() {
 
 export function useInviteWorkspaceMember() {
   return useMutation({ mutationFn: inviteWorkspaceMember })
+}
+
+export function useMemberAccessOptions(workspaceId: string | null, enabled = true) {
+  return useQuery({
+    queryKey: WORKSPACE_QUERY_KEYS.accessOptions(workspaceId),
+    queryFn: () => getMemberAccessOptions(workspaceId!),
+    enabled: Boolean(workspaceId) && enabled,
+  })
+}
+
+export function useUpdateWorkspaceMemberAccess() {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: updateWorkspaceMemberAccess,
+    onSuccess: (_member, { workspaceId }) =>
+      client.invalidateQueries({ queryKey: ['workspaces', workspaceId, 'members'] }),
+  })
+}
+
+export function useInvitationPreview(token: string | null) {
+  return useQuery({
+    queryKey: WORKSPACE_QUERY_KEYS.invitation(token),
+    queryFn: () => getInvitationPreview(token!),
+    enabled: Boolean(token),
+    retry: false,
+  })
+}
+
+export function useAcceptInvitation() {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: acceptInvitation,
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: WORKSPACE_QUERY_KEYS.list() })
+      void client.invalidateQueries({ queryKey: WORKSPACE_QUERY_KEYS.myInvitations() })
+    },
+  })
+}
+
+export function useDeclineInvitation() {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: declineInvitation,
+    onSuccess: () => client.invalidateQueries({ queryKey: WORKSPACE_QUERY_KEYS.myInvitations() }),
+  })
+}
+
+/** Pending invitations for the signed-in user; refreshed when the tab regains focus. */
+export function useMyInvitations() {
+  return useQuery({
+    queryKey: WORKSPACE_QUERY_KEYS.myInvitations(),
+    queryFn: getMyInvitations,
+    staleTime: 60_000,
+    refetchOnWindowFocus: true,
+  })
+}
+
+export function useAcceptInvitationById() {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: acceptInvitationById,
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: WORKSPACE_QUERY_KEYS.list() })
+      void client.invalidateQueries({ queryKey: WORKSPACE_QUERY_KEYS.myInvitations() })
+    },
+  })
+}
+
+export function useDeclineInvitationById() {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: declineInvitationById,
+    onSuccess: () => client.invalidateQueries({ queryKey: WORKSPACE_QUERY_KEYS.myInvitations() }),
+  })
 }

@@ -6,6 +6,7 @@ import {
   Alert,
   Avatar,
   Button,
+  ConfirmDialog,
   IconBrandManagement,
   IconDelete,
   IconEdit,
@@ -15,12 +16,7 @@ import {
   Spin,
   useToast,
 } from '@/shared/ui'
-import {
-  BRAND_QUERY_KEYS,
-  type BrandDto,
-  useBrands,
-  useDeleteBrand,
-} from '../api'
+import { BRAND_QUERY_KEYS, type BrandDto, useBrands, useDeleteBrand } from '../api'
 import { CreateBrandModal } from './CreateBrandModal'
 import { EditBrandModal } from './EditBrandModal'
 
@@ -138,39 +134,19 @@ export function ManageBrandsModal({ open, onClose }: { open: boolean; onClose: (
         open={editBrand !== null}
         onClose={() => setEditBrand(null)}
       />
-      <Modal
+      <ConfirmDialog
         open={brandToDelete !== null}
         title={t('deleteModal.title')}
-        headerIcon={<IconDelete aria-hidden className="text-error-700" />}
-        headerDescription={t('deleteModal.description', { name: brandToDelete?.name ?? '' })}
-        headerLayout="vertical"
-        width={440}
+        description={t('deleteModal.description', { name: brandToDelete?.name ?? '' })}
+        confirmLabel={t('deleteModal.confirm')}
+        cancelLabel={t('deleteModal.cancel')}
+        loading={removeBrand.isPending}
+        confirmDisabled={deleteConfirmation !== brandToDelete?.name}
+        onConfirm={() => void confirmDelete()}
         onClose={() => {
-          if (removeBrand.isPending) return
           setDeleteConfirmation('')
           setBrandToDelete(null)
         }}
-        footer={
-          <div className="flex justify-end gap-2">
-            <Button
-              disabled={removeBrand.isPending}
-              onClick={() => {
-                setDeleteConfirmation('')
-                setBrandToDelete(null)
-              }}
-            >
-              {t('deleteModal.cancel')}
-            </Button>
-            <Button
-              variant="destructive"
-              loading={removeBrand.isPending}
-              disabled={deleteConfirmation !== brandToDelete?.name}
-              onClick={() => void confirmDelete()}
-            >
-              {t('deleteModal.confirm')}
-            </Button>
-          </div>
-        }
       >
         <Input
           value={deleteConfirmation}
@@ -181,11 +157,9 @@ export function ManageBrandsModal({ open, onClose }: { open: boolean; onClose: (
           onChange={(event) => setDeleteConfirmation(event.target.value)}
         />
         {removeBrand.isError ? (
-          <div className="mt-4">
-            <Alert variant="soft" tone="error" title={t('deleteModal.error')} />
-          </div>
+          <Alert variant="soft" tone="error" title={t('deleteModal.error')} />
         ) : null}
-      </Modal>
+      </ConfirmDialog>
     </>
   )
 }

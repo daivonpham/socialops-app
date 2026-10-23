@@ -9,4 +9,5 @@ export const MOCK_WORKSPACES: WorkspaceDto[] = [
 
 export const workspaceHandlers = [
   http.get('/api/workspaces', () => HttpResponse.json(envelope(MOCK_WORKSPACES, '/workspaces'))),
+  http.get('/api/invitations/mine', () => HttpResponse.json(envelope([], '/invitations/mine'))),
 ]
