@@ -24,6 +24,7 @@ import {
   type FacebookTab,
 } from '../api'
 import { AnalyticsTab } from '../components/AnalyticsTab'
+import { FacebookConnectionHealthBanner } from '../components/FacebookConnectionHealthBanner'
 import { FacebookDisconnected } from '../components/FacebookDisconnected'
 import { FacebookFilters } from '../components/FacebookFilters'
 import {
@@ -67,6 +68,7 @@ export default function FacebookPage() {
         connectionId?: string | null
         autoConnected?: boolean
         pageId?: string | null
+        restoredPages?: number
         error?: string | null
       }
       if (message?.type !== 'socialops.facebook.oauth') return
@@ -75,6 +77,10 @@ export default function FacebookPage() {
         return
       }
       if (message.brandId !== brandId) return
+      if (message.restoredPages) {
+        toast.success({ title: t('tokenHealth.restored', { count: message.restoredPages }) })
+        void queryClient.invalidateQueries({ queryKey: FACEBOOK_QUERY_KEYS.root(brandId) })
+      }
       if (message.autoConnected) {
         if (message.pageId) setFilters({ tab: 'overview', pageId: message.pageId })
         toast.success({ title: t('oauth.connected') })
@@ -133,7 +139,10 @@ export default function FacebookPage() {
 
   const data = integration.data
   const visiblePages = data.pages.filter((page) => page.health !== 'disconnected')
-  const connectedPages = visiblePages.filter((page) => page.health === 'connected')
+  // An expiring grant still works, so its Pages stay selectable until it actually lapses.
+  const connectedPages = visiblePages.filter(
+    (page) => page.health === 'connected' || page.health === 'token_expiring',
+  )
   const unhealthyPages = visiblePages.filter((page) => page.health !== 'connected')
   const tab = (
     ['overview', 'analytics'].includes(filters.tab) ? filters.tab : 'overview'
@@ -192,6 +201,12 @@ export default function FacebookPage() {
         </div>
       </header>
 
+      <FacebookConnectionHealthBanner
+        pages={visiblePages}
+        canManage={canManageConnection}
+        reconnecting={connect.isPending}
+        onReconnect={startConnect}
+      />
       <FacebookSyncBanner brandId={brandId} />
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

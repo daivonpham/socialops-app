@@ -125,6 +125,21 @@ export const facebookEnUS = {
     permission_missing: 'Permission missing',
     disconnected: 'Disconnected',
   },
+  tokenHealth: {
+    pausedTitle_one: '{{count}} Page needs Facebook reconnected',
+    pausedTitle_other: '{{count}} Pages need Facebook reconnected',
+    pausedDescription:
+      'Access to {{pages}} is no longer valid, so SocialOps paused syncing and publishing for them.',
+    expiringTitle: 'Facebook connection expires on {{date}}',
+    expiringSoonTitle: 'Facebook connection expires soon',
+    expiringDescription:
+      'Reconnect before then so {{pages}} keep syncing and publishing without interruption.',
+    reconnect: 'Reconnect Facebook',
+    askManager: "Ask whoever manages this brand's connections to reconnect it.",
+    reconnectBy: 'Reconnect by {{date}}',
+    restored_one: '{{count}} Page restored.',
+    restored_other: '{{count}} Pages restored.',
+  },
   metrics: {
     mediaViews: 'Media views',
     uniqueViewers: 'Unique viewers',

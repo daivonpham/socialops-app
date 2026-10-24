@@ -12,6 +12,8 @@ export type FacebookPageDto = {
   category: string
   followersCount: number
   health: FacebookPageHealth
+  /** Deadline to connect Facebook again; set while health is token_expiring. */
+  reconnectBy?: string | null
   lastSyncedAt: string
 }
 

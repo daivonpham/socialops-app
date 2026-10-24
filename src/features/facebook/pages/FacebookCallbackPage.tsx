@@ -16,6 +16,7 @@ export default function FacebookCallbackPage() {
   const connectionId = params.get('connectionId')
   const autoConnected = params.get('autoConnected') === 'true'
   const pageId = params.get('pageId')
+  const restoredPages = Number(params.get('restoredPages') ?? 0)
   const callbackError = params.get('error')
   const isPopup = Boolean(window.opener && window.opener !== window)
   const { workspaceId } = useActiveWorkspace()
@@ -40,12 +41,13 @@ export default function FacebookCallbackPage() {
         connectionId,
         autoConnected,
         pageId,
+        restoredPages,
         error: callbackError,
       },
       window.location.origin,
     )
     window.close()
-  }, [autoConnected, brandId, callbackError, connectionId, isPopup, pageId])
+  }, [autoConnected, brandId, callbackError, connectionId, isPopup, pageId, restoredPages])
 
   useEffect(() => {
     if (isPopup || !autoConnected || !brandId || callbackError || autoCompletionHandled.current)

@@ -128,6 +128,21 @@ export const facebookViVN = {
     permission_missing: 'Thiếu quyền',
     disconnected: 'Đã ngắt kết nối',
   },
+  tokenHealth: {
+    pausedTitle_one: '{{count}} Trang cần kết nối lại Facebook',
+    pausedTitle_other: '{{count}} Trang cần kết nối lại Facebook',
+    pausedDescription:
+      'Quyền truy cập của {{pages}} đã hết hiệu lực nên SocialOps tạm dừng đồng bộ số liệu và đăng bài lên các Trang này.',
+    expiringTitle: 'Kết nối Facebook sẽ hết hạn vào {{date}}',
+    expiringSoonTitle: 'Kết nối Facebook sắp hết hạn',
+    expiringDescription:
+      'Hãy kết nối lại trước thời hạn để {{pages}} tiếp tục đồng bộ và đăng bài không bị gián đoạn.',
+    reconnect: 'Kết nối lại Facebook',
+    askManager: 'Hãy nhờ người quản lý kết nối của thương hiệu kết nối lại.',
+    reconnectBy: 'Kết nối lại trước {{date}}',
+    restored_one: 'Đã khôi phục {{count}} Trang.',
+    restored_other: 'Đã khôi phục {{count}} Trang.',
+  },
   metrics: {
     mediaViews: 'Lượt xem nội dung',
     uniqueViewers: 'Số người xem',

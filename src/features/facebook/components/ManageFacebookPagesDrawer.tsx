@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { formatNumber, type AppLocale } from '@/shared/i18n'
+import { formatDate, formatNumber, type AppLocale } from '@/shared/i18n'
 import {
   Avatar,
   Button,
@@ -44,15 +44,19 @@ export function ManageFacebookPagesDrawer({
   const reconnectPage = useReconnectFacebookPage(brandId)
   const toast = useToast()
   // Re-validate the existing grant first; only fall back to Facebook OAuth when the
-  // stored connection can no longer see the Page.
+  // stored connection can no longer see the Page. An expiring grant can only be renewed by
+  // logging in to Facebook again, so it goes straight to OAuth.
   const reconnect = (page: FacebookPageDto) =>
-    reconnectPage.mutate(
-      { brandId, pageId: page.id },
-      {
-        onSuccess: () => toast.success({ title: t('connection.reconnected', { page: page.name }) }),
-        onError: onAddPage,
-      },
-    )
+    page.health === 'token_expiring'
+      ? onAddPage()
+      : reconnectPage.mutate(
+          { brandId, pageId: page.id },
+          {
+            onSuccess: () =>
+              toast.success({ title: t('connection.reconnected', { page: page.name }) }),
+            onError: onAddPage,
+          },
+        )
   const [pageToDisconnect, setPageToDisconnect] = useState<FacebookPageDto | null>(null)
   const [isDisconnectAllConfirmationOpen, setIsDisconnectAllConfirmationOpen] = useState(false)
 
@@ -111,6 +115,13 @@ export function ManageFacebookPagesDrawer({
                         {formatNumber(page.followersCount, locale)}{' '}
                         {t('metrics.followers').toLowerCase()}
                       </p>
+                      {page.health === 'token_expiring' && page.reconnectBy ? (
+                        <p className="mt-1 text-caption text-warning-700">
+                          {t('tokenHealth.reconnectBy', {
+                            date: formatDate(page.reconnectBy, locale),
+                          })}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2 border-t border-border-subtle pt-3">
