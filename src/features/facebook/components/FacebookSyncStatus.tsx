@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { formatDateTime } from '@/shared/i18n'
 import { Alert, Button, IconRefresh, useToast } from '@/shared/ui'
 import { useFacebookSyncStatus, useRequestFacebookSync } from '../api'
+import { persistentSyncIssues } from '../model/sync-issues'
 
 const NON_DATA_KEYS = new Set(['integration', 'sync', 'available-pages'])
 
@@ -35,13 +36,18 @@ function useRefreshOnSync(brandId: string) {
 }
 
 export function FacebookSyncBanner({ brandId }: { brandId: string }) {
-  const { t } = useTranslation('facebook')
+  const { t, i18n } = useTranslation('facebook')
   const { data } = useRefreshOnSync(brandId)
   if (!data) return null
   const backfilling = data.pages.filter((page) => !page.backfillCompleted).length
-  const failing = data.pages.filter(
-    (page) => page.backfillCompleted && (page.status === 'error' || page.status === 'rate_limited'),
-  ).length
+  const failing = persistentSyncIssues(data.pages)
+  const rateLimitedOnly = failing.every((page) => page.status === 'rate_limited')
+  const names = failing.map((page) => page.name)
+  const pageList = new Intl.ListFormat(i18n.resolvedLanguage, { type: 'conjunction' }).format(
+    names.length > 3
+      ? [...names.slice(0, 3), t('sync.morePages', { count: names.length - 3 })]
+      : names,
+  )
 
   return (
     <>
@@ -53,12 +59,20 @@ export function FacebookSyncBanner({ brandId }: { brandId: string }) {
           description={t('sync.initialDescription', { count: backfilling })}
         />
       ) : null}
-      {failing ? (
+      {failing.length ? (
         <Alert
           variant="soft"
           tone="warning"
-          title={t('sync.issueTitle', { count: failing })}
-          description={t('sync.issueDescription')}
+          title={
+            rateLimitedOnly
+              ? t('sync.rateLimitedTitle', { count: failing.length })
+              : t('sync.issueTitle', { count: failing.length })
+          }
+          description={
+            rateLimitedOnly
+              ? t('sync.rateLimitedDescription', { pages: pageList })
+              : t('sync.issueDescription', { pages: pageList })
+          }
         />
       ) : null}
     </>

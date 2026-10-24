@@ -678,7 +678,9 @@ function syncStatusFor(brandId: string): FacebookSyncStatusDto {
     refreshAvailableAt: null,
     pages: (PAGE_IDS[brandId] ?? []).map((pageId) => ({
       pageId,
+      name: `Page ${pageId}`,
       status: 'idle',
+      failureCount: 0,
       lastSyncedAt: syncedAt,
       historyStartAt: null,
       backfillCompleted: true,

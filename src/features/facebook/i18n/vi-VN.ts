@@ -56,7 +56,12 @@ export const facebookViVN = {
     initialDescription:
       'SocialOps đang tải lịch sử cho {{count}} Trang. Số liệu sẽ tự cập nhật khi hoàn tất.',
     issueTitle: '{{count}} Trang chưa đồng bộ được',
-    issueDescription: 'Số liệu của các Trang này có thể đã cũ. Hãy kết nối lại nếu lỗi tiếp diễn.',
+    issueDescription:
+      'Số liệu của {{pages}} có thể đã cũ. SocialOps vẫn tự thử lại; nếu lỗi kéo dài, hãy kết nối lại Facebook.',
+    rateLimitedTitle: 'Facebook đang giới hạn tần suất cho {{count}} Trang',
+    rateLimitedDescription:
+      'Số liệu của {{pages}} sẽ cập nhật chậm hơn. SocialOps sẽ tự thử lại, bạn không cần làm gì.',
+    morePages: '{{count}} Trang khác',
   },
   connection: {
     disconnectedTitle: 'Kết nối Facebook với SocialOps',

@@ -230,7 +230,10 @@ export type FacebookSyncStatusDto = {
   refreshAvailableAt: string | null
   pages: Array<{
     pageId: string
+    name: string
     status: 'pending' | 'syncing' | 'idle' | 'error' | 'rate_limited'
+    /** Consecutive failed sync runs; 0 after a success. */
+    failureCount: number
     lastSyncedAt: string | null
     historyStartAt: string | null
     backfillCompleted: boolean

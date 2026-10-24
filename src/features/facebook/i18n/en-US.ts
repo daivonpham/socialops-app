@@ -54,7 +54,11 @@ export const facebookEnUS = {
       'SocialOps is importing history for {{count}} Page(s). Figures update automatically when it finishes.',
     issueTitle: '{{count}} Page(s) could not sync',
     issueDescription:
-      'Figures for these Pages may be out of date. Reconnect them if the problem persists.',
+      'Figures for {{pages}} may be out of date. SocialOps keeps retrying; reconnect Facebook if the problem persists.',
+    rateLimitedTitle: 'Facebook is rate limiting {{count}} Page(s)',
+    rateLimitedDescription:
+      'Figures for {{pages}} will update more slowly. SocialOps retries automatically; no action needed.',
+    morePages: '{{count}} more',
   },
   connection: {
     disconnectedTitle: 'Connect Facebook to SocialOps',

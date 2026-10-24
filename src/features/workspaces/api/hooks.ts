@@ -123,12 +123,16 @@ export function useDeclineInvitation() {
   })
 }
 
-/** Pending invitations for the signed-in user; refreshed when the tab regains focus. */
+/**
+ * Pending invitations for the signed-in user. Polled every minute (and on tab focus) so a new
+ * invite shows up without a reload; there is no push channel yet.
+ */
 export function useMyInvitations() {
   return useQuery({
     queryKey: WORKSPACE_QUERY_KEYS.myInvitations(),
     queryFn: getMyInvitations,
     staleTime: 60_000,
+    refetchInterval: 60_000,
     refetchOnWindowFocus: true,
   })
 }
