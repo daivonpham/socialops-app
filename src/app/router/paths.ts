@@ -11,6 +11,8 @@ export const ROUTES = {
   GOOGLE_CALLBACK: AUTH_ROUTES.GOOGLE_CALLBACK,
   INVITATION: AUTH_ROUTES.INVITATION,
   FACEBOOK_CALLBACK: '/auth/facebook/callback',
+  /** Meta links users here after a data deletion request; must stay public and stable. */
+  FACEBOOK_DATA_DELETION: '/facebook/data-deletion',
   TIKTOK_CALLBACK: '/auth/tiktok/callback',
   CHANGE_PASSWORD: AUTH_ROUTES.CHANGE_PASSWORD,
   PROFILE: '/profile',

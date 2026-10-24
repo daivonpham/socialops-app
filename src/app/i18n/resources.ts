@@ -6,6 +6,7 @@ import { FACEBOOK_I18N } from '@/features/facebook'
 import { PLANNING_I18N } from '@/features/planning'
 import { TIKTOK_I18N } from '@/features/tiktok'
 import { OVERVIEW_I18N } from '@/features/overview'
+import { PRIVACY_I18N } from '@/features/privacy'
 import { commonEnUS, commonViVN } from '@/shared/i18n'
 import { appEnUS } from './en-US'
 import { appViVN } from './vi-VN'
@@ -21,6 +22,7 @@ export const defaultResources = {
   planning: PLANNING_I18N['en-US'],
   tiktok: TIKTOK_I18N['en-US'],
   overview: OVERVIEW_I18N['en-US'],
+  privacy: PRIVACY_I18N['en-US'],
 } as const
 
 export const resources = {
@@ -36,5 +38,6 @@ export const resources = {
     planning: PLANNING_I18N['vi-VN'],
     tiktok: TIKTOK_I18N['vi-VN'],
     overview: OVERVIEW_I18N['vi-VN'],
+    privacy: PRIVACY_I18N['vi-VN'],
   },
 } as const

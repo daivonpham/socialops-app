@@ -216,6 +216,14 @@ const routes: RouteObject[] = [
     hydrateFallbackElement: bootFallback,
   },
   {
+    path: ROUTES.FACEBOOK_DATA_DELETION,
+    handle: handle({ auth: 'public' }),
+    lazy: async () => ({
+      Component: (await import('@/features/privacy/pages/FacebookDataDeletionPage')).default,
+    }),
+    hydrateFallbackElement: bootFallback,
+  },
+  {
     path: ROUTES.GOOGLE_CALLBACK,
     handle: handle({ auth: 'required' }),
     lazy: async () => ({
