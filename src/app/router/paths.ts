@@ -13,6 +13,8 @@ export const ROUTES = {
   FACEBOOK_CALLBACK: '/auth/facebook/callback',
   /** Meta links users here after a data deletion request; must stay public and stable. */
   FACEBOOK_DATA_DELETION: '/facebook/data-deletion',
+  /** Printed into report PDFs by headless Chromium; public, authorized by a one-time token. */
+  REPORT_PRINT: '/reports/print',
   TIKTOK_CALLBACK: '/auth/tiktok/callback',
   CHANGE_PASSWORD: AUTH_ROUTES.CHANGE_PASSWORD,
   PROFILE: '/profile',

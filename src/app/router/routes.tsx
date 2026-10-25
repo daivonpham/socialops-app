@@ -103,7 +103,9 @@ const layoutChildren: RouteObject[] = [
   },
   {
     path: ROUTES.REPORTS,
-    lazy: async () => ({ Component: (await import('@/features/reports/pages/ReportsPage')).default }),
+    lazy: async () => ({
+      Component: (await import('@/features/reports/pages/ReportsPage')).default,
+    }),
     handle: handle({
       nav: { labelKey: 'navigation.reports', section: 'main', order: 10, icon: <IconReports /> },
       requires: [PERMISSIONS.REPORTS_VIEW.key],
@@ -111,12 +113,16 @@ const layoutChildren: RouteObject[] = [
   },
   {
     path: ROUTES.REPORTS_NEW,
-    lazy: async () => ({ Component: (await import('@/features/reports/pages/ReportBuilderPage')).default }),
+    lazy: async () => ({
+      Component: (await import('@/features/reports/pages/ReportBuilderPage')).default,
+    }),
     handle: handle({ requires: [PERMISSIONS.REPORTS_VIEW.key] }),
   },
   {
     path: ROUTES.REPORTS_DETAIL,
-    lazy: async () => ({ Component: (await import('@/features/reports/pages/ReportBuilderPage')).default }),
+    lazy: async () => ({
+      Component: (await import('@/features/reports/pages/ReportBuilderPage')).default,
+    }),
     handle: handle({ requires: [PERMISSIONS.REPORTS_VIEW.key] }),
   },
   {
@@ -222,6 +228,14 @@ const routes: RouteObject[] = [
     handle: handle({ auth: 'public' }),
     lazy: async () => ({
       Component: (await import('@/features/workspaces/pages/InvitationAcceptPage')).default,
+    }),
+    hydrateFallbackElement: bootFallback,
+  },
+  {
+    path: ROUTES.REPORT_PRINT,
+    handle: handle({ auth: 'public' }),
+    lazy: async () => ({
+      Component: (await import('@/features/reports/pages/ReportPrintPage')).default,
     }),
     hydrateFallbackElement: bootFallback,
   },

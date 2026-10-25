@@ -26,11 +26,11 @@ export type CsvTable =
   | 'publishing_summary'
   | 'publishing'
 
-export type ExportFormat = 'xlsx' | 'zip' | 'csv'
+export type ExportFormat = 'xlsx' | 'zip' | 'csv' | 'pdf'
 
 /**
  * One export button: Excel (one sheet per table), every table as CSV files in a ZIP, a single
- * table as CSV, and the formats that are not ready yet. A CSV file can only hold one table.
+ * table as CSV, the designed PDF report, and the formats that are not ready yet. A CSV file can only hold one table.
  */
 export function ReportExportMenu({
   disabled,
@@ -48,7 +48,7 @@ export function ReportExportMenu({
     <Dropdown
       placement="bottomRight"
       onSelect={(key) => {
-        if (key === 'xlsx' || key === 'zip') onExport(key)
+        if (key === 'xlsx' || key === 'zip' || key === 'pdf') onExport(key)
         else if (key.startsWith('csv:')) onExport('csv', key.slice(4) as CsvTable)
       }}
       items={[
@@ -61,12 +61,7 @@ export function ReportExportMenu({
           icon: <IconFileText aria-hidden />,
         })),
         { type: 'divider' as const },
-        {
-          key: 'pdf',
-          label: `${t('preview.pdf')} · ${t('preview.comingSoon')}`,
-          icon: <IconFile aria-hidden />,
-          disabled: true,
-        },
+        { key: 'pdf', label: t('preview.pdf'), icon: <IconFile aria-hidden /> },
         {
           key: 'sheets',
           label: `${t('preview.sheets')} · ${t('preview.comingSoon')}`,

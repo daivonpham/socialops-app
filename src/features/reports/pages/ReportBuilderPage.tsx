@@ -26,6 +26,7 @@ import { useReport, useReportPreview } from '../api/hooks'
 import {
   createReport,
   exportReport,
+  exportReportPdf,
   getReportRefresh,
   requestReportRefresh,
   updateReport,
@@ -233,9 +234,12 @@ export default function ReportBuilderPage() {
     if (!brandId) return
     setExporting(true)
     try {
-      await exportReport(brandId, { config, format, table, title: name.trim() })
+      if (format === 'pdf') {
+        toast.info({ title: t('preview.pdfPreparing') })
+        await exportReportPdf(brandId, { config, title: name.trim() })
+      } else await exportReport(brandId, { config, format, table, title: name.trim() })
     } catch {
-      toast.error({ title: t('preview.exportError') })
+      toast.error({ title: t(format === 'pdf' ? 'preview.pdfError' : 'preview.exportError') })
     } finally {
       setExporting(false)
     }

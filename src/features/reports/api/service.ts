@@ -97,10 +97,13 @@ export async function exportReport(
   const response = await apiClient.post<Blob>(`${root(brandId)}/export`, input, {
     responseType: 'blob',
   })
-  const disposition = response.headers['content-disposition'] as string | undefined
-  const filename =
-    disposition?.match(/filename="?([^";]+)"?/)?.[1] ?? `socialops-report.${input.format}`
-  const url = URL.createObjectURL(response.data)
+  saveBlob(response.data, response.headers, `socialops-report.${input.format}`)
+}
+
+function saveBlob(data: Blob, headers: Record<string, unknown>, fallback: string) {
+  const disposition = headers['content-disposition'] as string | undefined
+  const filename = disposition?.match(/filename="?([^";]+)"?/)?.[1] ?? fallback
+  const url = URL.createObjectURL(data)
   const link = document.createElement('a')
   link.href = url
   link.download = filename
@@ -108,4 +111,50 @@ export async function exportReport(
   link.click()
   link.remove()
   window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+export type PdfJob = {
+  id: string
+  status: 'queued' | 'running' | 'completed' | 'failed'
+  fileName: string
+  errorCode: string | null
+}
+
+const PDF_POLL_MS = 1500
+const PDF_TIMEOUT_MS = 3 * 60_000
+
+/**
+ * PDF is rendered in the background: start the job, poll until it finishes, then download the
+ * file. Throws with the job's error code if rendering failed.
+ */
+export async function exportReportPdf(
+  brandId: string,
+  input: { config?: ReportConfig; reportId?: string; title?: string },
+) {
+  const started = await apiClient.post<CommonApiResponse<PdfJob>>(`${root(brandId)}/pdf`, input, {
+    headers: { 'Idempotency-Key': crypto.randomUUID() },
+  })
+  let job = started.data.data
+  const deadline = Date.now() + PDF_TIMEOUT_MS
+  while (job.status === 'queued' || job.status === 'running') {
+    if (Date.now() > deadline) throw new Error('REPORT_PDF_TIMEOUT')
+    await new Promise((resolve) => window.setTimeout(resolve, PDF_POLL_MS))
+    const response = await apiClient.get<CommonApiResponse<PdfJob>>(
+      `${root(brandId)}/pdf/${job.id}`,
+    )
+    job = response.data.data
+  }
+  if (job.status === 'failed') throw new Error(job.errorCode ?? 'REPORT_PDF_FAILED')
+  const file = await apiClient.get<Blob>(`${root(brandId)}/pdf/${job.id}/file`, {
+    responseType: 'blob',
+  })
+  saveBlob(file.data, file.headers, job.fileName)
+}
+
+/** Prepared report for the PDF print page; authorized by the job's one-time token, not a session. */
+export async function getReportPrintData(token: string) {
+  const response = await apiClient.get<
+    CommonApiResponse<{ document: ReportDocument; locale: string }>
+  >(`/reports/print-data/${encodeURIComponent(token)}`)
+  return response.data.data
 }

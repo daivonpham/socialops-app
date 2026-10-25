@@ -1,0 +1,49 @@
+/*
+ * A4 print page for report PDFs. Chromium sets the page margins and the footer (page numbers);
+ * this file only sizes the sheet and keeps colours when printing.
+ */
+@page {
+  size: A4;
+}
+
+.report-print {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  font-family:
+    'Inter',
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    Arial,
+    sans-serif;
+  /* Unitless, so the small print sizes don't inherit the app's fixed body line-height. */
+  line-height: 1.45;
+}
+
+@media print {
+  /* The app paints the page grey; a printed report is white edge to edge. */
+  html,
+  body,
+  .report-print {
+    background: transparent !important;
+  }
+}
+
+.report-print table {
+  page-break-inside: auto;
+}
+
+.report-print thead {
+  display: table-header-group;
+}
+
+@media screen {
+  /* Viewing the print page in a browser shows it as a sheet, to review the design. */
+  .report-print-sheet {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 14mm;
+    margin: 24px auto;
+    box-shadow: 0 12px 32px rgb(0 0 0 / 0.12);
+  }
+}
