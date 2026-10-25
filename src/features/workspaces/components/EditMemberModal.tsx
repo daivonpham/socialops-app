@@ -117,10 +117,10 @@ export function EditMemberModal({
                 name="member-role"
                 value={item}
                 checked={role === item}
-                className="mt-0.5 size-4 shrink-0 accent-neutral-900"
+                className="mt-[2px] size-4 shrink-0 accent-neutral-900"
                 onChange={() => setRole(item)}
               />
-              <span className="grid min-w-0 gap-0.5">
+              <span className="grid min-w-0 gap-1">
                 <span className="text-label-md text-text-primary">{t(`roles.${item}`)}</span>
                 <span className="text-body-sm text-text-tertiary">
                   {t(`roleDescriptions.${item}`)}

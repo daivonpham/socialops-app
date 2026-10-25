@@ -103,11 +103,21 @@ const layoutChildren: RouteObject[] = [
   },
   {
     path: ROUTES.REPORTS,
-    lazy: placeholderPage,
+    lazy: async () => ({ Component: (await import('@/features/reports/pages/ReportsPage')).default }),
     handle: handle({
       nav: { labelKey: 'navigation.reports', section: 'main', order: 10, icon: <IconReports /> },
       requires: [PERMISSIONS.REPORTS_VIEW.key],
     }),
+  },
+  {
+    path: ROUTES.REPORTS_NEW,
+    lazy: async () => ({ Component: (await import('@/features/reports/pages/ReportBuilderPage')).default }),
+    handle: handle({ requires: [PERMISSIONS.REPORTS_VIEW.key] }),
+  },
+  {
+    path: ROUTES.REPORTS_DETAIL,
+    lazy: async () => ({ Component: (await import('@/features/reports/pages/ReportBuilderPage')).default }),
+    handle: handle({ requires: [PERMISSIONS.REPORTS_VIEW.key] }),
   },
   {
     path: ROUTES.MEMBERS,

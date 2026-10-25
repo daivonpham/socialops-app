@@ -58,7 +58,7 @@ export function InvitationsInbox() {
         aria-label={
           items.length ? t('inbox.triggerWithCount', { count: items.length }) : t('inbox.trigger')
         }
-        className="relative flex size-9 items-center justify-center rounded-lg text-icon-md text-text-secondary outline-none hover:bg-bg-surface-subtle focus-visible:focus-ring"
+        className="relative flex size-10 items-center justify-center rounded-lg text-icon-md text-text-secondary outline-none hover:bg-bg-surface-subtle focus-visible:focus-ring"
       >
         <IconBell aria-hidden />
         {items.length ? (
@@ -112,7 +112,7 @@ function InvitationItem({
     <li className="grid gap-3 px-4 py-3">
       <div className="flex items-start gap-3">
         <Avatar name={invitation.workspaceName} size="sm" />
-        <div className="grid min-w-0 gap-0.5">
+        <div className="grid min-w-0 gap-1">
           <p className="text-body-sm text-text-secondary">
             {t('inbox.message', {
               inviter: invitation.inviterName,

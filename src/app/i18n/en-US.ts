@@ -22,7 +22,13 @@ export const appEnUS = {
     title: "You don't have access to this page",
     description:
       "Your role in the current brand doesn't include this area. Switch to another brand or ask a workspace admin.",
+    workspaceDescription:
+      "Your role in the current workspace doesn't include this area. Ask a workspace admin for access.",
     goToAllPlatforms: 'Go to All Platforms',
+  },
+  noBrand: {
+    title: 'No brand selected',
+    reportsDescription: 'Create or select a brand to view reports.',
   },
   sidebar: {
     collapse: 'Collapse sidebar',
@@ -72,6 +78,7 @@ export const appEnUS = {
     manageWorkspace: 'Manage workspace',
     viewAnalytics: 'View analytics',
     viewReports: 'View reports',
+    manageReports: 'Manage reports',
     viewMembers: 'View members',
     viewSettings: 'View settings',
   },

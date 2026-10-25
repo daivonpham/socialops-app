@@ -8,6 +8,7 @@ import {
   Alert,
   Avatar,
   Button,
+  EmptyState,
   IconTikTok,
   Modal,
   SectionError,
@@ -58,7 +59,12 @@ export default function TikTokPage() {
     return () => window.removeEventListener('message', receiveResult)
   }, [brandId, client, t, toast])
 
-  if (!brandId) return null
+  if (!brandId)
+    return (
+      <div className="py-16">
+        <EmptyState title={t('noBrand.title')} description={t('noBrand.description')} />
+      </div>
+    )
   if (integration.isPending) return <SectionSkeleton rows={5} />
   if (integration.isError)
     return (

@@ -25,6 +25,8 @@ export const ROUTES = {
   FACEBOOK_OVERVIEW: '/platforms/facebook/overview',
   TIKTOK_OVERVIEW: '/platforms/tiktok/overview',
   REPORTS: '/reports',
+  REPORTS_NEW: '/reports/new',
+  REPORTS_DETAIL: '/reports/:reportId',
   MEMBERS: '/members',
   SETTINGS: '/settings',
 } as const

@@ -232,13 +232,13 @@ function AccountRow({
   return (
     <div className="flex items-center gap-3 px-4 py-3">
       <span
-        className={`flex size-9 shrink-0 items-center justify-center rounded-lg text-icon-md ${
+        className={`flex size-10 shrink-0 items-center justify-center rounded-lg text-icon-md ${
           highlight ? 'bg-brand-50 text-brand-700' : 'bg-bg-surface-muted text-text-tertiary'
         }`}
       >
         {icon}
       </span>
-      <div className="grid min-w-0 gap-0.5">
+      <div className="grid min-w-0 gap-1">
         <dt className="text-caption text-text-tertiary">{label}</dt>
         <dd className="truncate text-label-md text-text-primary" title={email}>
           {email}

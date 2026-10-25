@@ -50,13 +50,13 @@ export default function FacebookDataDeletionPage() {
               </p>
             </div>
             <dl className="divide-y divide-border-subtle rounded-xl border border-border-subtle">
-              <div className="grid gap-0.5 px-4 py-3">
+              <div className="grid gap-1 px-4 py-3">
                 <dt className="text-caption text-text-tertiary">{t('dataDeletion.code')}</dt>
                 <dd className="break-all font-mono text-label-md text-text-primary">
                   {status.data.confirmationCode}
                 </dd>
               </div>
-              <div className="grid gap-0.5 px-4 py-3">
+              <div className="grid gap-1 px-4 py-3">
                 <dt className="text-caption text-text-tertiary">{t('dataDeletion.completedAt')}</dt>
                 <dd className="text-label-md text-text-primary">
                   {formatDateTime(status.data.completedAt, i18n.resolvedLanguage)}

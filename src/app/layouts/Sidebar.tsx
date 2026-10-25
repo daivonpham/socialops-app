@@ -4,10 +4,11 @@ import { ROUTES } from '@/app/router/paths'
 import { BrandSwitcher } from '@/features/brands'
 import { getNavEntries, type NavEntry } from '@/app/router/routes'
 import { PlatformNavList } from '@/features/social-accounts'
-import { WorkspaceSwitcher } from '@/features/workspaces'
+import { useWorkspaces, WorkspaceSwitcher } from '@/features/workspaces'
 import { allOf, usePermissions } from '@/shared/permissions'
-import { useActiveBrand } from '@/shared/scope'
+import { useActiveBrand, useActiveWorkspace } from '@/shared/scope'
 import { Divider, NavItem, SectionLabel, Spin } from '@/shared/ui'
+import { hasWorkspaceRouteAccess } from '@/app/router/workspace-access'
 
 const summaryNav = getNavEntries('summary')
 const mainNav = getNavEntries('main')
@@ -33,10 +34,16 @@ export function Sidebar({
   const { t } = useTranslation('app')
   const { granted, isLoading } = usePermissions()
   const { brandId } = useActiveBrand()
+  const { workspaceId } = useActiveWorkspace()
+  const workspaces = useWorkspaces()
+  const role = workspaces.data?.find((workspace) => workspace.id === workspaceId)?.role
   const isPlanning = Boolean(useMatch({ path: ROUTES.PLATFORM_PLANNING, end: false }))
   const platformPath = isPlanning ? ROUTES.PLATFORM_PLANNING : ROUTES.PLATFORM_OVERVIEW
-  const canSee = (entry: NavEntry) =>
-    brandId === null || !entry.requires || allOf(granted, entry.requires)
+  const canSee = (entry: NavEntry) => {
+    if (entry.path === ROUTES.MEMBERS || entry.path === ROUTES.SETTINGS)
+      return (entry.requires ?? []).every((permission) => hasWorkspaceRouteAccess(role, permission))
+    return brandId === null || !entry.requires || allOf(granted, entry.requires)
+  }
 
   return (
     <aside
@@ -78,7 +85,7 @@ export function Sidebar({
 
       <Divider className={collapsed ? 'my-1' : 'my-2'} />
 
-      {isLoading ? (
+      {isLoading || workspaces.isPending ? (
         <div className="px-3 py-2">
           <Spin size="sm" />
         </div>

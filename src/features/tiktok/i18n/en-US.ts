@@ -1,5 +1,9 @@
 export const tiktokEnUS = {
   title: 'TikTok',
+  noBrand: {
+    title: 'No brand selected',
+    description: 'Create or select a brand to view its TikTok account.',
+  },
   description: 'Manage the TikTok account connected to this brand.',
   connect: 'Connect TikTok',
   connecting: 'Connecting…',

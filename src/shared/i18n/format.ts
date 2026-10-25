@@ -87,28 +87,56 @@ export function uses12HourTime(locale?: string | null): boolean {
   return resolveLocale(locale) === 'en-US'
 }
 
-export function formatDate(value: DateInput, locale?: string | null): string {
+export function formatDate(
+  value: DateInput,
+  locale?: string | null,
+  timeZone?: string,
+): string {
   const date = toDate(value)
   if (!date) return ''
 
   const resolvedLocale = resolveLocale(locale)
-  const { day, month, year } = toParts(DATE_FORMATTERS[resolvedLocale], date)
+  const formatter = timeZone
+    ? new Intl.DateTimeFormat(resolvedLocale, {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      })
+    : DATE_FORMATTERS[resolvedLocale]
+  const { day, month, year } = toParts(formatter, date)
   return resolvedLocale === 'vi-VN' ? `${day}/${month}/${year}` : `${month}/${day}/${year}`
 }
 
-export function formatTime(value: DateInput, locale?: string | null): string {
+export function formatTime(
+  value: DateInput,
+  locale?: string | null,
+  timeZone?: string,
+): string {
   const date = toDate(value)
   if (!date) return ''
 
   const resolvedLocale = resolveLocale(locale)
-  const { hour, minute, dayPeriod } = toParts(TIME_FORMATTERS[resolvedLocale], date)
+  const formatter = timeZone
+    ? new Intl.DateTimeFormat(resolvedLocale, {
+        timeZone,
+        hour: resolvedLocale === 'vi-VN' ? '2-digit' : 'numeric',
+        minute: '2-digit',
+        hour12: resolvedLocale !== 'vi-VN',
+      })
+    : TIME_FORMATTERS[resolvedLocale]
+  const { hour, minute, dayPeriod } = toParts(formatter, date)
   return resolvedLocale === 'vi-VN' ? `${hour}:${minute}` : `${hour}:${minute} ${dayPeriod}`
 }
 
-export function formatDateTime(value: DateInput, locale?: string | null): string {
+export function formatDateTime(
+  value: DateInput,
+  locale?: string | null,
+  timeZone?: string,
+): string {
   const date = toDate(value)
   if (!date) return ''
-  return `${formatTime(date, locale)} ${formatDate(date, locale)}`
+  return `${formatTime(date, locale, timeZone)} ${formatDate(date, locale, timeZone)}`
 }
 
 export function formatNumber(

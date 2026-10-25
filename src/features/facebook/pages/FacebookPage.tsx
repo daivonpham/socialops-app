@@ -8,6 +8,7 @@ import { useActiveBrand } from '@/shared/scope'
 import {
   Badge,
   Button,
+  EmptyState,
   IconFacebook,
   IconSettings,
   SectionError,
@@ -114,7 +115,12 @@ export default function FacebookPage() {
     />
   )
 
-  if (!brandId) return null
+  if (!brandId)
+    return (
+      <div className="py-16">
+        <EmptyState title={t('noBrand.title')} description={t('noBrand.description')} />
+      </div>
+    )
   if (integration.isPending)
     return (
       <div aria-label={t('common.loading')}>

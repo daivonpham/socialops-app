@@ -25,7 +25,13 @@ export const appViVN = {
     title: 'Bạn không có quyền truy cập trang này',
     description:
       'Vai trò của bạn trong thương hiệu hiện tại không bao gồm khu vực này. Hãy chuyển sang thương hiệu khác hoặc liên hệ quản trị viên workspace.',
+    workspaceDescription:
+      'Vai trò của bạn trong workspace hiện tại không bao gồm khu vực này. Hãy liên hệ quản trị viên workspace.',
     goToAllPlatforms: 'Đi đến Tất cả nền tảng',
+  },
+  noBrand: {
+    title: 'Chưa có thương hiệu được chọn',
+    reportsDescription: 'Hãy tạo hoặc chọn một thương hiệu để xem báo cáo.',
   },
   sidebar: {
     collapse: 'Thu gọn thanh bên',
@@ -75,6 +81,7 @@ export const appViVN = {
     manageWorkspace: 'Quản lý không gian làm việc',
     viewAnalytics: 'Xem phân tích',
     viewReports: 'Xem báo cáo',
+    manageReports: 'Quản lý báo cáo',
     viewMembers: 'Xem thành viên',
     viewSettings: 'Xem cài đặt',
   },

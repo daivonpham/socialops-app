@@ -3,6 +3,10 @@ import type { facebookEnUS } from './en-US'
 
 export const facebookViVN = {
   title: 'Facebook',
+  noBrand: {
+    title: 'Chưa có thương hiệu được chọn',
+    description: 'Hãy tạo hoặc chọn một thương hiệu để xem các Trang Facebook.',
+  },
   subtitle: 'Theo dõi các Trang đã kết nối, hiệu suất và thông tin đối tượng.',
   tabs: {
     label: 'Các mục Facebook',

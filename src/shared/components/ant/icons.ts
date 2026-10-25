@@ -67,6 +67,18 @@ export {
 } from 'react-icons/pi'
 export { TbBrandAirtable as IconBrandManagement } from 'react-icons/tb'
 export { BsUpload as IconUpload } from 'react-icons/bs'
+export {
+  FiArrowLeft as IconArrowLeft,
+  FiArrowRight as IconArrowRight,
+  FiBarChart2 as IconBarChart,
+  FiCopy as IconCopy,
+  FiFile as IconFile,
+  FiFileText as IconFileText,
+  FiGrid as IconGrid,
+  FiLayers as IconLayers,
+  FiTable as IconTable,
+  FiTrendingUp as IconTrendingUp,
+} from 'react-icons/fi'
 export { FiUploadCloud as IconUploadCloud } from 'react-icons/fi'
 export { FcGoogle as IconGoogle } from 'react-icons/fc'
 export {

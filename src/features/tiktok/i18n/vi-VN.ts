@@ -3,6 +3,10 @@ import type { tiktokEnUS } from './en-US'
 
 export const tiktokViVN = {
   title: 'TikTok',
+  noBrand: {
+    title: 'Chưa có thương hiệu được chọn',
+    description: 'Hãy tạo hoặc chọn một thương hiệu để xem tài khoản TikTok.',
+  },
   description: 'Quản lý tài khoản TikTok kết nối với thương hiệu này.',
   connect: 'Kết nối TikTok',
   connecting: 'Đang kết nối…',

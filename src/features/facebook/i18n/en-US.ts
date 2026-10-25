@@ -1,5 +1,9 @@
 export const facebookEnUS = {
   title: 'Facebook',
+  noBrand: {
+    title: 'No brand selected',
+    description: 'Create or select a brand to view its Facebook Pages.',
+  },
   subtitle: 'Monitor connected Pages, performance, and audience insights.',
   tabs: {
     label: 'Facebook sections',

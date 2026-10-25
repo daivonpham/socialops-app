@@ -1,12 +1,15 @@
 import { useEffect, type ReactNode } from 'react'
 import { Link, Navigate, Outlet, useLocation, useMatches } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useWorkspaces } from '@/features/workspaces'
 import { pendingInvitationPath } from '@/features/auth'
 import { allOf, usePermissions } from '@/shared/permissions'
-import { Spin } from '@/shared/ui'
+import { EmptyState, Spin } from '@/shared/ui'
 import { useAuth } from '@/shared/auth'
+import { useActiveBrand, useActiveWorkspace } from '@/shared/scope'
 import { ROUTES } from './paths'
 import type { AppRouteHandle } from './routes'
+import { hasWorkspaceRouteAccess } from './workspace-access'
 
 /**
  * Route guards are UX only — they avoid dead-end screens. Real authorization
@@ -51,6 +54,10 @@ export function RouteAccessGuard({ children }: { children: ReactNode }) {
   const { t } = useTranslation('app')
   const matches = useMatches()
   const { granted, isLoading } = usePermissions()
+  const { brandId } = useActiveBrand()
+  const { workspaceId } = useActiveWorkspace()
+  const workspaces = useWorkspaces()
+  const role = workspaces.data?.find((workspace) => workspace.id === workspaceId)?.role
 
   const requires = [...matches]
     .reverse()
@@ -59,8 +66,20 @@ export function RouteAccessGuard({ children }: { children: ReactNode }) {
 
   if (!requires || requires.length === 0) return <>{children}</>
 
+  if (requires.includes('reports.view') && !brandId) {
+    return (
+      <div className="py-16">
+        <EmptyState title={t('noBrand.title')} description={t('noBrand.reportsDescription')} />
+      </div>
+    )
+  }
+
+  const workspaceRoute = requires.every(
+    (permission) => permission === 'members.view' || permission === 'settings.view',
+  )
+
   // Never render 403 while grants are still loading (authorized users would flash it).
-  if (isLoading) {
+  if (workspaceRoute ? workspaces.isPending : isLoading) {
     return (
       <div className="flex justify-center pt-16">
         <Spin size="lg" />
@@ -68,11 +87,17 @@ export function RouteAccessGuard({ children }: { children: ReactNode }) {
     )
   }
 
-  if (!allOf(granted, requires)) {
+  const allowed = workspaceRoute
+    ? requires.every((permission) => hasWorkspaceRouteAccess(role, permission))
+    : allOf(granted, requires)
+
+  if (!allowed) {
     return (
       <section className="max-w-narrow">
         <h1 className="text-heading-2 text-text-primary">{t('accessDenied.title')}</h1>
-        <p className="mt-2 text-body-md text-text-secondary">{t('accessDenied.description')}</p>
+        <p className="mt-2 text-body-md text-text-secondary">
+          {t(workspaceRoute ? 'accessDenied.workspaceDescription' : 'accessDenied.description')}
+        </p>
         <Link
           to={ROUTES.ALL_PLATFORMS}
           className="mt-6 inline-block rounded-sm text-label-md text-link outline-none hover:text-link-hover focus-visible:focus-ring"
