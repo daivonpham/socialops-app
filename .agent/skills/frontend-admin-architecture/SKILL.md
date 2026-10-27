@@ -29,7 +29,6 @@ RHF, Zod) own behavior; `shared/adapters/<kit>` supplies visuals.
 - `frontend-i18n` — localized copy, locale resources/formatting, Ant locale, RTL
 - `create-api-module` / `create-admin-feature` — scaffolding
 - `frontend-code-simplicity` — reuse-first
-- `migrate-admin-template` — template → this architecture
 
 ## When to Apply
 

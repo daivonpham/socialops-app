@@ -17,7 +17,7 @@ npm run build    # type-check + production build
 npm run lint     # ESLint incl. architecture boundary rules
 ```
 
-## Architecture (see `.cursor/skills/frontend-admin-architecture`)
+## Architecture (see `.agent/skills/frontend-admin-architecture`)
 
 ```text
 src/
