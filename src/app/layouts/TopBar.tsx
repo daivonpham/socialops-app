@@ -14,6 +14,7 @@ import {
   IconSignOut,
   Logo,
   NavItem,
+  TopLoadingBar,
   useLocaleMenu,
 } from '@/shared/ui'
 import { useAuth } from '@/shared/auth'
@@ -44,7 +45,7 @@ export function TopBar({
   const activePlatform = PLATFORMS.find((platform) => platform === platformParam)
 
   return (
-    <header className="flex shrink-0 items-stretch border-b border-border-subtle bg-bg-surface">
+    <header className="relative flex shrink-0 items-stretch border-b border-border-subtle bg-bg-surface">
       {/* Same width + right border as the sidebar so the rail reads as one column. */}
       <div
         className={
@@ -109,6 +110,7 @@ export function TopBar({
         <InvitationsInbox />
         <AccountMenu />
       </div>
+      <TopLoadingBar label={t('topbar.loading')} />
     </header>
   )
 }

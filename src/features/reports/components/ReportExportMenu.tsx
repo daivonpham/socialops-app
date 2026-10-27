@@ -10,64 +10,33 @@ import {
   IconTable,
 } from '@/shared/ui'
 
-export type CsvTable =
-  | 'kpis'
-  | 'daily'
-  | 'trends'
-  | 'pages'
-  | 'top_pages'
-  | 'audience_countries'
-  | 'audience_cities'
-  | 'content_mix'
-  | 'top_posts'
-  | 'bottom_posts'
-  | 'posts'
-  | 'best_times'
-  | 'publishing_summary'
-  | 'publishing'
-
-export type ExportFormat = 'xlsx' | 'zip' | 'csv' | 'pdf'
+export type ExportFormat = 'xlsx' | 'zip' | 'pdf' | 'sheets'
 
 /**
- * One export button: Excel (one sheet per table), every table as CSV files in a ZIP, a single
- * table as CSV, the designed PDF report, and the formats that are not ready yet. A CSV file can only hold one table.
+ * One export button: Excel (one sheet per table), every table as CSV files in a ZIP (a CSV
+ * file can only hold one table), the designed PDF report, and a Google Sheets file in the
+ * user's Drive.
  */
 export function ReportExportMenu({
   disabled,
   loading,
-  tables,
   onExport,
 }: {
   disabled: boolean
   loading: boolean
-  tables: CsvTable[]
-  onExport: (format: ExportFormat, table?: CsvTable) => void
+  onExport: (format: ExportFormat) => void
 }) {
   const { t } = useTranslation('reports')
   return (
     <Dropdown
       placement="bottomRight"
-      onSelect={(key) => {
-        if (key === 'xlsx' || key === 'zip' || key === 'pdf') onExport(key)
-        else if (key.startsWith('csv:')) onExport('csv', key.slice(4) as CsvTable)
-      }}
+      onSelect={(key) => onExport(key as ExportFormat)}
       items={[
         { key: 'xlsx', label: t('preview.excel'), icon: <IconTable aria-hidden /> },
-        { key: 'zip', label: t('preview.csvAll'), icon: <IconFileText aria-hidden /> },
-        { type: 'divider' as const },
-        ...tables.map((table) => ({
-          key: `csv:${table}`,
-          label: t('preview.csv', { table: t(`tables.${table}`) }),
-          icon: <IconFileText aria-hidden />,
-        })),
+        { key: 'zip', label: t('preview.csv'), icon: <IconFileText aria-hidden /> },
         { type: 'divider' as const },
         { key: 'pdf', label: t('preview.pdf'), icon: <IconFile aria-hidden /> },
-        {
-          key: 'sheets',
-          label: `${t('preview.sheets')} · ${t('preview.comingSoon')}`,
-          icon: <IconGrid aria-hidden />,
-          disabled: true,
-        },
+        { key: 'sheets', label: t('preview.sheets'), icon: <IconGrid aria-hidden /> },
       ]}
     >
       <Button disabled={disabled} loading={loading} icon={<IconDownload aria-hidden />}>

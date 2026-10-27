@@ -12,6 +12,7 @@ export function ReportStepper({
   current,
   reached,
   label,
+  collapsed = false,
   onSelect,
 }: {
   steps: ReportStep[]
@@ -19,6 +20,8 @@ export function ReportStepper({
   /** Highest step the user may jump back to. */
   reached: number
   label: string
+  /** Icons only, like the collapsed app sidebar; the title moves to the tooltip. */
+  collapsed?: boolean
   onSelect: (id: number) => void
 }) {
   return (
@@ -33,6 +36,8 @@ export function ReportStepper({
                 type="button"
                 disabled={step.id > reached}
                 aria-current={active ? 'step' : undefined}
+                aria-label={collapsed ? step.title : undefined}
+                title={collapsed ? step.title : undefined}
                 onClick={() => onSelect(step.id)}
                 className="flex w-full items-center gap-3 rounded-lg text-left outline-none focus-visible:focus-ring disabled:cursor-default"
               >
@@ -50,18 +55,20 @@ export function ReportStepper({
                     </span>
                   ) : null}
                 </span>
-                <span className="grid min-w-0">
-                  <span
-                    className={`text-label-md font-semibold ${active ? 'text-text-primary' : 'text-text-disabled'}`}
-                  >
-                    {step.title}
+                {collapsed ? null : (
+                  <span className="grid min-w-0">
+                    <span
+                      className={`text-label-md font-semibold ${active ? 'text-text-primary' : 'text-text-disabled'}`}
+                    >
+                      {step.title}
+                    </span>
+                    <span
+                      className={`text-body-sm ${active ? 'text-text-secondary' : 'text-text-disabled'}`}
+                    >
+                      {step.hint}
+                    </span>
                   </span>
-                  <span
-                    className={`text-body-sm ${active ? 'text-text-secondary' : 'text-text-disabled'}`}
-                  >
-                    {step.hint}
-                  </span>
-                </span>
+                )}
               </button>
               {index < steps.length - 1 ? (
                 <span

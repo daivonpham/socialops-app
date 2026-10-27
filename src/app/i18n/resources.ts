@@ -8,6 +8,7 @@ import { TIKTOK_I18N } from '@/features/tiktok'
 import { OVERVIEW_I18N } from '@/features/overview'
 import { PRIVACY_I18N } from '@/features/privacy'
 import { REPORTS_I18N } from '@/features/reports'
+import { GOOGLE_I18N } from '@/features/google'
 import { commonEnUS, commonViVN } from '@/shared/i18n'
 import { appEnUS } from './en-US'
 import { appViVN } from './vi-VN'
@@ -25,6 +26,7 @@ export const defaultResources = {
   overview: OVERVIEW_I18N['en-US'],
   privacy: PRIVACY_I18N['en-US'],
   reports: REPORTS_I18N['en-US'],
+  google: GOOGLE_I18N['en-US'],
 } as const
 
 export const resources = {
@@ -42,5 +44,6 @@ export const resources = {
     overview: OVERVIEW_I18N['vi-VN'],
     privacy: PRIVACY_I18N['vi-VN'],
     reports: REPORTS_I18N['vi-VN'],
+    google: GOOGLE_I18N['vi-VN'],
   },
 } as const

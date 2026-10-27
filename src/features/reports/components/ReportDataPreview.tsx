@@ -1,6 +1,12 @@
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { formatDate, formatDateTime, formatNumber, resolveLocale } from '@/shared/i18n'
+import {
+  formatCountryLabel,
+  formatDate,
+  formatDateTime,
+  formatNumber,
+  resolveLocale,
+} from '@/shared/i18n'
 import {
   Button,
   IconBarChart,
@@ -179,6 +185,7 @@ function DataGrid({
     }
     if (kind === 'date') return formatDate(value, locale)
     if (kind === 'datetime') return formatDateTime(value, locale, timeZone)
+    if (kind === 'country') return formatCountryLabel(value, locale)
     if (kind === 'url')
       return (
         <a

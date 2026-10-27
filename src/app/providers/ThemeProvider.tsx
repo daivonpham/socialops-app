@@ -23,6 +23,15 @@ const ANT_LOCALE = {
  * utilities) makes antd win over Tailwind's preflight while Tailwind
  * utilities keep winning over antd.
  */
+/**
+ * Popups (dropdowns, selects, tooltips) live inside the page scroll area when there is one, so
+ * they scroll with their trigger and are clipped under the top bar instead of covering it.
+ * Modals and drawers call this without a trigger and stay on `body`.
+ */
+function popupContainer(trigger?: HTMLElement): HTMLElement {
+  return trigger?.closest<HTMLElement>('[data-popup-root]') ?? document.body
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const { i18n } = useTranslation()
   const locale = resolveLocale(i18n.resolvedLanguage ?? i18n.language)
@@ -37,6 +46,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         direction={LOCALE_META[locale].direction}
         locale={ANT_LOCALE[locale]}
         theme={antTheme}
+        getPopupContainer={popupContainer}
       >
         <ToastProvider>{children}</ToastProvider>
       </ConfigProvider>

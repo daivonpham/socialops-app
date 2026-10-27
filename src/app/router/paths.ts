@@ -16,6 +16,8 @@ export const ROUTES = {
   /** Printed into report PDFs by headless Chromium; public, authorized by a one-time token. */
   REPORT_PRINT: '/reports/print',
   TIKTOK_CALLBACK: '/auth/tiktok/callback',
+  /** Google consent for Sheets exports returns here (in a popup) via the API. */
+  GOOGLE_SHEETS_CALLBACK: '/auth/google-sheets/callback',
   CHANGE_PASSWORD: AUTH_ROUTES.CHANGE_PASSWORD,
   PROFILE: '/profile',
   ALL_PLATFORMS: '/all-platforms',

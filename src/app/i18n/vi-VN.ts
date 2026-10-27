@@ -38,6 +38,7 @@ export const appViVN = {
     expand: 'Mở rộng thanh bên',
   },
   topbar: {
+    loading: 'Đang xử lý',
     openNavigation: 'Mở điều hướng',
     home: 'Trang chủ SocialOps',
     primaryNavigation: 'Điều hướng chính',
@@ -55,6 +56,10 @@ export const appViVN = {
     tabsLabel: 'Các mục trong trang cá nhân',
     detailsTab: 'Thông tin cá nhân',
     passwordTab: 'Mật khẩu',
+    connectionsTab: 'Kết nối',
+    connectionsTitle: 'Tài khoản đã kết nối',
+    connectionsDescription:
+      'Các tài khoản bên ngoài SocialOps dùng thay bạn, như Google để xuất báo cáo.',
     detailsTitle: 'Thông tin cá nhân',
     detailsDescription: 'Thông tin được liên kết với tài khoản SocialOps của bạn.',
     name: 'Họ và tên',

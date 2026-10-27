@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChangePasswordPage } from '@/features/auth'
+import { GoogleIntegrationCard } from '@/features/google'
 import { useAuth } from '@/shared/auth'
 import {
   Alert,
@@ -20,7 +21,7 @@ import {
 import profileBanner from '@/assets/profile-banner.png'
 import { updateProfile, uploadAvatar } from '../api'
 
-type ProfileTab = 'details' | 'password'
+type ProfileTab = 'details' | 'password' | 'connections'
 type ProfileValues = { displayName: string; email: string; locale: 'vi' | 'en' }
 
 const ACCEPTED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -38,7 +39,9 @@ export default function ProfilePage() {
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null)
   const [avatarError, setAvatarError] = useState<string | null>(null)
   const [isDirty, setIsDirty] = useState(false)
-  const tab: ProfileTab = params.get('tab') === 'password' ? 'password' : 'details'
+  const requestedTab = params.get('tab')
+  const tab: ProfileTab =
+    requestedTab === 'password' || requestedTab === 'connections' ? requestedTab : 'details'
   const displayName = user?.displayName ?? user?.email ?? 'User'
 
   const closeAvatarPreview = () => {
@@ -166,6 +169,7 @@ export default function ProfilePage() {
             options={[
               { value: 'details', label: t('profile.detailsTab') },
               { value: 'password', label: t('profile.passwordTab') },
+              { value: 'connections', label: t('profile.connectionsTab') },
             ]}
           />
         </div>
@@ -272,8 +276,20 @@ export default function ProfilePage() {
                 />
               </Form.Item>
             </Form>
-          ) : (
+          ) : tab === 'password' ? (
             <ChangePasswordPage embedded />
+          ) : (
+            <div className="grid gap-6">
+              <header className="border-b border-border-subtle pb-6">
+                <h2 className="text-heading-3 text-text-primary">
+                  {t('profile.connectionsTitle')}
+                </h2>
+                <p className="mt-1 text-body-md text-text-secondary">
+                  {t('profile.connectionsDescription')}
+                </p>
+              </header>
+              <GoogleIntegrationCard />
+            </div>
           )}
         </div>
       </div>

@@ -3,7 +3,7 @@ export const reportsEnUS = {
   subtitle:
     'Review social media performance for this brand and share it in the format your team needs.',
   create: 'Create report',
-  back: 'Reports',
+  back: 'Back',
   retry: 'Retry',
   loadError: 'Reports could not be loaded.',
   noBrandTitle: 'Select a brand',
@@ -64,6 +64,8 @@ export const reportsEnUS = {
   },
 
   steps: {
+    collapse: 'Collapse steps',
+    expand: 'Expand steps',
     label: 'Report steps',
     details: 'Report details',
     detailsHint: 'Name, template and date range',
@@ -119,8 +121,7 @@ export const reportsEnUS = {
     conflict: 'Someone else changed this report. Reload it to see their version.',
     export: 'Export',
     excel: 'Excel (.xlsx)',
-    csv: 'CSV · {{table}}',
-    csvAll: 'CSV · All tables (.zip)',
+    csv: 'CSV (.zip)',
     pdf: 'PDF',
     sheets: 'Google Sheets',
     fileContents: 'Export contents',
@@ -140,8 +141,14 @@ export const reportsEnUS = {
     dataNotes: 'Data notes',
     comingSoon: 'Coming soon',
     exportError: 'The report could not be exported.',
-    pdfPreparing: 'Building the PDF. It downloads automatically in a few seconds.',
     pdfError: 'The PDF could not be created. Please try again later.',
+    sheetsCreated: 'Google Sheets file created in your Drive.',
+    openSheet: 'Open spreadsheet',
+    sheetsError: 'The Google Sheets file could not be created. Please try again.',
+    sheetsBusy: 'Google is busy. Please try again in a few minutes.',
+    sheetsUnavailable:
+      'Google Sheets export is not enabled yet. Please contact your administrator.',
+    sheetsReconnect: 'Google access expired. Export again to reconnect Google.',
     generatedFor: '{{brand}} · {{since}} – {{until}}',
     comparedWith: 'Compared with {{since}} – {{until}}',
     timeZone: 'Time zone: {{timeZone}}',

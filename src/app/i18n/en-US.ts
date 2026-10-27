@@ -35,6 +35,7 @@ export const appEnUS = {
     expand: 'Expand sidebar',
   },
   topbar: {
+    loading: 'Working',
     openNavigation: 'Open navigation',
     home: 'SocialOps home',
     primaryNavigation: 'Primary navigation',
@@ -52,6 +53,10 @@ export const appEnUS = {
     tabsLabel: 'Profile sections',
     detailsTab: 'My details',
     passwordTab: 'Password',
+    connectionsTab: 'Connections',
+    connectionsTitle: 'Connected accounts',
+    connectionsDescription:
+      'Outside accounts SocialOps uses on your behalf, such as Google for report exports.',
     detailsTitle: 'Personal information',
     detailsDescription: 'Information associated with your SocialOps account.',
     name: 'Full name',

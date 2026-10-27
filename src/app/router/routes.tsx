@@ -263,6 +263,14 @@ const routes: RouteObject[] = [
     hydrateFallbackElement: bootFallback,
   },
   {
+    path: ROUTES.GOOGLE_SHEETS_CALLBACK,
+    handle: handle({ auth: 'required' }),
+    lazy: async () => ({
+      Component: (await import('@/features/google/pages/GoogleSheetsCallbackPage')).default,
+    }),
+    hydrateFallbackElement: bootFallback,
+  },
+  {
     path: ROUTES.TIKTOK_CALLBACK,
     handle: handle({ auth: 'required' }),
     lazy: async () => ({

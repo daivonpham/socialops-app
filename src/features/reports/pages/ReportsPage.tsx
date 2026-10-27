@@ -12,10 +12,13 @@ import {
   DataTable,
   Dropdown,
   EmptyState,
+  IconCopy,
   IconFileText,
   IconMore,
+  IconOpen,
   IconPlus,
   IconSearch,
+  IconTrash,
   Input,
   Pagination,
   SectionError,
@@ -154,12 +157,17 @@ export default function ReportsPage() {
             if (key === 'delete') setToDelete(report)
           }}
           items={[
-            { key: 'open', label: t('list.open') },
+            { key: 'open', label: t('list.open'), icon: <IconOpen aria-hidden /> },
             ...(canManage
               ? [
-                  { key: 'duplicate', label: t('list.duplicate') },
+                  { key: 'duplicate', label: t('list.duplicate'), icon: <IconCopy aria-hidden /> },
                   { type: 'divider' as const },
-                  { key: 'delete', label: t('list.delete'), danger: true },
+                  {
+                    key: 'delete',
+                    label: t('list.delete'),
+                    icon: <IconTrash aria-hidden />,
+                    danger: true,
+                  },
                 ]
               : []),
           ]}

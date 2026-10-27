@@ -87,7 +87,15 @@ export type ReportDocument = {
   tables?: ReportTable[]
 }
 
-export type ReportCellFormat = 'text' | 'number' | 'percent' | 'date' | 'datetime' | 'url'
+export type ReportCellFormat =
+  | 'text'
+  | 'number'
+  | 'percent'
+  | 'date'
+  | 'datetime'
+  | 'url'
+  /** ISO country code; shown with its flag and localized name. */
+  | 'country'
 export type ReportTable = {
   kind: string
   name: string

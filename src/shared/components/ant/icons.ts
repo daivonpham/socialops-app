@@ -70,6 +70,7 @@ export { BsUpload as IconUpload } from 'react-icons/bs'
 export {
   FiArrowLeft as IconArrowLeft,
   FiArrowRight as IconArrowRight,
+  FiArrowUpRight as IconOpen,
   FiBarChart2 as IconBarChart,
   FiCopy as IconCopy,
   FiFile as IconFile,
@@ -77,10 +78,15 @@ export {
   FiGrid as IconGrid,
   FiLayers as IconLayers,
   FiTable as IconTable,
+  FiTrash2 as IconTrash,
   FiTrendingUp as IconTrendingUp,
 } from 'react-icons/fi'
 export { FiUploadCloud as IconUploadCloud } from 'react-icons/fi'
 export { FcGoogle as IconGoogle } from 'react-icons/fc'
+export {
+  LuPanelLeftOpen as IconPanelLeftOpen,
+  LuPanelRightOpen as IconPanelRightOpen,
+} from 'react-icons/lu'
 export {
   RxPlusCircled as IconPlusCircle,
   RxPanelLeftMinimized as IconSidebarCollapse,

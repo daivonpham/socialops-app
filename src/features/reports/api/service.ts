@@ -1,7 +1,6 @@
 import { apiClient } from '@/shared/api/client'
 import type { CommonApiResponse } from '@/shared/api/types'
 import type { ReportConfig, ReportDocument, ReportRefresh, ReportsList, SavedReport } from './types'
-import type { CsvTable } from '../components/ReportExportMenu'
 
 const root = (brandId: string) => `/brands/${brandId}/reports`
 
@@ -88,9 +87,8 @@ export async function exportReport(
   input: {
     config?: ReportConfig
     reportId?: string
-    /** csv: one table · zip: every table as CSV files · xlsx: one sheet per table */
-    format: 'csv' | 'zip' | 'xlsx'
-    table?: CsvTable
+    /** zip: every table as CSV files · xlsx: one sheet per table */
+    format: 'zip' | 'xlsx'
     title?: string
   },
 ) {
@@ -149,6 +147,20 @@ export async function exportReportPdf(
     responseType: 'blob',
   })
   saveBlob(file.data, file.headers, job.fileName)
+}
+
+/** Creates a Google Sheets file in the user's Drive; needs their Google grant (409 otherwise). */
+export async function exportReportSheets(
+  brandId: string,
+  input: { config?: ReportConfig; reportId?: string; title?: string },
+  idempotencyKey: string,
+) {
+  const response = await apiClient.post<CommonApiResponse<{ spreadsheetId: string; url: string }>>(
+    `${root(brandId)}/sheets`,
+    input,
+    { headers: { 'Idempotency-Key': idempotencyKey } },
+  )
+  return response.data.data
 }
 
 /** Prepared report for the PDF print page; authorized by the job's one-time token, not a session. */

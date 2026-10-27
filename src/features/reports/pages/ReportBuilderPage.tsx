@@ -4,6 +4,13 @@ import { isAxiosError } from 'axios'
 import { Link, useBlocker, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useFacebookIntegration } from '@/features/facebook'
+import {
+  connectGoogleInPopup,
+  GOOGLE_QUERY_KEYS,
+  googleErrorCode,
+  needsGoogleConsent,
+  useGoogleConnection,
+} from '@/features/google'
 import { hasPermission, PERMISSIONS, usePermissions } from '@/shared/permissions'
 import { useActiveBrand } from '@/shared/scope'
 import {
@@ -13,6 +20,9 @@ import {
   DateRangePicker,
   EmptyState,
   IconArrowLeft,
+  IconPanelLeftOpen,
+  IconPanelRightOpen,
+  useTopLoading,
   IconBarChart,
   IconFileText,
   IconLayers,
@@ -27,12 +37,13 @@ import {
   createReport,
   exportReport,
   exportReportPdf,
+  exportReportSheets,
   getReportRefresh,
   requestReportRefresh,
   updateReport,
 } from '../api/service'
 import type { ReportConfig, ReportMetricId, ReportRefresh, ReportTemplate } from '../api/types'
-import { ReportExportMenu, type CsvTable, type ExportFormat } from '../components/ReportExportMenu'
+import { ReportExportMenu, type ExportFormat } from '../components/ReportExportMenu'
 import { ReportFreshnessBar } from '../components/ReportFreshnessBar'
 import { ReportPagesPicker } from '../components/ReportPagesPicker'
 import { ReportDataPreview } from '../components/ReportDataPreview'
@@ -80,9 +91,11 @@ export default function ReportBuilderPage() {
   const [name, setName] = useState('')
   const [step, setStep] = useState<Step>(reportId ? 3 : 1)
   const [reached, setReached] = useState<Step>(reportId ? 3 : 1)
+  const [railCollapsed, setRailCollapsed] = useState(false)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [exporting, setExporting] = useState(false)
+  useTopLoading(exporting)
   const [refresh, setRefresh] = useState<ReportRefresh | null>(null)
   const [postsPage, setPostsPage] = useState(1)
   const [loadedId, setLoadedId] = useState<string | null>(null)
@@ -90,11 +103,11 @@ export default function ReportBuilderPage() {
 
   const saved = useReport(brandId, reportId ?? null)
   const facebook = useFacebookIntegration(brandId)
+  const google = useGoogleConnection()
   const preview = useReportPreview(brandId, previewConfig, postsPage, name, step === 3)
   const pages = (facebook.data?.pages ?? []).filter((page) => page.health !== 'disconnected')
   const selectedPages = config.pageIds === 'all' ? pages.length : config.pageIds.length
   // CSV choices are exactly the tables the export contains.
-  const csvTables = (preview.data?.tables ?? []).map((table) => table.kind as CsvTable)
 
   // Open a saved report on its preview.
   useEffect(() => {
@@ -230,14 +243,76 @@ export default function ReportBuilderPage() {
     }
   }
 
-  const exportFile = async (format: ExportFormat, table?: CsvTable) => {
+  const sheetsError = (cause: unknown) => {
+    const code = googleErrorCode(cause)
+    if (code === 'GOOGLE_SHEETS_NOT_ENABLED' || code === 'OAUTH_NOT_CONFIGURED')
+      return t('preview.sheetsUnavailable')
+    if (code === 'GOOGLE_RATE_LIMITED') return t('preview.sheetsBusy')
+    return t('preview.sheetsError')
+  }
+
+  /**
+   * Google Sheets needs the user's Google grant. Without one, consent opens in a popup straight
+   * from this click (before any await, so it is not blocked) and the export continues after it.
+   * The new spreadsheet opens in a new tab once it exists; if the browser blocks that tab (it no
+   * longer counts as part of the click), a toast offers the link instead.
+   */
+  const exportSheets = () => {
     if (!brandId) return
+    const needsConsent = !google.data?.connected || !google.data.usable
+    const idempotencyKey = crypto.randomUUID()
+    setExporting(true)
+    const consent = needsConsent ? connectGoogleInPopup() : Promise.resolve(null)
+    void consent
+      .then(() => exportReportSheets(brandId, { config, title: name.trim() }, idempotencyKey))
+      .then(({ url }) => {
+        // With `noopener` window.open always returns null, so detach the opener by hand to
+        // still learn whether the browser blocked the tab.
+        const tab = window.open(url, '_blank')
+        if (tab) {
+          tab.opener = null
+          return
+        }
+        toast.success({
+          title: t('preview.sheetsCreated'),
+          duration: 15,
+          description: (
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-link underline hover:text-link-hover"
+            >
+              {t('preview.openSheet')}
+            </a>
+          ),
+        })
+      })
+      .catch((cause: unknown) => {
+        if (cause instanceof Error && cause.message === 'GOOGLE_AUTH_CANCELLED') return
+        if (needsGoogleConsent(cause)) {
+          // The grant was revoked since we last checked; the next click asks for consent.
+          void queryClient.invalidateQueries({ queryKey: GOOGLE_QUERY_KEYS.connection })
+          toast.warning({ title: t('preview.sheetsReconnect') })
+          return
+        }
+        toast.error({ title: sheetsError(cause) })
+      })
+      .finally(() => {
+        setExporting(false)
+        if (needsConsent)
+          void queryClient.invalidateQueries({ queryKey: GOOGLE_QUERY_KEYS.connection })
+      })
+  }
+
+  const exportFile = async (format: ExportFormat) => {
+    if (!brandId) return
+    if (format === 'sheets') return exportSheets()
     setExporting(true)
     try {
       if (format === 'pdf') {
-        toast.info({ title: t('preview.pdfPreparing') })
         await exportReportPdf(brandId, { config, title: name.trim() })
-      } else await exportReport(brandId, { config, format, table, title: name.trim() })
+      } else await exportReport(brandId, { config, format, title: name.trim() })
     } catch {
       toast.error({ title: t(format === 'pdf' ? 'preview.pdfError' : 'preview.exportError') })
     } finally {
@@ -306,22 +381,45 @@ export default function ReportBuilderPage() {
   return (
     <div className="-m-4 flex min-h-[calc(100%+2rem)] flex-col md:-m-5 md:min-h-[calc(100%+2.5rem)] lg:flex-row xl:-m-6 xl:min-h-[calc(100%+3rem)]">
       {/* Left rail: back link and the step list. */}
-      <aside className="shrink-0 border-b border-border-subtle bg-bg-surface-subtle px-5 py-6 lg:w-[320px] lg:border-b-0 lg:border-e lg:px-6 lg:py-8">
+      <aside
+        className={`shrink-0 border-b border-border-subtle bg-bg-surface-subtle px-5 py-6 transition-[width,padding] duration-drawer ease-standard lg:border-b-0 lg:border-e lg:pt-2 lg:pb-6 ${
+          railCollapsed ? 'lg:w-sidebar-collapsed lg:px-4' : 'lg:w-[320px] lg:px-6'
+        }`}
+      >
         {/* Sticky inside the page scroll area so the steps stay visible on long steps. */}
-        <div className="lg:sticky lg:top-8">
-          <Link
-            to="/reports"
-            className="inline-flex items-center gap-2 rounded-sm text-label-md text-text-secondary outline-none hover:text-text-primary focus-visible:focus-ring"
+        <div className="lg:sticky lg:top-2">
+          {/* Back link and the collapse toggle share the top row; collapsed keeps only the toggle. */}
+          <div
+            className={`flex min-h-8 items-center gap-2 ${railCollapsed ? 'lg:justify-center' : 'justify-between'}`}
           >
-            <IconArrowLeft aria-hidden />
-            {t('back')}
-          </Link>
+            <Link
+              to="/reports"
+              className={`inline-flex min-h-8 items-center gap-2 rounded-sm text-label-md text-text-secondary outline-none hover:text-text-primary focus-visible:focus-ring ${railCollapsed ? 'lg:hidden' : ''}`}
+            >
+              <IconArrowLeft aria-hidden />
+              {t('back')}
+            </Link>
+            {/* Collapsing only applies to the desktop rail; small screens stack it on top. */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="max-lg:hidden"
+              aria-label={railCollapsed ? t('steps.expand') : t('steps.collapse')}
+              icon={
+                <span aria-hidden className="flex items-center text-icon-md text-text-secondary">
+                  {railCollapsed ? <IconPanelLeftOpen /> : <IconPanelRightOpen />}
+                </span>
+              }
+              onClick={() => setRailCollapsed((current) => !current)}
+            />
+          </div>
           <div className="mt-8">
             <ReportStepper
               steps={steps}
               current={step}
               reached={reached}
               label={t('steps.label')}
+              collapsed={railCollapsed}
               onSelect={(id) => goTo(id as Step)}
             />
           </div>
@@ -514,8 +612,7 @@ export default function ReportBuilderPage() {
                 <ReportExportMenu
                   disabled={!preview.data}
                   loading={exporting}
-                  tables={csvTables}
-                  onExport={(format, table) => void exportFile(format, table)}
+                  onExport={(format) => void exportFile(format)}
                 />
                 {canManage ? (
                   <Button
