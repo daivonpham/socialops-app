@@ -119,7 +119,8 @@ export const facebookViVN = {
     back: 'Quay lại Facebook',
     selectTitle: 'Chọn Trang Facebook',
     selectDescription: 'Chọn các Trang bạn muốn kết nối với thương hiệu này.',
-    noPages: 'Không tìm thấy Trang Facebook nào mà tài khoản này có thể quản lý.',
+    noPages:
+      'Không có Trang nào được cho phép. Hãy kết nối lại và tick chọn Trang trong hộp thoại Facebook. Nếu Trang không có trong danh sách của Facebook, tài khoản của bạn chưa có quyền trên Trang đó.',
     connectSelected: 'Kết nối các Trang đã chọn',
     selectError: 'Không thể kết nối các Trang đã chọn.',
     connected: 'Đã kết nối Trang Facebook thành công.',
@@ -136,7 +137,9 @@ export const facebookViVN = {
     pausedTitle_one: '{{count}} Trang cần kết nối lại Facebook',
     pausedTitle_other: '{{count}} Trang cần kết nối lại Facebook',
     pausedDescription:
-      'Quyền truy cập của {{pages}} đã hết hiệu lực nên SocialOps tạm dừng đồng bộ số liệu và đăng bài lên các Trang này.',
+      'SocialOps không còn truy cập được {{pages}} nên tạm dừng đồng bộ số liệu và đăng bài lên các Trang này. Hãy kết nối lại.',
+    permissionHint:
+      'Facebook chưa cho SocialOps truy cập Trang này. Bấm Kết nối lại và tick chọn Trang trong hộp thoại Facebook. Nếu Trang không có trong danh sách, tài khoản Facebook của bạn chưa có quyền trên Trang: nhờ quản trị viên Trang cấp quyền Nội dung và Thông tin chi tiết.',
     expiringTitle: 'Kết nối Facebook sẽ hết hạn vào {{date}}',
     expiringSoonTitle: 'Kết nối Facebook sắp hết hạn',
     expiringDescription:

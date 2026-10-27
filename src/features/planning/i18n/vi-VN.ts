@@ -173,7 +173,8 @@ export const planningViVN = {
     retrySkipped: 'Chưa thử lại: {{reason}}',
     errorReason: {
       reconnect: 'Token hết hạn hoặc thiếu token. Hãy kết nối lại Trang.',
-      permission: 'Trang chưa cấp đủ quyền đăng. Hãy kiểm tra và cấp quyền lại.',
+      permission:
+        'Tài khoản Facebook đã kết nối chưa có quyền Nội dung trên Trang này. Nhờ quản trị viên Trang hoặc Business cấp quyền Nội dung, rồi kết nối lại Trang.',
       disconnected: 'Trang đã ngắt kết nối. Hãy kết nối lại.',
       rateLimit: 'Facebook giới hạn tần suất. Có thể thử lại sau.',
       unknown:
@@ -185,7 +186,7 @@ export const planningViVN = {
     },
     retryReason: {
       reconnect: 'Cần kết nối lại Trang',
-      permission: 'Cần cấp lại quyền đăng',
+      permission: 'Thiếu quyền Nội dung trên Trang',
       disconnected: 'Trang đã ngắt kết nối',
       rateLimit: 'Facebook đang giới hạn tần suất',
       unknown: 'Có thể đăng trùng nếu thử lại',

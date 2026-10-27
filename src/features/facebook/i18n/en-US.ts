@@ -116,7 +116,8 @@ export const facebookEnUS = {
     back: 'Back to Facebook',
     selectTitle: 'Choose Facebook Pages',
     selectDescription: 'Select the Pages you want to connect to this brand.',
-    noPages: 'No manageable Facebook Pages were found for this account.',
+    noPages:
+      'No Pages were allowed. Connect again and tick the Pages in the Facebook dialog. If a Page is not listed there, your Facebook account has no access to it.',
     connectSelected: 'Connect selected Pages',
     selectError: 'Could not connect the selected Pages.',
     connected: 'Facebook Pages connected successfully.',
@@ -133,7 +134,9 @@ export const facebookEnUS = {
     pausedTitle_one: '{{count}} Page needs Facebook reconnected',
     pausedTitle_other: '{{count}} Pages need Facebook reconnected',
     pausedDescription:
-      'Access to {{pages}} is no longer valid, so SocialOps paused syncing and publishing for them.',
+      'SocialOps can no longer reach {{pages}}, so it paused syncing and publishing for them. Connect again.',
+    permissionHint:
+      'Facebook has not allowed SocialOps to access this Page. Click Reconnect and tick this Page in the Facebook dialog. If the Page is not listed, your Facebook account has no access to it: ask a Page admin for Content and Insights access.',
     expiringTitle: 'Facebook connection expires on {{date}}',
     expiringSoonTitle: 'Facebook connection expires soon',
     expiringDescription:

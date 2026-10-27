@@ -115,6 +115,11 @@ export function ManageFacebookPagesDrawer({
                         {formatNumber(page.followersCount, locale)}{' '}
                         {t('metrics.followers').toLowerCase()}
                       </p>
+                      {page.health === 'permission_missing' ? (
+                        <p className="mt-1 text-caption text-error-700">
+                          {t('tokenHealth.permissionHint')}
+                        </p>
+                      ) : null}
                       {page.health === 'token_expiring' && page.reconnectBy ? (
                         <p className="mt-1 text-caption text-warning-700">
                           {t('tokenHealth.reconnectBy', {

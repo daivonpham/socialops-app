@@ -170,7 +170,8 @@ export const planningEnUS = {
     retrySkipped: 'Not retried: {{reason}}',
     errorReason: {
       reconnect: 'The token is expired or missing. Reconnect this Page.',
-      permission: 'This Page lacks publishing permission. Review and grant access again.',
+      permission:
+        'The connected Facebook account has no Content access to this Page. Ask a Page or Business admin for Content access, then reconnect the Page.',
       disconnected: 'This Page is disconnected. Reconnect it.',
       rateLimit: 'Facebook is rate limiting requests. Retry later.',
       unknown:
@@ -182,7 +183,7 @@ export const planningEnUS = {
     },
     retryReason: {
       reconnect: 'Reconnect this Page',
-      permission: 'Grant publishing permission again',
+      permission: 'Missing Content access on the Page',
       disconnected: 'Page is disconnected',
       rateLimit: 'Facebook is rate limiting requests',
       unknown: 'Retry may create a duplicate',
