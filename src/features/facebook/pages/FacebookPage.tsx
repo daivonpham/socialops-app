@@ -72,6 +72,7 @@ export default function FacebookPage() {
         autoConnected?: boolean
         pageId?: string | null
         restoredPages?: number
+        revokedPages?: number
         error?: string | null
       }
       if (message?.type !== 'socialops.facebook.oauth') return
@@ -87,6 +88,12 @@ export default function FacebookPage() {
       if (message.brandId !== brandId) return
       if (message.restoredPages) {
         toast.success({ title: t('tokenHealth.restored', { count: message.restoredPages }) })
+        void queryClient.invalidateQueries({ queryKey: FACEBOOK_QUERY_KEYS.root(brandId) })
+      }
+      // Pages left unticked in the Facebook dialog lose access; the health banner then
+      // offers reconnecting them.
+      if (message.revokedPages) {
+        toast.warning({ title: t('tokenHealth.revoked', { count: message.revokedPages }) })
         void queryClient.invalidateQueries({ queryKey: FACEBOOK_QUERY_KEYS.root(brandId) })
       }
       if (message.autoConnected) {

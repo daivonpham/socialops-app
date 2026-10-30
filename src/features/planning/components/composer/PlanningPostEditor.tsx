@@ -28,7 +28,14 @@ import {
   Tabs,
   Textarea,
 } from '@/shared/ui'
-import type { PlanningAccount, PlanningComposerDraft } from '../../model'
+import {
+  isComposerCaptionMissing,
+  setComposerCaptionMode,
+  supportsCaptionPerAccount,
+  usesCaptionPerAccount,
+  type PlanningAccount,
+  type PlanningComposerDraft,
+} from '../../model'
 import { PlanningAccountMultiSelect } from './PlanningAccountMultiSelect'
 
 const TIKTOK_BOOLEAN_SETTINGS = [
@@ -53,18 +60,11 @@ export function PlanningPostEditor({
   const { t } = useTranslation('planning')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const previewUrls = useRef(new Set<string>())
-  const customizationDetailsRef = useRef<HTMLDetailsElement>(null)
   const [captionFocused, setCaptionFocused] = useState(false)
   const [mediaPopoverOpen, setMediaPopoverOpen] = useState(false)
   const selectedAccounts = accounts.filter((account) => draft.targetIds.includes(account.id))
-  const hasCaptionOverrides = Object.values(draft.captionOverrides).some(Boolean)
+  const perAccountCaption = usesCaptionPerAccount(draft)
   const published = publishedMode
-
-  useEffect(() => {
-    if ((hasCaptionOverrides || published) && customizationDetailsRef.current) {
-      customizationDetailsRef.current.open = true
-    }
-  }, [hasCaptionOverrides, published, selectedAccounts.length])
 
   useEffect(() => {
     const urls = previewUrls.current
@@ -214,7 +214,11 @@ export function PlanningPostEditor({
             <div
               className={`overflow-hidden rounded-xl border bg-bg-surface ${captionFocused ? 'border-border-focus ring-2 ring-brand-100' : 'border-border'}`}
             >
-              {
+              {perAccountCaption ? (
+                <p className="px-4 py-3 text-body-sm text-text-tertiary">
+                  {t('composer.customization.sharedCaptionHidden')}
+                </p>
+              ) : (
                 <Textarea
                   value={draft.caption}
                   rows={7}
@@ -228,7 +232,7 @@ export function PlanningPostEditor({
                     setDraft((current) => ({ ...current, caption: event.target.value }))
                   }
                 />
-              }
+              )}
               <div className="flex items-center gap-1 border-t border-border-subtle px-2 py-1.5">
                 {!published ? (
                   <>
@@ -302,11 +306,11 @@ export function PlanningPostEditor({
                   </>
                 ) : null}
                 <span className="flex-1" />
-                {
+                {perAccountCaption ? null : (
                   <span className="px-2 text-caption tabular-nums text-text-tertiary">
                     {draft.caption.length.toLocaleString()}/2,200
                   </span>
-                }
+                )}
               </div>
             </div>
           )}
@@ -412,35 +416,68 @@ export function PlanningPostEditor({
         </details>
       ) : null}
 
-      {selectedAccounts.length > 1 && draft.postType !== 'facebook_story' ? (
-        <details ref={customizationDetailsRef} className="group border-t border-border-subtle">
-          <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-4 text-label-md text-text-secondary outline-none hover:bg-bg-surface-subtle focus-visible:focus-ring">
+      {supportsCaptionPerAccount(draft) ? (
+        // Opening the section switches every account to its own caption; closing it returns to
+        // the shared caption. The per-account captions stay in the draft either way.
+        <details open={perAccountCaption} className="group border-t border-border-subtle">
+          <summary
+            onClick={(event) => {
+              event.preventDefault()
+              setDraft((current) =>
+                setComposerCaptionMode(
+                  current,
+                  usesCaptionPerAccount(current) ? 'shared' : 'per_target',
+                ),
+              )
+            }}
+            className="flex cursor-pointer list-none items-center gap-2 px-5 py-4 text-label-md text-text-secondary outline-none hover:bg-bg-surface-subtle focus-visible:focus-ring"
+          >
             <span>{t('composer.customization.title')}</span>
             <IconChevronDown
               aria-hidden
               className="ms-auto text-icon-sm transition-transform duration-fast group-open:rotate-180"
             />
           </summary>
-          <div className="grid gap-3 border-t border-border-subtle p-5">
-            {selectedAccounts.map((account) => (
-              <div key={account.id} className="grid gap-2">
-                <SocialAccountLabel name={account.name} avatarUrl={account.avatarUrl} />
-                <Textarea
-                  value={draft.captionOverrides[account.id] ?? ''}
-                  rows={2}
-                  placeholder={t('composer.customization.inheritCaption')}
-                  onChange={(event) =>
-                    setDraft((current) => ({
-                      ...current,
-                      captionOverrides: {
-                        ...current.captionOverrides,
-                        [account.id]: event.target.value,
-                      },
-                    }))
-                  }
-                />
-              </div>
-            ))}
+          <div className="grid gap-4 border-t border-border-subtle p-5">
+            {perAccountCaption
+              ? selectedAccounts.map((account) => {
+                  const caption = draft.captionOverrides[account.id] ?? ''
+                  const missing = published
+                    ? !caption.trim()
+                    : isComposerCaptionMissing(draft, account.id)
+                  return (
+                    <div key={account.id} className="grid gap-2">
+                      <SocialAccountLabel name={account.name} avatarUrl={account.avatarUrl} />
+                      <Textarea
+                        value={caption}
+                        rows={4}
+                        maxLength={2200}
+                        aria-label={account.name}
+                        placeholder={t('composer.customization.accountCaptionPlaceholder')}
+                        onChange={(event) =>
+                          setDraft((current) => ({
+                            ...current,
+                            captionOverrides: {
+                              ...current.captionOverrides,
+                              [account.id]: event.target.value,
+                            },
+                          }))
+                        }
+                      />
+                      <div className="flex items-center gap-2 text-caption">
+                        {missing ? (
+                          <span className="text-error-700">
+                            {t('composer.customization.captionRequired')}
+                          </span>
+                        ) : null}
+                        <span className="ms-auto tabular-nums text-text-tertiary">
+                          {caption.length.toLocaleString()}/2,200
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })
+              : null}
           </div>
         </details>
       ) : null}

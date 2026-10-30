@@ -3,6 +3,7 @@ import type { CommonApiResponse } from '@/shared/api/types'
 import type {
   CreatePlanningContentInput,
   PlanningAccountsResponse,
+  PlanningCaptionMode,
   PlanningContent,
   UpdatePlanningApprovalInput,
   PlanningContentsResponse,
@@ -163,6 +164,22 @@ export async function editPublishedPlanningCaption(input: {
     await apiClient.post<CommonApiResponse<PlanningContent>>(
       `/brands/${input.brandId}/planning/publications/${input.publicationId}/caption-edit`,
       { caption: input.caption },
+    )
+  ).data
+}
+
+/** Edits every published Page at once; Facebook applies each Page edit in the background. */
+export async function editPublishedPlanningCaptions(input: {
+  brandId: string
+  contentId: string
+  captionMode: PlanningCaptionMode
+  caption: string
+  captions: Array<{ publicationId: string; caption: string }>
+}) {
+  return (
+    await apiClient.post<CommonApiResponse<PlanningContent>>(
+      `/brands/${input.brandId}/planning/${input.contentId}/caption-edit`,
+      { captionMode: input.captionMode, caption: input.caption, captions: input.captions },
     )
   ).data
 }

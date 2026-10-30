@@ -12,6 +12,7 @@ import {
   retryFailedPlanningPublications,
   reconcileUnknownPlanningPublications,
   editPublishedPlanningCaption,
+  editPublishedPlanningCaptions,
   deletePublishedPlanningPublication,
   discardUnknownPlanningPublication,
   deleteAllPlanningPublications,
@@ -163,6 +164,10 @@ export function useReconcileUnknownPlanningPublications(brandId: string | null) 
 
 export function useEditPublishedPlanningCaption(brandId: string | null) {
   return usePlanningMutation(brandId, editPublishedPlanningCaption)
+}
+
+export function useEditPublishedPlanningCaptions(brandId: string | null) {
+  return usePlanningMutation(brandId, editPublishedPlanningCaptions)
 }
 
 export function useDeletePublishedPlanningPublication(brandId: string | null) {

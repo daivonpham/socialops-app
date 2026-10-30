@@ -2,9 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
+import { useReconnectFacebookPages } from '@/features/facebook'
 import { useSocialAccountCounts } from '@/features/social-accounts'
+import { isApiErrorCode } from '@/shared/api/errors'
 import { useApiErrorMessage, useUrlFilters } from '@/shared/hooks'
-import { hasPermission, usePermissions } from '@/shared/permissions'
+import { hasPermission, PERMISSIONS, usePermissions } from '@/shared/permissions'
 import { useActiveBrand } from '@/shared/scope'
 import {
   EmptyState,
@@ -54,6 +56,18 @@ import { PlanningFilters } from '../components/PlanningFilters'
 import { PlanningList } from '../components/PlanningList'
 import { PlanningPostModal } from '../components/PlanningPostDrawer'
 
+/** Failures that reconnecting the Page fixes; their toast offers to reconnect it. */
+const FACEBOOK_RECONNECT_CODES = [
+  'FACEBOOK_RECONNECT_REQUIRED',
+  'FACEBOOK_REAUTHORIZATION_REQUIRED',
+  'FACEBOOK_TOKEN_EXPIRED',
+  'FACEBOOK_TOKEN_MISSING',
+  'FACEBOOK_PAGE_TOKEN_MISSING',
+  'FACEBOOK_PERMISSION_MISSING',
+  'FACEBOOK_PUBLISH_PERMISSION_MISSING',
+  'PAGE_DISCONNECTED',
+]
+
 export default function PlanningPage() {
   const { t } = useTranslation('planning')
   const errorMessage = useApiErrorMessage('planning')
@@ -61,6 +75,29 @@ export default function PlanningPage() {
   const navigate = useNavigate()
   const { brandId } = useActiveBrand()
   const { granted } = usePermissions()
+  const reconnectFacebook = useReconnectFacebookPages(brandId)
+  /** Toast action doing what Reconnect does in the Facebook Page manager. */
+  const reconnectAction = (content: PlanningContent | null, socialAccountIds: string[]) => {
+    const pageIds = (content?.publications ?? [])
+      .filter((item) => socialAccountIds.includes(item.socialAccountId))
+      .map((item) => item.target.providerAccountId)
+      .filter((pageId): pageId is string => Boolean(pageId))
+    // Reconnecting is a connection change; others only see the reason in the toast.
+    if (!pageIds.length || !hasPermission(granted, PERMISSIONS.CHANNELS_MANAGE.key))
+      return undefined
+    return {
+      label: t('detail.reconnectPages'),
+      onClick: () =>
+        reconnectFacebook
+          .reconnect(pageIds)
+          .then((outcome) => {
+            if (outcome === 'reconnected') toast.success({ title: t('detail.reconnectSuccess') })
+          })
+          .catch((error: unknown) =>
+            toast.error({ title: errorMessage(error, t('detail.reconnectError')) }),
+          ),
+    }
+  }
   const { platform: routePlatformParam } = useParams<{ platform: string }>()
 
   const routePlatform = isPlanningPlatform(routePlatformParam) ? routePlatformParam : 'all'
@@ -294,7 +331,16 @@ export default function PlanningPage() {
             setSelectedContent(response.data)
             toast.success({ title: t('detail.retrySuccess') })
           } catch (error) {
-            toast.error({ title: errorMessage(error, t('detail.retryError')) })
+            const publication = selectedContent?.publications?.find(
+              (item) => item.id === publicationId,
+            )
+            toast.error({
+              title: errorMessage(error, t('detail.retryError')),
+              action:
+                publication && isApiErrorCode(error, FACEBOOK_RECONNECT_CODES)
+                  ? reconnectAction(selectedContent, [publication.socialAccountId])
+                  : undefined,
+            })
           }
         }}
         onRetryFailed={async (contentId) => {
@@ -304,8 +350,14 @@ export default function PlanningPage() {
             setSelectedContent(response.data.content)
             setRetryResults(response.data.results)
             const queued = response.data.results.filter((item) => item.outcome === 'queued').length
-            if (queued) toast.success({ title: t('detail.retryAllResult', { queued }) })
-            else toast.error({ title: t('detail.retryNone') })
+            const action = reconnectAction(
+              response.data.content,
+              response.data.results
+                .filter((item) => FACEBOOK_RECONNECT_CODES.includes(item.reason ?? ''))
+                .map((item) => item.socialAccountId),
+            )
+            if (queued) toast.success({ title: t('detail.retryAllResult', { queued }), action })
+            else toast.error({ title: t('detail.retryNone'), action })
           } catch (error) {
             toast.error({ title: errorMessage(error, t('detail.retryError')) })
           }

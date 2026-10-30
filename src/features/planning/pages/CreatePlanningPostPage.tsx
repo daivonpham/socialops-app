@@ -17,13 +17,14 @@ import {
 } from '@/shared/ui'
 import {
   useCreatePlanningContent,
-  useEditPublishedPlanningCaption,
+  useEditPublishedPlanningCaptions,
   usePlanningAccounts,
   usePlanningContent,
   useUpdatePlanningContent,
   type PlanningContent,
   type PlanningPlatform,
   type PlanningPostType,
+  type PlanningPublication,
   type PlanningPublishIntent,
 } from '../api'
 import { uploadPlanningMedia } from '../api/service'
@@ -33,11 +34,13 @@ import { canPublishOnPlatform } from '../config/planning-capabilities'
 import { PlanningPostPreview } from '../components/preview/PlanningPostPreview'
 import {
   canSubmitComposer,
+  composerCaptionFor,
   createComposerDraft,
   createComposerDraftFromContent,
   getPlanningContentIntent,
   toCreatePlanningContentInput,
   toUpdatePlanningContentInput,
+  usesCaptionPerAccount,
   type PlanningAccount,
   type PlanningComposerDraft,
   type PreviewViewport,
@@ -163,10 +166,6 @@ function PublishedPlanningEditor({
     content.publications?.filter((publication) =>
       ['published', 'edit_queued', 'editing', 'edit_unknown'].includes(publication.status),
     ) ?? []
-  // An uncertain edit can be saved again; writing a caption to Facebook is idempotent.
-  const published = posted.filter((publication) =>
-    ['published', 'edit_unknown'].includes(publication.status),
-  )
   const publishedAccounts: PlanningAccount[] = posted.map(
     (publication) =>
       accounts.find((account) => account.id === publication.socialAccountId) ?? {
@@ -180,67 +179,51 @@ function PublishedPlanningEditor({
       ? requestedAccountId!
       : firstAccountId,
   )
-  const [draft, setDraft] = useState(() => {
-    const initial = createComposerDraftFromContent(content)
-    return {
-      ...initial,
-      targetIds: posted.map((publication) => publication.socialAccountId),
-      captionOverrides: {
-        ...initial.captionOverrides,
-        ...Object.fromEntries(
-          posted.flatMap((publication) =>
-            publication.pendingCaption
-              ? [[publication.socialAccountId, publication.pendingCaption]]
-              : [],
-          ),
-        ),
-      },
-      caption:
-        posted.length === 1
-          ? (posted[0]?.pendingCaption ?? posted[0]?.captionOverride ?? content.caption)
-          : content.caption,
-    }
-  })
+  // The caption each Page is showing or is about to show on Facebook.
+  const currentCaption = (publication: PlanningPublication) =>
+    (publication.pendingCaption ?? publication.captionOverride ?? content.caption).trim()
+  const savedCaptionMode = posted.length > 1 ? (content.captionMode ?? 'shared') : 'shared'
+  const [draft, setDraft] = useState<PlanningComposerDraft>(() => ({
+    ...createComposerDraftFromContent(content),
+    targetIds: posted.map((publication) => publication.socialAccountId),
+    captionMode: savedCaptionMode,
+    captionOverrides:
+      savedCaptionMode === 'per_target'
+        ? Object.fromEntries(
+            posted.map((publication) => [publication.socialAccountId, currentCaption(publication)]),
+          )
+        : {},
+    caption: posted.length === 1 && posted[0] ? currentCaption(posted[0]) : content.caption,
+  }))
   const [viewport, setViewport] = useState<PreviewViewport>('mobile')
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<unknown>(null)
-  const editCaption = useEditPublishedPlanningCaption(brandId)
+  const editCaptions = useEditPublishedPlanningCaptions(brandId)
   const supported =
     content.platform === 'facebook' &&
     ['facebook_feed', 'facebook_reel'].includes(content.type ?? '')
-  const changes = published
-    .map((publication) => ({
-      publicationId: publication.id,
-      caption: (posted.length === 1
-        ? draft.caption
-        : draft.captionOverrides[publication.socialAccountId] || draft.caption
-      ).trim(),
-      original: (publication.captionOverride ?? content.caption).trim(),
-    }))
-    .filter((item) => item.caption !== item.original)
-  const canSave = supported && changes.length > 0 && changes.every((item) => item.caption)
+  const captionMode = usesCaptionPerAccount(draft) ? 'per_target' : 'shared'
+  const captions = posted.map((publication) => ({
+    publicationId: publication.id,
+    caption: composerCaptionFor(draft, publication.socialAccountId).trim(),
+  }))
+  const changed =
+    captionMode !== savedCaptionMode ||
+    posted.some((publication, index) => captions[index]?.caption !== currentCaption(publication))
+  const canSave = supported && changed && captions.every((item) => item.caption)
 
   const onSave = async () => {
     if (!canSave || saving) return
     setSaving(true)
     setSaveError(null)
     try {
-      const results = await Promise.allSettled(
-        changes.map((change) =>
-          editCaption.mutateAsync({
-            brandId,
-            publicationId: change.publicationId,
-            caption: change.caption,
-          }),
-        ),
-      )
-      const rejected = results.find(
-        (result): result is PromiseRejectedResult => result.status === 'rejected',
-      )
-      if (rejected) {
-        setSaveError(rejected.reason)
-        return
-      }
+      await editCaptions.mutateAsync({
+        brandId,
+        contentId: content.id,
+        captionMode,
+        caption: draft.caption.trim(),
+        captions: captionMode === 'per_target' ? captions : [],
+      })
       toast.success({ title: t('detail.editPublishedSuccess') })
       navigate(planningPath)
     } catch (error) {

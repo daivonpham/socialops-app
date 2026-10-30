@@ -143,6 +143,10 @@ export const facebookEnUS = {
     reconnectBy: 'Reconnect by {{date}}',
     restored_one: '{{count}} Page restored.',
     restored_other: '{{count}} Pages restored.',
+    revoked_one:
+      '{{count}} Page was left out of the Facebook permission and needs reconnecting. When connecting, tick every Page you want to use.',
+    revoked_other:
+      '{{count}} Pages were left out of the Facebook permission and need reconnecting. When connecting, tick every Page you want to use.',
   },
   metrics: {
     mediaViews: 'Media views',

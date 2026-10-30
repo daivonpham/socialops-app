@@ -146,6 +146,10 @@ export const facebookViVN = {
     reconnectBy: 'Kết nối lại trước {{date}}',
     restored_one: 'Đã khôi phục {{count}} Trang.',
     restored_other: 'Đã khôi phục {{count}} Trang.',
+    revoked_one:
+      '{{count}} Trang không được chọn khi cấp quyền Facebook nên cần kết nối lại. Khi kết nối, hãy tick đủ các Trang muốn dùng.',
+    revoked_other:
+      '{{count}} Trang không được chọn khi cấp quyền Facebook nên cần kết nối lại. Khi kết nối, hãy tick đủ các Trang muốn dùng.',
   },
   metrics: {
     mediaViews: 'Lượt xem nội dung',

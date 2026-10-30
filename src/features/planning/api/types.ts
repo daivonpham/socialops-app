@@ -37,6 +37,8 @@ export type PlanningMedia = {
 export type PlanningTarget = {
   id: string
   name: string
+  /** The Page ID on Facebook, used to reconnect the Page. */
+  providerAccountId?: string
   avatarUrl?: string
 }
 
@@ -48,10 +50,14 @@ export type PlanningAccountsResponse = {
   items: PlanningAccountDto[]
 }
 
+/** `per_target`: every Page has its own caption and `caption` mirrors the first Page. */
+export type PlanningCaptionMode = 'shared' | 'per_target'
+
 export type PlanningContent = {
   id: string
   version: number
   caption: string
+  captionMode?: PlanningCaptionMode
   title?: string
   thumbnailUrl?: string
   mediaType: PlanningMediaType
@@ -129,6 +135,7 @@ export type CreatePlanningContentInput = {
   platform: PlanningPlatform
   type: PlanningPostType
   caption: string
+  captionMode: PlanningCaptionMode
   link?: string
   media: PlanningMedia[]
   publications: Array<{

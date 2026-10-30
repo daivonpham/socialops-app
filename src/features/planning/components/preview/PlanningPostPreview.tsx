@@ -3,7 +3,11 @@ import { useTranslation } from 'react-i18next'
 import { SocialAccountLabel } from '@/features/social-accounts'
 import { IconDesktop, IconMobile, Select, Tabs, Tooltip } from '@/shared/ui'
 import type { PlanningAccount } from '../../model'
-import type { PlanningComposerDraft, PreviewViewport } from '../../model/composer'
+import {
+  composerCaptionFor,
+  type PlanningComposerDraft,
+  type PreviewViewport,
+} from '../../model/composer'
 import { FacebookPostPreview } from './FacebookPostPreview'
 import { TikTokPostPreview } from './TikTokPostPreview'
 
@@ -31,7 +35,7 @@ export function PlanningPostPreview({
     if (account && account.id !== previewAccountId) onPreviewAccountChange(account.id)
   }, [account, onPreviewAccountChange, previewAccountId])
 
-  const caption = account ? draft.captionOverrides[account.id] || draft.caption : draft.caption
+  const caption = account ? composerCaptionFor(draft, account.id) : draft.caption
 
   return (
     <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border-subtle bg-bg-surface shadow-xs">

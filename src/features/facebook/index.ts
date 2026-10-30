@@ -6,6 +6,7 @@ export {
   useFacebookOverviewSummary,
   useFacebookPosts,
   useFacebookSyncStatus,
+  useReconnectFacebookPages,
 } from './api/hooks'
 export { FacebookFilters } from './components/FacebookFilters'
 export { FacebookSyncBanner, FacebookSyncControl } from './components/FacebookSyncStatus'

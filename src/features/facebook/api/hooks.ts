@@ -224,6 +224,27 @@ export function useSelectFacebookPages(brandId: string | null) {
 export function useReconnectFacebookPage(brandId: string | null) {
   return useFacebookMutation(reconnectFacebookPage, brandId)
 }
+/**
+ * The Page manager's Reconnect for any screen: re-check each Page with the stored Facebook
+ * grant (this also stores its fresh Page token) and, when Facebook no longer grants a Page,
+ * fall back to logging in to Facebook again, which restores every Page ticked there.
+ */
+export function useReconnectFacebookPages(brandId: string | null) {
+  const reconnectPage = useReconnectFacebookPage(brandId)
+  const connect = useConnectFacebook()
+  const reconnect = async (pageIds: string[]): Promise<'reconnected' | 'login'> => {
+    if (!brandId) throw new Error('A Brand is required to reconnect Facebook Pages')
+    try {
+      for (const pageId of pageIds) await reconnectPage.mutateAsync({ brandId, pageId })
+      return 'reconnected'
+    } catch {
+      await connect.mutateAsync({ brandId })
+      return 'login'
+    }
+  }
+  return { reconnect, isPending: reconnectPage.isPending || connect.isPending }
+}
+
 export function useDisconnectFacebookPage(brandId: string | null) {
   return useFacebookMutation(disconnectFacebookPage, brandId)
 }

@@ -127,10 +127,13 @@ export function PlanningPostModal({
         item.status,
       ),
     ) &&
-    content.publications!.some((item) => !['cancelled', 'deleted'].includes(item.status))
+    // Without a post on Facebook there is nothing to delete there: cancelling covers it.
+    content.publications!.some(isOnFacebook)
   const canEditPublished = supportsPublishedEdit && activePublication?.status === 'published'
   const canCancel =
-    content && ['draft', 'scheduled', 'queued', 'failed', 'retry_wait'].includes(content.status)
+    content &&
+    ['draft', 'scheduled', 'queued', 'failed', 'retry_wait'].includes(content.status) &&
+    !content.publications?.some(isOnFacebook)
   const canEdit = content && ['draft', 'scheduled', 'failed'].includes(content.status)
 
   return (
@@ -518,12 +521,8 @@ function PlanningPostModalContent({
   const previewPublication = content.publications?.find(
     (item) => item.socialAccountId === previewAccount?.id,
   )
-  const previewCaption = previewAccount
-    ? previewPublication?.pendingCaption ||
-      previewPublication?.captionOverride ||
-      draft.captionOverrides[previewAccount.id] ||
-      draft.caption
-    : draft.caption
+  const previewCaption =
+    previewPublication?.pendingCaption ?? previewPublication?.captionOverride ?? draft.caption
   const hasIndividualSchedules =
     new Set(content.publications?.map((publication) => publication.scheduledAt ?? null)).size > 1
   const summaryStatus = planningStatusGroup(content)
@@ -957,18 +956,30 @@ function reasonKey(code: string | undefined) {
   return 'other'
 }
 
+/**
+ * A failed Page never reached Facebook, so it can be published again. An expired or missing
+ * token included: the API checks the Page's current connection and explains if it still needs
+ * reconnecting. A refused permission or rejected content must be fixed first.
+ */
 function canRetryPublication(publication: PlanningPublication): boolean {
+  if (publication.status === 'unknown') return true
   return (
-    (publication.status === 'failed' || publication.status === 'unknown') &&
-    (publication.status === 'unknown' ||
-      ![
-        'FACEBOOK_PERMISSION_MISSING',
-        'FACEBOOK_PUBLISH_PERMISSION_MISSING',
-        'FACEBOOK_TOKEN_EXPIRED',
-        'FACEBOOK_TOKEN_MISSING',
-        'FACEBOOK_REQUEST_FAILED',
-        'INVALID_MEDIA',
-      ].includes(publication.errorCode ?? ''))
+    publication.status === 'failed' &&
+    !publication.externalPostId &&
+    ![
+      'FACEBOOK_PERMISSION_MISSING',
+      'FACEBOOK_PUBLISH_PERMISSION_MISSING',
+      'FACEBOOK_REQUEST_FAILED',
+      'INVALID_MEDIA',
+    ].includes(publication.errorCode ?? '')
+  )
+}
+
+/** The post may exist on Facebook for this Page, so removing it means deleting it there. */
+function isOnFacebook(publication: PlanningPublication): boolean {
+  return (
+    ['published', 'delete_unknown'].includes(publication.status) ||
+    (publication.status === 'unknown' && Boolean(publication.externalPostId))
   )
 }
 

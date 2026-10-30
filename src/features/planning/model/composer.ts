@@ -1,5 +1,6 @@
 import type {
   CreatePlanningContentInput,
+  PlanningCaptionMode,
   PlanningContent,
   PlanningMedia,
   PlanningPlatform,
@@ -19,6 +20,8 @@ export type PlanningComposerDraft = {
   caption: string
   link: string
   media: ComposerMedia[]
+  captionMode: PlanningCaptionMode
+  /** Per-Page captions. Kept while the per-Page mode is off so turning it back on restores them. */
   captionOverrides: Record<string, string>
   publishMode: 'publish_now' | 'schedule'
   scheduleMode: ScheduleMode
@@ -35,6 +38,7 @@ export function createComposerDraft(platform: PlanningPlatform): PlanningCompose
     caption: '',
     link: '',
     media: [],
+    captionMode: 'shared',
     captionOverrides: {},
     publishMode: 'publish_now',
     scheduleMode: 'same_time',
@@ -55,9 +59,58 @@ export function createComposerDraft(platform: PlanningPlatform): PlanningCompose
   }
 }
 
+/** Per-Page captions only apply to a post with several Pages that has a caption at all. */
+export function supportsCaptionPerAccount(draft: PlanningComposerDraft): boolean {
+  return draft.targetIds.length > 1 && draft.postType !== 'facebook_story'
+}
+
+export function usesCaptionPerAccount(draft: PlanningComposerDraft): boolean {
+  return draft.captionMode === 'per_target' && supportsCaptionPerAccount(draft)
+}
+
+/** The caption a Page publishes with the current draft. */
+export function composerCaptionFor(draft: PlanningComposerDraft, accountId: string): string {
+  return usesCaptionPerAccount(draft) ? (draft.captionOverrides[accountId] ?? '') : draft.caption
+}
+
+/** Turning per-Page captions on starts every empty Page from the shared caption. */
+export function setComposerCaptionMode(
+  draft: PlanningComposerDraft,
+  captionMode: PlanningCaptionMode,
+): PlanningComposerDraft {
+  if (captionMode === 'shared') return { ...draft, captionMode }
+  return {
+    ...draft,
+    captionMode,
+    captionOverrides: {
+      ...draft.captionOverrides,
+      ...Object.fromEntries(
+        draft.targetIds
+          .filter((accountId) => !draft.captionOverrides[accountId]?.trim())
+          .map((accountId) => [accountId, draft.caption]),
+      ),
+    },
+  }
+}
+
+/** A feed post needs text, a link or media on every Page. */
+export function isComposerCaptionMissing(
+  draft: PlanningComposerDraft,
+  accountId?: string,
+): boolean {
+  if (draft.postType !== 'facebook_feed' || draft.link.trim() || draft.media.length) return false
+  const accountIds = accountId ? [accountId] : draft.targetIds
+  return usesCaptionPerAccount(draft)
+    ? accountIds.some((id) => !composerCaptionFor(draft, id).trim())
+    : !draft.caption.trim()
+}
+
 export function createComposerDraftFromContent(content: PlanningContent): PlanningComposerDraft {
   const defaults = createComposerDraft(content.platform)
   const publications = content.publications ?? []
+  const captionMode =
+    content.captionMode ??
+    (publications.some((publication) => publication.captionOverride) ? 'per_target' : 'shared')
   const scheduledAt = content.scheduledAt ?? publications[0]?.scheduledAt ?? ''
   const publicationSchedules = publications.filter((publication) => publication.scheduledAt)
   const usesAccountSchedules =
@@ -88,8 +141,9 @@ export function createComposerDraftFromContent(content: PlanningContent): Planni
         : content.caption,
     link: content.link ?? '',
     media: content.media ?? fallbackMedia,
+    captionMode: publications.length > 1 ? captionMode : 'shared',
     captionOverrides:
-      publications.length > 1
+      publications.length > 1 && captionMode === 'per_target'
         ? Object.fromEntries(
             publications.flatMap((publication) =>
               publication.captionOverride
@@ -126,11 +180,10 @@ export function canSubmitComposer(draft: PlanningComposerDraft): boolean {
 }
 
 function hasValidContentForPostType(draft: PlanningComposerDraft): boolean {
-  const caption = draft.caption.trim()
   if (draft.postType === 'facebook_feed') {
     if (draft.link.trim() && draft.media.length) return false
     if (draft.media.some((item) => item.type === 'video') && draft.media.length !== 1) return false
-    return Boolean(caption || draft.link.trim() || draft.media.length)
+    return !isComposerCaptionMissing(draft)
   }
   if (draft.postType === 'facebook_reel' || draft.postType === 'tiktok_video') {
     return draft.media.length === 1 && draft.media[0]?.type === 'video'
@@ -149,21 +202,20 @@ export function toCreatePlanningContentInput(
   draft: PlanningComposerDraft,
   intent: PlanningPublishIntent,
 ): CreatePlanningContentInput {
+  const perAccount = usesCaptionPerAccount(draft)
   return {
     brandId,
     platform: draft.platform,
     type: draft.postType,
     caption: draft.postType === 'facebook_story' ? '' : draft.caption.trim(),
+    captionMode: perAccount ? 'per_target' : 'shared',
     link: draft.postType === 'facebook_story' ? undefined : draft.link.trim() || undefined,
     media: draft.media.map(({ id, type, url, name }) => ({ id, type, url, name })),
     intent,
     platformSettings: draft.platformSettings,
     publications: draft.targetIds.map((socialAccountId) => ({
       socialAccountId,
-      captionOverride:
-        draft.postType === 'facebook_story' || draft.targetIds.length <= 1
-          ? undefined
-          : draft.captionOverrides[socialAccountId]?.trim() || undefined,
+      captionOverride: perAccount ? composerCaptionFor(draft, socialAccountId).trim() : undefined,
       scheduledAt: plannedAt(draft, socialAccountId, intent),
     })),
   }

@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw'
 import { envelope } from '@/mocks/envelope'
 import type {
   CreatePlanningContentInput,
+  PlanningCaptionMode,
   PlanningContent,
   PlanningApprovalStatus,
   PlanningContentsResponse,
@@ -209,6 +210,15 @@ function dateInRange(content: PlanningContent, from: string | null, to: string |
   return value >= fromValue && value <= toValue
 }
 
+/** Mirrors the API: per-account captions show the first account's caption in lists. */
+function mockDisplayCaption(
+  body: Pick<CreatePlanningContentInput, 'caption' | 'captionMode' | 'publications'>,
+) {
+  return body.captionMode === 'per_target'
+    ? (body.publications[0]?.captionOverride ?? '')
+    : body.caption
+}
+
 export const planningHandlers = [
   http.get('/api/brands/:brandId/planning/accounts', ({ params }) => {
     const brandId = String(params.brandId)
@@ -277,7 +287,8 @@ export const planningHandlers = [
     const content: PlanningContent = {
       id: `content-created-${createdCount}`,
       version: 1,
-      caption: body.caption,
+      caption: mockDisplayCaption(body),
+      captionMode: body.captionMode,
       thumbnailUrl: body.media[0]?.url,
       mediaType: body.media[0]?.type ?? 'text',
       type: body.type,
@@ -322,7 +333,8 @@ export const planningHandlers = [
     const updated: PlanningContent = {
       ...content,
       version: content.version + 1,
-      caption: body.caption,
+      caption: mockDisplayCaption(body),
+      captionMode: body.captionMode,
       thumbnailUrl: body.media[0]?.url,
       mediaType: body.media[0]?.type ?? 'text',
       type: body.type,
@@ -467,6 +479,39 @@ export const planningHandlers = [
       ),
     )
   }),
+  http.post(
+    '/api/brands/:brandId/planning/:contentId/caption-edit',
+    async ({ params, request }) => {
+      const body = (await request.json()) as {
+        captionMode: PlanningCaptionMode
+        caption: string
+        captions: Array<{ publicationId: string; caption: string }>
+      }
+      const content = contents.find((item) => item.id === params.contentId)
+      if (!content) return new HttpResponse(null, { status: 404 })
+      const perAccount = body.captionMode === 'per_target'
+      const captionFor = (publicationId: string) =>
+        perAccount
+          ? (body.captions.find((item) => item.publicationId === publicationId)?.caption ?? '')
+          : body.caption
+      const publications = content.publications?.map((row) => ({
+        ...row,
+        captionOverride: perAccount ? captionFor(row.id) : undefined,
+      }))
+      const updated: PlanningContent = {
+        ...content,
+        version: content.version + 1,
+        captionMode: body.captionMode,
+        caption: perAccount ? (publications?.[0]?.captionOverride ?? '') : body.caption,
+        publications,
+      }
+      contents = contents.map((item) => (item.id === updated.id ? updated : item))
+      return HttpResponse.json(
+        envelope(updated, `/brands/${String(params.brandId)}/planning/${updated.id}/caption-edit`),
+        { status: 202 },
+      )
+    },
+  ),
   http.post(
     '/api/brands/:brandId/planning/publications/:publicationId/caption-edit',
     async ({ params, request }) => {

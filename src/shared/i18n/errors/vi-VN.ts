@@ -107,6 +107,7 @@ export const errorsViVN = {
     INVALID_CONTENT_TYPE: 'Loại nội dung không khớp với nền tảng.',
     UNSUPPORTED_PUBLISH_TYPE: 'Định dạng này không đăng được.',
     CONTENT_REQUIRED: 'Thêm nội dung, liên kết hoặc media.',
+    TARGET_CAPTION_REQUIRED: 'Mỗi tài khoản cần có caption riêng.',
     INVALID_FEED_MEDIA: 'Dùng một video, tối đa mười ảnh hoặc một liên kết.',
     VIDEO_REQUIRED: 'Định dạng này cần đúng một video.',
     STORY_MEDIA_REQUIRED: 'Story cần đúng một ảnh hoặc video.',

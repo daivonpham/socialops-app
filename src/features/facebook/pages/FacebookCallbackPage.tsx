@@ -19,6 +19,7 @@ export default function FacebookCallbackPage() {
   const autoConnected = params.get('autoConnected') === 'true'
   const pageId = params.get('pageId')
   const restoredPages = Number(params.get('restoredPages') ?? 0)
+  const revokedPages = Number(params.get('revokedPages') ?? 0)
   const callbackError = params.get('error')
   const isPopup = Boolean(window.opener && window.opener !== window)
   const { workspaceId } = useActiveWorkspace()
@@ -44,12 +45,22 @@ export default function FacebookCallbackPage() {
         autoConnected,
         pageId,
         restoredPages,
+        revokedPages,
         error: callbackError,
       },
       window.location.origin,
     )
     window.close()
-  }, [autoConnected, brandId, callbackError, connectionId, isPopup, pageId, restoredPages])
+  }, [
+    autoConnected,
+    brandId,
+    callbackError,
+    connectionId,
+    isPopup,
+    pageId,
+    restoredPages,
+    revokedPages,
+  ])
 
   useEffect(() => {
     if (isPopup || !autoConnected || !brandId || callbackError || autoCompletionHandled.current)
@@ -57,6 +68,7 @@ export default function FacebookCallbackPage() {
     autoCompletionHandled.current = true
     if (workspaceId) selectBrand(workspaceId, brandId)
     toast.success({ title: t('oauth.connected') })
+    if (revokedPages) toast.warning({ title: t('tokenHealth.revoked', { count: revokedPages }) })
     navigate(
       pageId
         ? `${FACEBOOK_OVERVIEW_PATH}?pageId=${encodeURIComponent(pageId)}`
@@ -72,6 +84,7 @@ export default function FacebookCallbackPage() {
     isPopup,
     navigate,
     pageId,
+    revokedPages,
     selectBrand,
     t,
     toast,
@@ -117,6 +130,7 @@ export default function FacebookCallbackPage() {
     }
     if (workspaceId) selectBrand(workspaceId, brandId)
     toast.success({ title: t('oauth.connected') })
+    if (revokedPages) toast.warning({ title: t('tokenHealth.revoked', { count: revokedPages }) })
     navigate(FACEBOOK_OVERVIEW_PATH, { replace: true })
   }
 

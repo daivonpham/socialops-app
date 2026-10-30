@@ -110,6 +110,7 @@ export const errorsEnUS = {
     INVALID_CONTENT_TYPE: 'This content type does not match the platform.',
     UNSUPPORTED_PUBLISH_TYPE: 'This format cannot be published.',
     CONTENT_REQUIRED: 'Add text, a link or media.',
+    TARGET_CAPTION_REQUIRED: 'Every account needs its own caption.',
     INVALID_FEED_MEDIA: 'Use one video, up to ten photos, or one link.',
     VIDEO_REQUIRED: 'This format needs exactly one video.',
     STORY_MEDIA_REQUIRED: 'A story needs exactly one photo or video.',
