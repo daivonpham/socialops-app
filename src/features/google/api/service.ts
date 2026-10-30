@@ -1,6 +1,6 @@
-import { isAxiosError } from 'axios'
 import { apiClient } from '@/shared/api/client'
-import type { ApiErrorResponse, CommonApiResponse } from '@/shared/api/types'
+import { isApiErrorCode } from '@/shared/api/errors'
+import type { CommonApiResponse } from '@/shared/api/types'
 import type { GoogleConnection } from './types'
 
 const root = '/users/me/integrations/google'
@@ -22,16 +22,17 @@ export async function disconnectGoogle() {
 }
 
 /** API errors that mean the user has to (re)grant Google access before exporting. */
-const NEEDS_CONSENT = new Set([
+const NEEDS_CONSENT = [
   'GOOGLE_NOT_CONNECTED',
   'GOOGLE_REAUTHORIZATION_REQUIRED',
   'GOOGLE_PERMISSION_MISSING',
-])
-
-export function googleErrorCode(error: unknown): string | undefined {
-  return isAxiosError<ApiErrorResponse>(error) ? error.response?.data?.error?.code : undefined
-}
+] as const
 
 export function needsGoogleConsent(error: unknown): boolean {
-  return NEEDS_CONSENT.has(googleErrorCode(error) ?? '')
+  return isApiErrorCode(error, NEEDS_CONSENT)
+}
+
+/** The user closed the Google consent popup or pressed Cancel: not a failure to report. */
+export function isGoogleConsentCancelled(error: unknown): boolean {
+  return isApiErrorCode(error, 'GOOGLE_AUTH_CANCELLED')
 }

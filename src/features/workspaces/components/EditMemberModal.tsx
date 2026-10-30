@@ -25,6 +25,7 @@ import {
   type InvitableRole,
 } from '../model/member-role'
 import { MemberAccessEditor } from './MemberAccessEditor'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 /** Role and Brand/Page access for one member, saved together. */
 export function EditMemberModal({
@@ -39,19 +40,20 @@ export function EditMemberModal({
   onClose: () => void
 }) {
   const { t, i18n } = useTranslation('workspaces')
+  const errorMessage = useApiErrorMessage('workspaces')
   const toast = useToast()
   const options = useMemberAccessOptions(workspaceId)
   const updateRole = useUpdateWorkspaceMember()
   const updateAccess = useUpdateWorkspaceMemberAccess()
   const [role, setRole] = useState<InvitableRole>(member.role as InvitableRole)
   const [access, setAccess] = useState(() => memberAccessInput(member))
-  const [failed, setFailed] = useState(false)
+  const [failure, setFailure] = useState<unknown>(null)
   const saving = updateRole.isPending || updateAccess.isPending
   const name = member.displayName || member.email
   const canSave = !saving && (role === 'admin' || isAccessComplete(access))
 
   const save = async () => {
-    setFailed(false)
+    setFailure(null)
     try {
       // Change the role first: access only applies to Editor/Viewer.
       if (role !== member.role)
@@ -60,8 +62,8 @@ export function EditMemberModal({
         await updateAccess.mutateAsync({ workspaceId, memberId: member.id, brands: access })
       toast.success({ title: t('members.saved') })
       onClose()
-    } catch {
-      setFailed(true)
+    } catch (error) {
+      setFailure(error)
     }
   }
 
@@ -87,7 +89,13 @@ export function EditMemberModal({
       }
     >
       <div className="grid gap-5">
-        {failed ? <Alert variant="soft" tone="error" title={t('members.saveError')} /> : null}
+        {failure ? (
+          <Alert
+            variant="soft"
+            tone="error"
+            title={errorMessage(failure, t('members.saveError'))}
+          />
+        ) : null}
         <div className="flex items-center gap-3">
           <Avatar name={name} src={member.avatarUrl ?? undefined} size="lg" />
           <div className="min-w-0">

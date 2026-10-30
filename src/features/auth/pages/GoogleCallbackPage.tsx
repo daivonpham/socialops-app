@@ -6,6 +6,7 @@ import { useAuth } from '@/shared/auth'
 import { AuthLayout } from '../components/AuthLayout'
 import { AUTH_ROUTES } from '../config/auth.routes'
 import { pendingInvitationPath } from '../model/pending-invitation'
+import { parseErrorCode } from '@/shared/api/errors'
 
 export default function GoogleCallbackPage() {
   const { t } = useTranslation('auth')
@@ -20,10 +21,14 @@ export default function GoogleCallbackPage() {
   useEffect(() => {
     if (providerError || status === 'anonymous') {
       // Cancelling Google consent is a normal choice, not a failure worth an error message.
-      const cancelled = params.get('error') === 'GOOGLE_AUTH_CANCELLED'
-      navigate(cancelled ? AUTH_ROUTES.LOGIN : `${AUTH_ROUTES.LOGIN}?oauth=failed`, {
-        replace: true,
-      })
+      const code = parseErrorCode(params.get('error'), 'GOOGLE_AUTH_FAILED')
+      const failed = new URLSearchParams({ oauth: 'failed', error: code })
+      navigate(
+        code === 'GOOGLE_AUTH_CANCELLED' ? AUTH_ROUTES.LOGIN : `${AUTH_ROUTES.LOGIN}?${failed}`,
+        {
+          replace: true,
+        },
+      )
       return
     }
     if (status === 'authenticated')

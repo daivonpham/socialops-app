@@ -5,6 +5,7 @@ export type AuthUserDto = {
   locale: 'vi' | 'en'
   avatarUrl: string | null
   brandOnboardingCompleted: boolean
+  hasPassword: boolean
 }
 export type SessionDto = { accessToken: string; expiresIn: string; user: AuthUserDto }
 

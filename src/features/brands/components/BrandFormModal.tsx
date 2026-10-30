@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Avatar, Button, Divider, Form, IconUpload, Input, Modal } from '@/shared/ui'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 type Values = { name: string }
 export type BrandFormSubmit = { name: string; avatar: File | null }
@@ -22,11 +23,13 @@ export function BrandFormModal({
   avatarUrl?: string | null
   pending: boolean
   disabled?: boolean
-  error: boolean
+  /** Failure of the last submit, translated by its API code. */
+  error?: unknown
   onClose: () => void
   onSubmit: (values: BrandFormSubmit) => Promise<void>
 }) {
   const { t } = useTranslation('brands')
+  const errorMessage = useApiErrorMessage('brands')
   const [form] = Form.useForm<Values>()
   const inputRef = useRef<HTMLInputElement>(null)
   const [avatar, setAvatar] = useState<File | null>(null)
@@ -136,7 +139,9 @@ export function BrandFormModal({
           </div>
         </div>
         {avatarError ? <Alert variant="soft" tone="error" title={avatarError} /> : null}
-        {error ? <Alert variant="soft" tone="error" title={copy.error} /> : null}
+        {error ? (
+          <Alert variant="soft" tone="error" title={errorMessage(error, copy.error)} />
+        ) : null}
         <Form.Item
           name="name"
           label={copy.name}
@@ -152,12 +157,7 @@ export function BrandFormModal({
           <Button className="flex-1" disabled={pending} onClick={close}>
             {copy.cancel}
           </Button>
-          <Button
-            variant="primary"
-            htmlType="submit"
-            loading={pending}
-            disabled={disabled}
-          >
+          <Button variant="primary" htmlType="submit" loading={pending} disabled={disabled}>
             {copy.submit}
           </Button>
         </div>

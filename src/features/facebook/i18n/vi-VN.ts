@@ -56,9 +56,6 @@ export const facebookViVN = {
     refreshQueued: 'Đã yêu cầu làm mới. Dữ liệu mới sẽ xuất hiện trong ít phút.',
     refreshTooSoon: 'Dữ liệu vừa được làm mới. Vui lòng thử lại sau vài phút.',
     refreshError: 'Không thể yêu cầu làm mới dữ liệu.',
-    initialTitle: 'Đang đồng bộ dữ liệu Facebook lần đầu',
-    initialDescription:
-      'SocialOps đang tải lịch sử cho {{count}} Trang. Số liệu sẽ tự cập nhật khi hoàn tất.',
     issueTitle: '{{count}} Trang chưa đồng bộ được',
     issueDescription:
       'Số liệu của {{pages}} có thể đã cũ. SocialOps vẫn tự thử lại; nếu lỗi kéo dài, hãy kết nối lại Facebook.',

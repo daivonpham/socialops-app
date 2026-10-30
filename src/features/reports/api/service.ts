@@ -1,6 +1,7 @@
 import { apiClient } from '@/shared/api/client'
 import type { CommonApiResponse } from '@/shared/api/types'
 import type { ReportConfig, ReportDocument, ReportRefresh, ReportsList, SavedReport } from './types'
+import { CodedError } from '@/shared/api/errors'
 
 const root = (brandId: string) => `/brands/${brandId}/reports`
 
@@ -135,14 +136,14 @@ export async function exportReportPdf(
   let job = started.data.data
   const deadline = Date.now() + PDF_TIMEOUT_MS
   while (job.status === 'queued' || job.status === 'running') {
-    if (Date.now() > deadline) throw new Error('REPORT_PDF_TIMEOUT')
+    if (Date.now() > deadline) throw new CodedError('REPORT_PDF_TIMEOUT')
     await new Promise((resolve) => window.setTimeout(resolve, PDF_POLL_MS))
     const response = await apiClient.get<CommonApiResponse<PdfJob>>(
       `${root(brandId)}/pdf/${job.id}`,
     )
     job = response.data.data
   }
-  if (job.status === 'failed') throw new Error(job.errorCode ?? 'REPORT_PDF_FAILED')
+  if (job.status === 'failed') throw new CodedError(job.errorCode ?? 'REPORT_PDF_FAILED')
   const file = await apiClient.get<Blob>(`${root(brandId)}/pdf/${job.id}/file`, {
     responseType: 'blob',
   })

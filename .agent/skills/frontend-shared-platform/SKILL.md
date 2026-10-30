@@ -37,6 +37,7 @@ Aligns with `frontend-admin-architecture` (adapters behind `shared/ui`).
 | ------------------------------------------ | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
 | HTTP + response envelope + list query base | `shared/api` (`CommonApiResponse`, `ListQueryBase`)                              | [references/api-layer.md](references/api-layer.md)                       |
 | Server state                               | TanStack Query in feature `api/hooks.ts`                                         | [references/query.md](references/query.md)                               |
+| API errors (read, branch, translate)       | `shared/api/errors` + `useApiErrorMessage` (`shared/hooks`)                      | [references/api-errors.md](references/api-errors.md)                     |
 | Authorization                              | `shared/permissions` (catalog + engine); feature `config/*-access.ts` for policy | `frontend-admin-security/references/authorization.md`                    |
 | Approval/publish lifecycle                 | Status = rendering, transitions = allowed moves + guards                         | [references/workflow-transitions.md](references/workflow-transitions.md) |
 | Table                                      | `shared/ui/DataTable` (TanStack Table)                                           | [references/data-table.md](references/data-table.md)                     |
@@ -59,6 +60,9 @@ Aligns with `frontend-admin-architecture` (adapters behind `shared/ui`).
 ✗ Per-page ad-hoc URL query parsing when useUrlFilters exists
 ✗ Local Spin/Empty/Error trees when AsyncState exists
 ✗ Second table/filter/upload stack in parallel
+✗ Reading error.response.data.error.code, isAxiosError or response.status in features
+✗ Fixed-text error toast/Alert that ignores the API code (use errorMessage(error, fallback))
+✗ Rendering the server's English error message
 ```
 
 ## Output

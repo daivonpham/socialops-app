@@ -30,12 +30,14 @@ import { AccessSummary } from '../components/AccessSummary'
 import { EditMemberModal } from '../components/EditMemberModal'
 import { InviteMembersSection } from '../components/InviteMembersSection'
 import { memberAccessInput } from '../model/member-role'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 const PAGE_SIZE = 20
 
 /** Settings-style layout: section label on the left, its controls on the right. */
 export default function MembersPage() {
   const { t } = useTranslation('workspaces')
+  const errorMessage = useApiErrorMessage('workspaces')
   const toast = useToast()
   const { workspaceId } = useActiveWorkspace()
   const { user } = useAuth()
@@ -243,7 +245,8 @@ export default function MembersPage() {
                 setRemoveMember(null)
                 toast.success({ title: t('members.removed') })
               },
-              onError: () => toast.error({ title: t('members.saveError') }),
+              onError: (error) =>
+                toast.error({ title: errorMessage(error, t('members.saveError')) }),
             },
           )
         }}

@@ -12,6 +12,7 @@ type SessionDto = {
     locale: 'vi' | 'en'
     avatarUrl: string | null
     brandOnboardingCompleted: boolean
+    hasPassword: boolean
   }
 }
 

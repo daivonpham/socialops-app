@@ -8,6 +8,8 @@ export type AuthUser = {
   locale: 'vi' | 'en'
   avatarUrl: string | null
   brandOnboardingCompleted: boolean
+  /** False for accounts that only sign in with Google. */
+  hasPassword: boolean
 }
 export type AuthSession = { accessToken: string; user: AuthUser }
 

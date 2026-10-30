@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { isAxiosError } from 'axios'
 import { Link, useBlocker, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useFacebookIntegration } from '@/features/facebook'
 import {
   connectGoogleInPopup,
   GOOGLE_QUERY_KEYS,
-  googleErrorCode,
+  isGoogleConsentCancelled,
   needsGoogleConsent,
   useGoogleConnection,
 } from '@/features/google'
@@ -58,6 +57,8 @@ import {
   REPORT_TEMPLATES,
 } from '../model/report-config'
 import { periodDates, reportDatePresets } from '../model/report-period'
+import { CodedError } from '@/shared/api/errors'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 type Step = 1 | 2 | 3
 const TOTAL_STEPS = 3
@@ -69,6 +70,7 @@ const CONTENT_TYPES = ['post', 'reel', 'story'] as const
  */
 export default function ReportBuilderPage() {
   const { t } = useTranslation('reports')
+  const errorMessage = useApiErrorMessage('reports')
   const navigate = useNavigate()
   const toast = useToast()
   const queryClient = useQueryClient()
@@ -143,7 +145,13 @@ export default function ReportBuilderPage() {
           setRefresh(next)
           if (next.status === 'completed') toast.success({ title: t('freshness.done') })
           if (next.status === 'partial') toast.warning({ title: t('freshness.partial') })
-          if (next.status === 'failed') toast.error({ title: t('freshness.failed') })
+          if (next.status === 'failed')
+            toast.error({
+              title: errorMessage(
+                new CodedError(next.errorCode ?? 'REPORT_REFRESH_FAILED'),
+                t('freshness.failed'),
+              ),
+            })
           if (next.status === 'completed' || next.status === 'partial') void preview.refetch()
         })
         .catch(() => undefined)
@@ -236,19 +244,10 @@ export default function ReportBuilderPage() {
       void queryClient.invalidateQueries({ queryKey: ['reports', brandId] })
       toast.success({ title: t('preview.saved') })
     } catch (cause) {
-      const conflict = isAxiosError(cause) && cause.response?.status === 409
-      toast.error({ title: conflict ? t('preview.conflict') : t('preview.saveError') })
+      toast.error({ title: errorMessage(cause, t('preview.saveError')) })
     } finally {
       setSaving(false)
     }
-  }
-
-  const sheetsError = (cause: unknown) => {
-    const code = googleErrorCode(cause)
-    if (code === 'GOOGLE_SHEETS_NOT_ENABLED' || code === 'OAUTH_NOT_CONFIGURED')
-      return t('preview.sheetsUnavailable')
-    if (code === 'GOOGLE_RATE_LIMITED') return t('preview.sheetsBusy')
-    return t('preview.sheetsError')
   }
 
   /**
@@ -289,14 +288,14 @@ export default function ReportBuilderPage() {
         })
       })
       .catch((cause: unknown) => {
-        if (cause instanceof Error && cause.message === 'GOOGLE_AUTH_CANCELLED') return
+        if (isGoogleConsentCancelled(cause)) return
         if (needsGoogleConsent(cause)) {
           // The grant was revoked since we last checked; the next click asks for consent.
           void queryClient.invalidateQueries({ queryKey: GOOGLE_QUERY_KEYS.connection })
           toast.warning({ title: t('preview.sheetsReconnect') })
           return
         }
-        toast.error({ title: sheetsError(cause) })
+        toast.error({ title: errorMessage(cause, t('preview.sheetsError')) })
       })
       .finally(() => {
         setExporting(false)
@@ -313,8 +312,13 @@ export default function ReportBuilderPage() {
       if (format === 'pdf') {
         await exportReportPdf(brandId, { config, title: name.trim() })
       } else await exportReport(brandId, { config, format, title: name.trim() })
-    } catch {
-      toast.error({ title: t(format === 'pdf' ? 'preview.pdfError' : 'preview.exportError') })
+    } catch (error) {
+      toast.error({
+        title: errorMessage(
+          error,
+          t(format === 'pdf' ? 'preview.pdfError' : 'preview.exportError'),
+        ),
+      })
     } finally {
       setExporting(false)
     }
@@ -332,8 +336,8 @@ export default function ReportBuilderPage() {
           ...(config.pageIds === 'all' ? {} : { pageIds: config.pageIds }),
         }),
       )
-    } catch {
-      toast.error({ title: t('freshness.failed') })
+    } catch (error) {
+      toast.error({ title: errorMessage(error, t('freshness.failed')) })
     }
   }
 

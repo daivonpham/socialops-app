@@ -25,8 +25,8 @@ export const authViVN = {
     emailRequired: 'Nhập email của bạn.',
     emailInvalid: 'Email không hợp lệ.',
     passwordRequired: 'Nhập mật khẩu.',
-    passwordMin: 'Mật khẩu phải có ít nhất 12 ký tự.',
-    passwordMax: 'Mật khẩu không được vượt quá 128 ký tự.',
+    passwordMin: 'Mật khẩu phải có ít nhất {{min}} ký tự.',
+    passwordMax: 'Mật khẩu không được vượt quá {{max}} ký tự.',
     confirmPasswordRequired: 'Nhập lại mật khẩu.',
     termsRequired: 'Bạn phải đồng ý với Điều khoản và Chính sách quyền riêng tư.',
   },
@@ -43,7 +43,7 @@ export const authViVN = {
   register: {
     title: 'Tạo tài khoản',
     description: 'Bắt đầu lập kế hoạch và đăng nội dung mạng xã hội.',
-    passwordHint: 'Mật khẩu phải có ít nhất 12 ký tự.',
+    passwordHint: 'Mật khẩu phải có ít nhất {{min}} ký tự.',
     acceptTerms: 'Tôi đồng ý với Điều khoản và Chính sách quyền riêng tư',
     submit: 'Tạo tài khoản',
     google: 'Đăng ký bằng Google',
@@ -68,10 +68,9 @@ export const authViVN = {
   },
   reset: {
     title: 'Đặt mật khẩu mới',
-    description: 'Chọn mật khẩu an toàn có ít nhất 12 ký tự.',
+    description: 'Chọn mật khẩu an toàn có ít nhất {{min}} ký tự.',
     submit: 'Đặt lại mật khẩu',
     success: 'Mật khẩu đã được đặt lại. Bạn có thể đăng nhập.',
-    login: 'Đăng nhập',
     back: 'Quay lại đăng nhập',
     missingToken: 'Liên kết đặt lại mật khẩu không hợp lệ.',
   },
@@ -93,14 +92,25 @@ export const authViVN = {
   change: {
     title: 'Đổi mật khẩu',
     description: 'Đổi mật khẩu sẽ đăng xuất tài khoản trên các thiết bị khác.',
-    passwordHint: 'Mật khẩu phải có ít nhất 12 ký tự.',
+    passwordHint: 'Mật khẩu phải có ít nhất {{min}} ký tự.',
     cancel: 'Hủy',
     submit: 'Đổi mật khẩu',
     success: 'Mật khẩu cập nhật thành công.',
   },
+  setPassword: {
+    title: 'Đặt mật khẩu',
+    description:
+      'Bạn đang đăng nhập bằng Google nên tài khoản chưa có mật khẩu. Đặt mật khẩu để đăng nhập thêm bằng email.',
+    instructions:
+      'Chúng tôi sẽ gửi liên kết đặt mật khẩu tới {{email}}. Sau khi đặt xong, bạn cần đăng nhập lại trên mọi thiết bị.',
+    submit: 'Gửi liên kết đặt mật khẩu',
+    success: 'Đã gửi liên kết tới {{email}}',
+    openInbox: 'Mở email',
+  },
   errors: {
     INVALID_CREDENTIALS: 'Email hoặc mật khẩu không đúng.',
     CURRENT_PASSWORD_INCORRECT: 'Mật khẩu hiện tại không đúng.',
+    PASSWORD_NOT_SET: 'Tài khoản chưa có mật khẩu. Hãy tải lại trang để đặt mật khẩu qua email.',
     EMAIL_NOT_VERIFIED: 'Vui lòng xác minh email trước khi đăng nhập.',
     EMAIL_ALREADY_REGISTERED: 'Email này đã có tài khoản.',
     INVALID_OR_EXPIRED_TOKEN: 'Liên kết không hợp lệ hoặc đã hết hạn.',

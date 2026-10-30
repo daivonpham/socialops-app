@@ -14,7 +14,11 @@ export interface CommonApiResponse<T> {
 }
 
 export interface ApiErrorResponse {
-  error: { code: string; message: string; fields?: Array<{ field: string; code: string }> }
+  error: {
+    code: string
+    message: string
+    fields?: Array<{ field: string; code: string; message?: string }>
+  }
   requestId: string
 }
 

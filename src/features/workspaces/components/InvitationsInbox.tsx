@@ -11,6 +11,7 @@ import {
   type MyInvitationDto,
 } from '../api'
 import { useEnterWorkspace } from '../model/use-enter-workspace'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 /**
  * Top-bar inbox for pending Workspace invitations, so an invite can be accepted without the
@@ -83,6 +84,7 @@ function InvitationItem({
   onDone: () => void
 }) {
   const { t, i18n } = useTranslation('workspaces')
+  const errorMessage = useApiErrorMessage('workspaces')
   const toast = useToast()
   const navigate = useNavigate()
   const accept = useAcceptInvitationById()
@@ -97,15 +99,15 @@ function InvitationItem({
       toast.success({ title: t('invitation.accepted', { workspace: invitation.workspaceName }) })
       onDone()
       navigate(AUTH_ROUTES.POST_AUTH)
-    } catch {
-      toast.error({ title: t('invitation.actionError') })
+    } catch (error) {
+      toast.error({ title: errorMessage(error, t('invitation.actionError')) })
     }
   }
 
   const declineInvitation = () =>
     decline.mutate(invitation.id, {
       onSuccess: () => toast.success({ title: t('invitation.declined') }),
-      onError: () => toast.error({ title: t('invitation.actionError') }),
+      onError: (error) => toast.error({ title: errorMessage(error, t('invitation.actionError')) }),
     })
 
   return (

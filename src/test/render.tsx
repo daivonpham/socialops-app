@@ -13,6 +13,7 @@ export const testUser: AuthUser = {
   locale: 'en',
   avatarUrl: null,
   brandOnboardingCompleted: true,
+  hasPassword: true,
 }
 
 export function authValue(overrides: Partial<AuthContextValue> = {}): AuthContextValue {

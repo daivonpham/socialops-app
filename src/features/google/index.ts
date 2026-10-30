@@ -4,6 +4,6 @@ export {
   connectGoogleInPopup,
   GOOGLE_QUERY_KEYS,
   needsGoogleConsent,
-  googleErrorCode,
+  isGoogleConsentCancelled,
   useGoogleConnection,
 } from './api'

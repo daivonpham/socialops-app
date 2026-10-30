@@ -176,6 +176,10 @@ Prefer explicit exports on large features; `export *` is acceptable on small one
 - Keep **all** feature TanStack hooks in this single `hooks.ts`
 - Invalidation belongs in mutation `onSuccess` / dedicated helpers here — not in `service.ts`
 - Business toasts/modals belong in pages/components, not the service layer
+- Errors: services and hooks let failures propagate; pages read them with `@/shared/api/errors`
+  (`isApiErrorCode`, `getApiError`) and show them with `useApiErrorMessage(ns)`; app-side failures
+  throw `CodedError`. Never inspect `error.response` in a feature. See
+  `frontend-shared-platform/references/api-errors.md`
 - `types.ts` extends `@/shared/api/types` (`ListQuery`, `CommonApiResponse`) —
   never redeclares the envelope or the common list params per feature
 - See [references/api-rules.md](references/api-rules.md) for do/don't detail

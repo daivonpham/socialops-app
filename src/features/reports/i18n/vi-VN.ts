@@ -119,7 +119,6 @@ export const reportsViVN = {
     save: 'Lưu báo cáo',
     saved: 'Đã lưu báo cáo.',
     saveError: 'Không lưu được báo cáo.',
-    conflict: 'Báo cáo vừa được người khác sửa. Hãy tải lại để xem bản mới.',
     export: 'Xuất báo cáo',
     excel: 'Excel (.xlsx)',
     csv: 'CSV (.zip)',
@@ -146,8 +145,6 @@ export const reportsViVN = {
     sheetsCreated: 'Đã tạo Google Trang tính trong Drive của bạn.',
     openSheet: 'Mở trang tính',
     sheetsError: 'Không tạo được Google Trang tính. Hãy thử lại.',
-    sheetsBusy: 'Google đang bận. Hãy thử lại sau ít phút.',
-    sheetsUnavailable: 'Xuất Google Trang tính chưa được bật cho hệ thống. Hãy báo quản trị viên.',
     sheetsReconnect: 'Quyền Google đã hết hiệu lực. Bấm xuất lại để kết nối Google.',
     generatedFor: '{{brand}} · {{since}} – {{until}}',
     comparedWith: 'So với {{since}} – {{until}}',
@@ -319,5 +316,26 @@ export const reportsViVN = {
     missing_history: 'Một số ngày nằm trước mốc dữ liệu lịch sử hiện có.',
     post_metrics_frozen: 'Bài cũ hơn 90 ngày dùng số liệu cập nhật lần cuối.',
     audience_current: 'Khán giả là số liệu hiện tại, không theo kỳ báo cáo.',
+  },
+  errors: {
+    REPORT_VERSION_CONFLICT: 'Báo cáo vừa được người khác sửa. Hãy tải lại để xem bản mới.',
+    GOOGLE_SHEETS_NOT_ENABLED:
+      'Xuất Google Trang tính chưa được bật cho hệ thống. Hãy báo quản trị viên.',
+    OAUTH_NOT_CONFIGURED:
+      'Xuất Google Trang tính chưa được bật cho hệ thống. Hãy báo quản trị viên.',
+    GOOGLE_RATE_LIMITED: 'Google đang bận. Hãy thử lại sau ít phút.',
+    PAGE_DISCONNECTED: 'Một kênh đã ngắt kết nối. Hãy kết nối lại để lấy dữ liệu.',
+    FACEBOOK_PAGE_DISCONNECTED: 'Một kênh đã ngắt kết nối. Hãy kết nối lại để lấy dữ liệu.',
+    FACEBOOK_CONNECTION_UNAVAILABLE: 'Kết nối của một kênh cần được làm mới.',
+    FACEBOOK_PAGE_TOKEN_MISSING: 'Một kênh cần được kết nối lại.',
+    FACEBOOK_TOKEN_MISSING: 'Một kênh cần được kết nối lại.',
+    FACEBOOK_TOKEN_EXPIRED: 'Kết nối của một kênh đã hết hạn. Hãy kết nối lại.',
+    FACEBOOK_PERMISSION_MISSING: 'Một kênh đang thiếu quyền. Hãy cấp lại quyền.',
+    FACEBOOK_POST_LIST_TOO_LARGE:
+      'Khoảng thời gian này có quá nhiều bài viết. Hãy chọn khoảng ngắn hơn.',
+    FACEBOOK_RATE_LIMITED: 'Nền tảng đang giới hạn yêu cầu. Thử lại sau vài phút.',
+    FACEBOOK_UNAVAILABLE: 'Nền tảng tạm thời không khả dụng.',
+    FACEBOOK_REQUEST_FAILED: 'Nền tảng từ chối yêu cầu.',
+    FACEBOOK_SYNC_FAILED: 'Không đồng bộ được dữ liệu kênh.',
   },
 } as const satisfies TranslationShape<typeof reportsEnUS>

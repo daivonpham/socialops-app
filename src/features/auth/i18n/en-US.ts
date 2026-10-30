@@ -22,8 +22,8 @@ export const authEnUS = {
     emailRequired: 'Enter your email.',
     emailInvalid: 'Enter a valid email address.',
     passwordRequired: 'Enter your password.',
-    passwordMin: 'Password must contain at least 12 characters.',
-    passwordMax: 'Password must not exceed 128 characters.',
+    passwordMin: 'Password must contain at least {{min}} characters.',
+    passwordMax: 'Password must not exceed {{max}} characters.',
     confirmPasswordRequired: 'Confirm your password.',
     termsRequired: 'You must accept the Terms and Privacy Policy.',
   },
@@ -40,7 +40,7 @@ export const authEnUS = {
   register: {
     title: 'Create an account',
     description: 'Start planning and publishing your social content.',
-    passwordHint: 'Must be at least 12 characters.',
+    passwordHint: 'Must be at least {{min}} characters.',
     acceptTerms: 'I agree to the Terms and Privacy Policy',
     submit: 'Create account',
     google: 'Sign up with Google',
@@ -65,10 +65,9 @@ export const authEnUS = {
   },
   reset: {
     title: 'Set a new password',
-    description: 'Choose a secure password with at least 12 characters.',
+    description: 'Choose a secure password with at least {{min}} characters.',
     submit: 'Reset password',
     success: 'Your password has been reset. You can now sign in.',
-    login: 'Sign in',
     back: 'Back to sign in',
     missingToken: 'This password reset link is invalid.',
   },
@@ -90,14 +89,25 @@ export const authEnUS = {
   change: {
     title: 'Change password',
     description: 'Changing your password signs you out of other devices.',
-    passwordHint: 'Must be at least 12 characters.',
+    passwordHint: 'Must be at least {{min}} characters.',
     cancel: 'Cancel',
     submit: 'Change password',
     success: 'Password updated successfully.',
   },
+  setPassword: {
+    title: 'Set a password',
+    description:
+      'You sign in with Google, so your account has no password yet. Set one to also sign in with your email.',
+    instructions:
+      'We will send a link to set your password to {{email}}. Afterwards you will need to sign in again on every device.',
+    submit: 'Send password link',
+    success: 'Link sent to {{email}}',
+    openInbox: 'Open email',
+  },
   errors: {
     INVALID_CREDENTIALS: 'Email or password is incorrect.',
     CURRENT_PASSWORD_INCORRECT: 'Your current password is incorrect.',
+    PASSWORD_NOT_SET: 'Your account has no password yet. Reload the page to set one by email.',
     EMAIL_NOT_VERIFIED: 'Verify your email before signing in.',
     EMAIL_ALREADY_REGISTERED: 'An account already exists for this email.',
     INVALID_OR_EXPIRED_TOKEN: 'This link is invalid or has expired.',

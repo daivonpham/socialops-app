@@ -11,11 +11,13 @@ import {
   useCreateBrand,
   useUploadBrandAvatar,
 } from '../api'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 type BrandFormValues = { name: string }
 
 export function BrandOnboardingModal({ workspaceId }: { workspaceId: string | null }) {
   const { t } = useTranslation('brands')
+  const errorMessage = useApiErrorMessage('brands')
   const { user, updateUser } = useAuth()
   const { selectBrand } = useActiveBrand()
   const navigate = useNavigate()
@@ -115,7 +117,14 @@ export function BrandOnboardingModal({ workspaceId }: { workspaceId: string | nu
         </div>
         {avatarError ? <Alert variant="soft" tone="error" title={avatarError} /> : null}
         {createBrand.isError || completeOnboarding.isError ? (
-          <Alert variant="soft" tone="error" title={t('onboarding.createFailed')} />
+          <Alert
+            variant="soft"
+            tone="error"
+            title={errorMessage(
+              createBrand.error ?? completeOnboarding.error,
+              t('onboarding.createFailed'),
+            )}
+          />
         ) : null}
         <Form.Item
           name="name"

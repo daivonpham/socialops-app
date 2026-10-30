@@ -48,6 +48,7 @@ import { getPlanningDragPolicy } from '../model'
 import { planningCalendarEventDate } from '../model/calendar-event-date'
 import { PlanningCalendarEvent } from './PlanningCalendarEvent'
 import './planning-calendar.css'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 type PendingReschedule = {
   content: PlanningContent
@@ -92,6 +93,7 @@ export function PlanningCalendar({
   onCreatePost: (date: string, postType: PlanningPostType) => void
 }) {
   const { t, i18n } = useTranslation('planning')
+  const errorMessage = useApiErrorMessage('planning')
   const calendarRef = useRef<FullCalendar | null>(null)
   const createButtonRoots = useRef(new Map<HTMLElement, Root>())
   const createButtonCleanups = useRef(new Map<HTMLElement, () => void>())
@@ -104,7 +106,7 @@ export function PlanningCalendar({
     week: 0,
   })
   const [pendingReschedule, setPendingReschedule] = useState<PendingReschedule | null>(null)
-  const [hasRescheduleError, setHasRescheduleError] = useState(false)
+  const [rescheduleError, setRescheduleError] = useState<unknown>(null)
   const fullCalendarView = calendarView === 'month' ? 'dayGridMonth' : 'timeGridWeek'
   const uses12HourClock = uses12HourTime(i18n.resolvedLanguage)
   const timeZone = getLocalTimeZone()
@@ -141,12 +143,12 @@ export function PlanningCalendar({
     proposedAt: string,
     revert: () => void,
   ) => {
-    setHasRescheduleError(false)
+    setRescheduleError(null)
     try {
       await reschedule.mutateAsync({ brandId, contentId: content.id, scheduledAt: proposedAt })
-    } catch {
+    } catch (error) {
       revert()
-      setHasRescheduleError(true)
+      setRescheduleError(error)
     }
   }
 
@@ -338,14 +340,14 @@ export function PlanningCalendar({
         </div>
       </div>
 
-      {hasRescheduleError ? (
+      {rescheduleError ? (
         <div className="p-4 pb-0">
           <Alert
             variant="soft"
             tone="error"
-            title={t('reschedule.error')}
+            title={errorMessage(rescheduleError, t('reschedule.error'))}
             closable
-            onClose={() => setHasRescheduleError(false)}
+            onClose={() => setRescheduleError(null)}
           />
         </div>
       ) : null}

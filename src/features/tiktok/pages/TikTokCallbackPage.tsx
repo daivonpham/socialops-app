@@ -6,11 +6,14 @@ import { SOCIAL_ACCOUNT_QUERY_KEYS } from '@/features/social-accounts'
 import { useActiveBrand, useActiveWorkspace } from '@/shared/scope'
 import { Button, IconTikTok, Spin, useToast } from '@/shared/ui'
 import { TIKTOK_QUERY_KEYS } from '../api'
+import { CodedError, parseErrorCode } from '@/shared/api/errors'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 const TIKTOK_OVERVIEW_PATH = '/platforms/tiktok/overview'
 
 export default function TikTokCallbackPage() {
   const { t } = useTranslation('tiktok')
+  const errorMessage = useApiErrorMessage('tiktok')
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const toast = useToast()
@@ -38,7 +41,12 @@ export default function TikTokCallbackPage() {
     if (isPopup || completed.current) return
     completed.current = true
     if (error || !brandId || !accountId) {
-      toast.error({ title: t('oauthFailed') })
+      toast.error({
+        title: errorMessage(
+          new CodedError(parseErrorCode(error, 'TIKTOK_OAUTH_FAILED')),
+          t('oauthFailed'),
+        ),
+      })
       return
     }
     if (workspaceId) selectBrand(workspaceId, brandId)

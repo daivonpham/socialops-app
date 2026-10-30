@@ -4,11 +4,13 @@ import { useTranslation } from 'react-i18next'
 import { useActiveBrand, useActiveWorkspace } from '@/shared/scope'
 import { Alert, Button, Checkbox, IconFacebook, SectionError, Spin, useToast } from '@/shared/ui'
 import { useAvailableFacebookPages, useSelectFacebookPages } from '../api'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 const FACEBOOK_OVERVIEW_PATH = '/platforms/facebook/overview'
 
 export default function FacebookCallbackPage() {
   const { t } = useTranslation('facebook')
+  const errorMessage = useApiErrorMessage('facebook')
   const navigate = useNavigate()
   const toast = useToast()
   const [params] = useSearchParams()
@@ -109,8 +111,8 @@ export default function FacebookCallbackPage() {
     if (!brandId || !connectionId || selected.length === 0) return
     try {
       await selectPages.mutateAsync({ brandId, connectionId, pageIds: selected })
-    } catch {
-      toast.error({ title: t('oauth.selectError') })
+    } catch (error) {
+      toast.error({ title: errorMessage(error, t('oauth.selectError')) })
       return
     }
     if (workspaceId) selectBrand(workspaceId, brandId)

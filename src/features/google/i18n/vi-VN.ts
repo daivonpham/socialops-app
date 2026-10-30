@@ -6,8 +6,6 @@ export const googleViVN = {
     completing: 'Đang kết nối tài khoản Google…',
     connected: 'Đã kết nối tài khoản Google. Bạn có thể đóng cửa sổ này.',
     failed: 'Không kết nối được tài khoản Google.',
-    permissionMissing:
-      'SocialOps cần quyền với các file do chính nó tạo trong Google Drive. Hãy kết nối lại và giữ ô quyền đó được chọn.',
     back: 'Về trang báo cáo',
   },
   integration: {
@@ -27,5 +25,10 @@ export const googleViVN = {
     connectedToast: 'Đã kết nối tài khoản Google.',
     error: 'Có lỗi khi làm việc với Google. Hãy thử lại.',
     loadError: 'Không tải được kết nối Google.',
+  },
+  errors: {
+    GOOGLE_AUTH_FAILED: 'Không kết nối được tài khoản Google.',
+    GOOGLE_PERMISSION_MISSING:
+      'SocialOps cần quyền với các file do chính nó tạo trong Google Drive. Hãy kết nối lại và giữ ô quyền đó được chọn.',
   },
 } as const satisfies TranslationShape<typeof googleEnUS>

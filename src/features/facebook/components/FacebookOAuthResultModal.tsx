@@ -12,6 +12,7 @@ import {
   useToast,
 } from '@/shared/ui'
 import { useAvailableFacebookPages, useSelectFacebookPages } from '../api'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 export type FacebookOAuthResult = { brandId: string; connectionId: string }
 
@@ -25,6 +26,7 @@ export function FacebookOAuthResultModal({
   onConnected: () => void
 }) {
   const { t } = useTranslation('facebook')
+  const errorMessage = useApiErrorMessage('facebook')
   const toast = useToast()
   const pages = useAvailableFacebookPages(result?.brandId ?? null, result?.connectionId ?? null)
   const selectPages = useSelectFacebookPages(result?.brandId ?? null)
@@ -54,7 +56,7 @@ export function FacebookOAuthResultModal({
           toast.success({ title: t('oauth.connected') })
           onConnected()
         },
-        onError: () => toast.error({ title: t('oauth.selectError') }),
+        onError: (error) => toast.error({ title: errorMessage(error, t('oauth.selectError')) }),
       },
     )
   }, [onConnected, pages.data, pagesReady, result, selectPages, t, toast])
@@ -68,7 +70,7 @@ export function FacebookOAuthResultModal({
           toast.success({ title: t('oauth.connected') })
           onConnected()
         },
-        onError: () => toast.error({ title: t('oauth.selectError') }),
+        onError: (error) => toast.error({ title: errorMessage(error, t('oauth.selectError')) }),
       },
     )
   }

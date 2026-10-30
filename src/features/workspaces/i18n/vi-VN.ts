@@ -56,7 +56,6 @@ export const workspacesViVN = {
     inviteError: 'Không thể gửi lời mời.',
     inviteDescription:
       'Người được mời sẽ nhận email và xuất hiện ở đây sau khi chấp nhận. Mời lại cùng email sẽ thay thế lời mời trước.',
-    alreadyMember: 'Người này đã là thành viên của workspace.',
     you: 'Bạn',
     columns: {
       member: 'Thành viên',

@@ -53,7 +53,6 @@ export const workspacesEnUS = {
     inviteError: 'Could not send invitation.',
     inviteDescription:
       'They receive an email and appear here after accepting. Inviting the same email again replaces the earlier invitation.',
-    alreadyMember: 'This person is already a member of the workspace.',
     you: 'You',
     columns: {
       member: 'Member',

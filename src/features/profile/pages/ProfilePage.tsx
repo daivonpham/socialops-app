@@ -20,6 +20,7 @@ import {
 } from '@/shared/ui'
 import profileBanner from '@/assets/profile-banner.png'
 import { updateProfile, uploadAvatar } from '../api'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 type ProfileTab = 'details' | 'password' | 'connections'
 type ProfileValues = { displayName: string; email: string; locale: 'vi' | 'en' }
@@ -29,6 +30,7 @@ const MAX_AVATAR_BYTES = 5 * 1024 * 1024
 
 export default function ProfilePage() {
   const { t } = useTranslation('app')
+  const errorMessage = useApiErrorMessage('app')
   const { t: tCommon } = useTranslation('common')
   const toast = useToast()
   const { user, updateUser } = useAuth()
@@ -213,7 +215,11 @@ export default function ProfilePage() {
               </header>
               {profileMutation.isError ? (
                 <div className="mt-6">
-                  <Alert variant="soft" tone="error" title={t('profile.saveError')} />
+                  <Alert
+                    variant="soft"
+                    tone="error"
+                    title={errorMessage(profileMutation.error, t('profile.saveError'))}
+                  />
                 </div>
               ) : null}
               <Form.Item
@@ -326,7 +332,11 @@ export default function ProfilePage() {
           ) : null}
           <p className="text-body-sm text-text-secondary">{t('profile.avatarHint')}</p>
           {avatarMutation.isError ? (
-            <Alert variant="soft" tone="error" title={t('profile.avatarUploadError')} />
+            <Alert
+              variant="soft"
+              tone="error"
+              title={errorMessage(avatarMutation.error, t('profile.avatarUploadError'))}
+            />
           ) : null}
         </div>
       </Modal>

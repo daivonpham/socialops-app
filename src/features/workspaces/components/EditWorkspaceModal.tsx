@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Alert, Button, Form, Input, Modal, useToast } from '@/shared/ui'
 import { WORKSPACE_QUERY_KEYS, type WorkspaceDto, useUpdateWorkspace } from '../api'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 type Values = { name: string }
 
@@ -16,6 +17,7 @@ export function EditWorkspaceModal({
   onClose: () => void
 }) {
   const { t } = useTranslation('workspaces')
+  const errorMessage = useApiErrorMessage('workspaces')
   const [form] = Form.useForm<Values>()
   const queryClient = useQueryClient()
   const toast = useToast()
@@ -36,8 +38,8 @@ export function EditWorkspaceModal({
     if (!workspace) return
     try {
       await updateWorkspace.mutateAsync({ workspaceId: workspace.id, name: name.trim() })
-    } catch {
-      toast.error({ title: t('toast.updateError') })
+    } catch (error) {
+      toast.error({ title: errorMessage(error, t('toast.updateError')) })
       return
     }
     await queryClient.invalidateQueries({ queryKey: WORKSPACE_QUERY_KEYS.list() })
@@ -50,7 +52,11 @@ export function EditWorkspaceModal({
     <Modal open={open} title={t('editModal.title')} width={440} onClose={close} footer={null}>
       <Form<Values> form={form} layout="vertical" requiredMark={false} onFinish={submit}>
         {updateWorkspace.isError ? (
-          <Alert variant="soft" tone="error" title={t('editModal.error')} />
+          <Alert
+            variant="soft"
+            tone="error"
+            title={errorMessage(updateWorkspace.error, t('editModal.error'))}
+          />
         ) : null}
         <Form.Item
           name="name"

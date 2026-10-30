@@ -42,6 +42,7 @@ import {
   type PlanningComposerDraft,
   type PreviewViewport,
 } from '../model'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 export default function CreatePlanningPostPage() {
   const { t } = useTranslation('planning')
@@ -155,6 +156,7 @@ function PublishedPlanningEditor({
   requestedAccountId: string | null
 }) {
   const { t } = useTranslation('planning')
+  const errorMessage = useApiErrorMessage('planning')
   const navigate = useNavigate()
   const toast = useToast()
   const posted =
@@ -201,7 +203,7 @@ function PublishedPlanningEditor({
   })
   const [viewport, setViewport] = useState<PreviewViewport>('mobile')
   const [saving, setSaving] = useState(false)
-  const [saveError, setSaveError] = useState(false)
+  const [saveError, setSaveError] = useState<unknown>(null)
   const editCaption = useEditPublishedPlanningCaption(brandId)
   const supported =
     content.platform === 'facebook' &&
@@ -221,7 +223,7 @@ function PublishedPlanningEditor({
   const onSave = async () => {
     if (!canSave || saving) return
     setSaving(true)
-    setSaveError(false)
+    setSaveError(null)
     try {
       const results = await Promise.allSettled(
         changes.map((change) =>
@@ -232,14 +234,17 @@ function PublishedPlanningEditor({
           }),
         ),
       )
-      if (results.some((result) => result.status === 'rejected')) {
-        setSaveError(true)
+      const rejected = results.find(
+        (result): result is PromiseRejectedResult => result.status === 'rejected',
+      )
+      if (rejected) {
+        setSaveError(rejected.reason)
         return
       }
       toast.success({ title: t('detail.editPublishedSuccess') })
       navigate(planningPath)
-    } catch {
-      setSaveError(true)
+    } catch (error) {
+      setSaveError(error)
     } finally {
       setSaving(false)
     }
@@ -258,7 +263,11 @@ function PublishedPlanningEditor({
         <h1 className="text-heading-2 text-text-primary">{t('detail.editPublishedTitle')}</h1>
       </header>
       {saveError ? (
-        <Alert variant="soft" tone="error" title={t('detail.editPublishedError')} />
+        <Alert
+          variant="soft"
+          tone="error"
+          title={errorMessage(saveError, t('detail.editPublishedError'))}
+        />
       ) : null}
       {posted.some((publication) => ['edit_queued', 'editing'].includes(publication.status)) ? (
         <Alert variant="soft" tone="info" title={t('detail.editPublishedPending')} />
@@ -317,6 +326,7 @@ function PlanningComposerWorkspace({
   requestedPostType: PlanningPostType | null
 }) {
   const { t } = useTranslation('planning')
+  const errorMessage = useApiErrorMessage('planning')
   const navigate = useNavigate()
   const shouldSchedule =
     !content && Boolean(requestedDate && requestedDate !== toDateKey(new Date()))
@@ -338,7 +348,7 @@ function PlanningComposerWorkspace({
   const [uploading, setUploading] = useState(false)
   const [uploadPercent, setUploadPercent] = useState<number | null>(null)
   const submitting = useRef(false)
-  const [uploadFailed, setUploadFailed] = useState(false)
+  const [submitError, setSubmitError] = useState<unknown>(null)
   const createKey = useRef(crypto.randomUUID())
   const [previewAccountId, setPreviewAccountId] = useState('')
   const [initialIntent] = useState<PlanningPublishIntent>(() =>
@@ -353,7 +363,7 @@ function PlanningComposerWorkspace({
     if (submitting.current) return
     submitting.current = true
     setUploading(true)
-    setUploadFailed(false)
+    setSubmitError(null)
     try {
       const files = draft.media.filter((item) => item.file)
       const totalBytes = files.reduce((sum, item) => sum + item.file!.size, 0)
@@ -392,8 +402,8 @@ function PlanningComposerWorkspace({
         })
       }
       navigate(planningPath)
-    } catch {
-      setUploadFailed(true)
+    } catch (error) {
+      setSubmitError(error)
     } finally {
       submitting.current = false
       setUploading(false)
@@ -423,11 +433,14 @@ function PlanningComposerWorkspace({
         </div>
       </header>
 
-      {saveContent.isError || uploadFailed ? (
+      {saveContent.isError || submitError ? (
         <Alert
           variant="soft"
           tone="error"
-          title={content ? t('composer.updateError') : t('composer.submitError')}
+          title={errorMessage(
+            submitError ?? saveContent.error,
+            content ? t('composer.updateError') : t('composer.submitError'),
+          )}
         />
       ) : null}
 

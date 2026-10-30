@@ -19,9 +19,11 @@ import {
 import { WORKSPACE_QUERY_KEYS, type WorkspaceDto, useDeleteWorkspace, useWorkspaces } from '../api'
 import { CreateWorkspaceModal } from './CreateWorkspaceModal'
 import { EditWorkspaceModal } from './EditWorkspaceModal'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 export function ManageWorkspacesModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useTranslation('workspaces')
+  const errorMessage = useApiErrorMessage('workspaces')
   const queryClient = useQueryClient()
   const toast = useToast()
   const { workspaceId, setWorkspace } = useActiveWorkspace()
@@ -42,8 +44,8 @@ export function ManageWorkspacesModal({ open, onClose }: { open: boolean; onClos
     if (!workspaceToDelete) return
     try {
       await removeWorkspace.mutateAsync(workspaceToDelete.id)
-    } catch {
-      toast.error({ title: t('toast.deleteError') })
+    } catch (error) {
+      toast.error({ title: errorMessage(error, t('toast.deleteError')) })
       return
     }
     const remaining = (workspaces ?? []).filter((item) => item.id !== workspaceToDelete.id)
@@ -166,7 +168,11 @@ export function ManageWorkspacesModal({ open, onClose }: { open: boolean; onClos
           onChange={(event) => setDeleteConfirmation(event.target.value)}
         />
         {removeWorkspace.isError ? (
-          <Alert variant="soft" tone="error" title={t('deleteModal.error')} />
+          <Alert
+            variant="soft"
+            tone="error"
+            title={errorMessage(removeWorkspace.error, t('deleteModal.error'))}
+          />
         ) : null}
       </ConfirmDialog>
     </>

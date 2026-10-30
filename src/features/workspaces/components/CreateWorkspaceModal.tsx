@@ -3,11 +3,13 @@ import { useTranslation } from 'react-i18next'
 import { Alert, Button, Form, Input, Modal, useToast } from '@/shared/ui'
 import { useActiveWorkspace } from '@/shared/scope'
 import { WORKSPACE_QUERY_KEYS, type WorkspaceDto, useCreateWorkspace } from '../api'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 type Values = { name: string }
 
 export function CreateWorkspaceModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useTranslation('workspaces')
+  const errorMessage = useApiErrorMessage('workspaces')
   const [form] = Form.useForm<Values>()
   const queryClient = useQueryClient()
   const toast = useToast()
@@ -25,8 +27,8 @@ export function CreateWorkspaceModal({ open, onClose }: { open: boolean; onClose
     let workspace: WorkspaceDto
     try {
       workspace = await createWorkspace.mutateAsync({ name: name.trim() })
-    } catch {
-      toast.error({ title: t('toast.createError') })
+    } catch (error) {
+      toast.error({ title: errorMessage(error, t('toast.createError')) })
       return
     }
     await queryClient.invalidateQueries({ queryKey: WORKSPACE_QUERY_KEYS.list() })
@@ -40,7 +42,11 @@ export function CreateWorkspaceModal({ open, onClose }: { open: boolean; onClose
     <Modal open={open} title={t('createModal.title')} width={440} onClose={close} footer={null}>
       <Form<Values> form={form} layout="vertical" requiredMark={false} onFinish={submit}>
         {createWorkspace.isError ? (
-          <Alert variant="soft" tone="error" title={t('createModal.error')} />
+          <Alert
+            variant="soft"
+            tone="error"
+            title={errorMessage(createWorkspace.error, t('createModal.error'))}
+          />
         ) : null}
         <Form.Item
           name="name"

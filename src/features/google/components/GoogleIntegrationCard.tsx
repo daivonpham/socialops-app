@@ -5,13 +5,16 @@ import { Alert, Button, ConfirmDialog, IconGoogle, Spin, useToast } from '@/shar
 import {
   connectGoogleInPopup,
   GOOGLE_QUERY_KEYS,
+  isGoogleConsentCancelled,
   useDisconnectGoogle,
   useGoogleConnection,
 } from '../api'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 /** The user's Google account for Sheets exports: status, connect, reconnect, disconnect. */
 export function GoogleIntegrationCard() {
   const { t } = useTranslation('google')
+  const errorMessage = useApiErrorMessage('google')
   const toast = useToast()
   const client = useQueryClient()
   const connection = useGoogleConnection()
@@ -24,8 +27,8 @@ export function GoogleIntegrationCard() {
     connectGoogleInPopup()
       .then(() => toast.success({ title: t('integration.connectedToast') }))
       .catch((error: unknown) => {
-        if (error instanceof Error && error.message === 'GOOGLE_AUTH_CANCELLED') return
-        toast.error({ title: t('integration.error') })
+        if (isGoogleConsentCancelled(error)) return
+        toast.error({ title: errorMessage(error, t('integration.error')) })
       })
       .finally(() => {
         setConnecting(false)
@@ -93,7 +96,7 @@ export function GoogleIntegrationCard() {
               setConfirming(false)
               toast.success({ title: t('integration.disconnected') })
             },
-            onError: () => toast.error({ title: t('integration.error') }),
+            onError: (error) => toast.error({ title: errorMessage(error, t('integration.error')) }),
           })
         }
         onClose={() => setConfirming(false)}

@@ -1,11 +1,12 @@
 import { useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { isAxiosError } from 'axios'
 import { useTranslation } from 'react-i18next'
 import { formatDateTime } from '@/shared/i18n'
 import { Alert, Button, IconRefresh, useToast } from '@/shared/ui'
 import { useFacebookSyncStatus, useRequestFacebookSync } from '../api'
 import { persistentSyncIssues } from '../model/sync-issues'
+import { isApiErrorCode } from '@/shared/api/errors'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 const NON_DATA_KEYS = new Set(['integration', 'sync', 'available-pages'])
 
@@ -39,7 +40,7 @@ export function FacebookSyncBanner({ brandId }: { brandId: string }) {
   const { t, i18n } = useTranslation('facebook')
   const { data } = useRefreshOnSync(brandId)
   if (!data) return null
-  const backfilling = data.pages.filter((page) => !page.backfillCompleted).length
+  // Initial backfill runs silently; figures refresh on their own via useRefreshOnSync.
   const failing = persistentSyncIssues(data.pages)
   const rateLimitedOnly = failing.every((page) => page.status === 'rate_limited')
   const names = failing.map((page) => page.name)
@@ -51,14 +52,6 @@ export function FacebookSyncBanner({ brandId }: { brandId: string }) {
 
   return (
     <>
-      {backfilling ? (
-        <Alert
-          variant="soft"
-          tone="info"
-          title={t('sync.initialTitle')}
-          description={t('sync.initialDescription', { count: backfilling })}
-        />
-      ) : null}
       {failing.length ? (
         <Alert
           variant="soft"
@@ -81,6 +74,7 @@ export function FacebookSyncBanner({ brandId }: { brandId: string }) {
 
 export function FacebookSyncControl({ brandId }: { brandId: string }) {
   const { t, i18n } = useTranslation('facebook')
+  const errorMessage = useApiErrorMessage('facebook')
   const toast = useToast()
   const { data } = useFacebookSyncStatus(brandId)
   const refresh = useRequestFacebookSync(brandId)
@@ -109,10 +103,12 @@ export function FacebookSyncControl({ brandId }: { brandId: string }) {
             onSuccess: () => toast.success({ title: t('sync.refreshQueued') }),
             onError: (error) =>
               toast.error({
-                title:
-                  isAxiosError(error) && error.response?.status === 429
-                    ? t('sync.refreshTooSoon')
-                    : t('sync.refreshError'),
+                title: isApiErrorCode(error, [
+                  'FACEBOOK_SYNC_RECENTLY_REQUESTED',
+                  'RATE_LIMIT_EXCEEDED',
+                ])
+                  ? t('sync.refreshTooSoon')
+                  : errorMessage(error, t('sync.refreshError')),
               }),
           })
         }

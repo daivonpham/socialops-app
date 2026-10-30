@@ -43,6 +43,7 @@ not change with the locale.
 Engine + common formatters:  shared/i18n
 Provider + composition:      app/providers and app/i18n
 Feature-owned messages:      features/<feature>/i18n
+API/client error codes:      shared/i18n/errors (namespace `errors`), feature overrides under `errors.<CODE>`
 Locale identifiers:          allow-listed BCP 47 tags (for example en-US, vi-VN)
 Translation timing:          during render or an explicit runtime operation
 ```

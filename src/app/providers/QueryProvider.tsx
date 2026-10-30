@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { isAxiosError } from 'axios'
 import type { ReactNode } from 'react'
+import { getApiError } from '@/shared/api/errors'
 
 // App-wide Query defaults (frontend-admin-performance/data-fetching):
 // admin data is rarely per-second fresh, admins alt-tab constantly, and
@@ -12,7 +12,8 @@ const queryClient = new QueryClient({
       gcTime: 5 * 60_000,
       refetchOnWindowFocus: false,
       retry: (failureCount, error) => {
-        if (isAxiosError(error) && error.response && error.response.status < 500) return false
+        const { kind, status } = getApiError(error)
+        if (kind === 'cancelled' || (status !== undefined && status < 500)) return false
         return failureCount < 1
       },
     },

@@ -30,9 +30,11 @@ import { useReports } from '../api/hooks'
 import { deleteReport, duplicateReport } from '../api/service'
 import type { SavedReport } from '../api/types'
 import { ReportsShowcase } from '../components/ReportsShowcase'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 export default function ReportsPage() {
   const { t, i18n } = useTranslation('reports')
+  const errorMessage = useApiErrorMessage('reports')
   const navigate = useNavigate()
   const toast = useToast()
   const queryClient = useQueryClient()
@@ -54,8 +56,8 @@ export default function ReportsPage() {
       const copy = await duplicateReport(brandId, report.id)
       refresh()
       navigate(`/reports/${copy.id}`)
-    } catch {
-      toast.error({ title: t('list.actionError') })
+    } catch (error) {
+      toast.error({ title: errorMessage(error, t('list.actionError')) })
     }
   }
 
@@ -67,8 +69,8 @@ export default function ReportsPage() {
       toast.success({ title: t('list.deleted') })
       setToDelete(null)
       refresh()
-    } catch {
-      toast.error({ title: t('list.actionError') })
+    } catch (error) {
+      toast.error({ title: errorMessage(error, t('list.actionError')) })
     } finally {
       setDeleting(false)
     }

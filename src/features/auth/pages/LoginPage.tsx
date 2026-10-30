@@ -4,15 +4,18 @@ import { useTranslation } from 'react-i18next'
 import { Alert, Button, Form, IconGoogle, Input } from '@/shared/ui'
 import { useAuth } from '@/shared/auth'
 import { useLogin, useStartGoogleAuth } from '../api'
-import { getAuthErrorKey } from '../model/auth-error'
+import { PASSWORD_MAX_LENGTH } from '../model/password-policy'
 import { AuthLayout } from '../components/AuthLayout'
 import { AUTH_ROUTES } from '../config/auth.routes'
 import { rememberPendingInvitation } from '../model/pending-invitation'
+import { CodedError, parseErrorCode } from '@/shared/api/errors'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 type LoginFormValues = { email: string; password: string }
 
 export default function LoginPage() {
   const { t } = useTranslation('auth')
+  const errorMessage = useApiErrorMessage('auth')
   const [params] = useSearchParams()
   const { authenticate } = useAuth()
   const login = useLogin()
@@ -65,10 +68,16 @@ export default function LoginPage() {
         onFinish={submit}
       >
         {params.get('oauth') === 'failed' ? (
-          <Alert variant="soft" tone="error" title={t('errors.GOOGLE_AUTH_FAILED')} />
+          <Alert
+            variant="soft"
+            tone="error"
+            title={errorMessage(
+              new CodedError(parseErrorCode(params.get('error'), 'GOOGLE_AUTH_FAILED')),
+            )}
+          />
         ) : null}
         {login.isError ? (
-          <Alert variant="soft" tone="error" title={t(getAuthErrorKey(login.error))} />
+          <Alert variant="soft" tone="error" title={errorMessage(login.error)} />
         ) : null}
         <Form.Item
           name="email"
@@ -91,7 +100,10 @@ export default function LoginPage() {
           label={t('fields.password')}
           rules={[
             { required: true, message: t('validation.passwordRequired') },
-            { max: 128, message: t('validation.passwordMax') },
+            {
+              max: PASSWORD_MAX_LENGTH,
+              message: t('validation.passwordMax', { max: PASSWORD_MAX_LENGTH }),
+            },
           ]}
         >
           <Input

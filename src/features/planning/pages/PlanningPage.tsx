@@ -3,11 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 import { useSocialAccountCounts } from '@/features/social-accounts'
-import { useUrlFilters } from '@/shared/hooks'
+import { useApiErrorMessage, useUrlFilters } from '@/shared/hooks'
 import { hasPermission, usePermissions } from '@/shared/permissions'
 import { useActiveBrand } from '@/shared/scope'
 import {
-  Button,
   EmptyState,
   IconCalendar,
   SectionError,
@@ -57,6 +56,7 @@ import { PlanningPostModal } from '../components/PlanningPostDrawer'
 
 export default function PlanningPage() {
   const { t } = useTranslation('planning')
+  const errorMessage = useApiErrorMessage('planning')
   const toast = useToast()
   const navigate = useNavigate()
   const { brandId } = useActiveBrand()
@@ -197,7 +197,7 @@ export default function PlanningPage() {
   if (connectedAccountCount === 0) {
     return (
       <PlanningState
-        icon={<IconCalendar />}
+        icon={<IconCalendar className="text-[35px] text-text-tertiary" aria-hidden />}
         title={t('states.noAccountsTitle')}
         description={t('states.noAccountsDescription')}
       />
@@ -235,19 +235,7 @@ export default function PlanningPage() {
         </div>
       </div>
 
-      {view === 'calendar' && contents.length === 0 ? (
-        <div className="rounded-xl border border-border-subtle bg-bg-surface py-12">
-          <EmptyState
-            title={t('states.emptyTitle')}
-            description={t('states.emptyDescription')}
-            action={
-              hasActiveFilters ? (
-                <Button onClick={clearFilters}>{t('filters.clear')}</Button>
-              ) : undefined
-            }
-          />
-        </div>
-      ) : view === 'calendar' ? (
+      {view === 'calendar' ? (
         <PlanningCalendar
           brandId={brandId}
           contents={contents}
@@ -295,7 +283,7 @@ export default function PlanningPage() {
             setSelectedContent(null)
             toast.success({ title: t('detail.cancelSuccess') })
           } catch (error) {
-            toast.error({ title: t('detail.cancelError') })
+            toast.error({ title: errorMessage(error, t('detail.cancelError')) })
             throw error
           }
         }}
@@ -305,8 +293,8 @@ export default function PlanningPage() {
             const response = await retryPublication.mutateAsync({ brandId, publicationId })
             setSelectedContent(response.data)
             toast.success({ title: t('detail.retrySuccess') })
-          } catch {
-            toast.error({ title: t('detail.retryError') })
+          } catch (error) {
+            toast.error({ title: errorMessage(error, t('detail.retryError')) })
           }
         }}
         onRetryFailed={async (contentId) => {
@@ -318,8 +306,8 @@ export default function PlanningPage() {
             const queued = response.data.results.filter((item) => item.outcome === 'queued').length
             if (queued) toast.success({ title: t('detail.retryAllResult', { queued }) })
             else toast.error({ title: t('detail.retryNone') })
-          } catch {
-            toast.error({ title: t('detail.retryError') })
+          } catch (error) {
+            toast.error({ title: errorMessage(error, t('detail.retryError')) })
           }
         }}
         onDeleteAll={async (contentId) => {
@@ -338,7 +326,7 @@ export default function PlanningPage() {
             if (failed) toast.error({ title: t('detail.deleteAllPartial', { deleted, failed }) })
             else toast.success({ title: t('detail.deleteAllSuccess', { deleted }) })
           } catch (error) {
-            toast.error({ title: t('detail.deleteAllError') })
+            toast.error({ title: errorMessage(error, t('detail.deleteAllError')) })
             throw error
           }
         }}
@@ -358,7 +346,7 @@ export default function PlanningPage() {
             )
             toast.success({ title: t('detail.deletePublishedSuccess') })
           } catch (error) {
-            toast.error({ title: t('detail.deletePublishedError') })
+            toast.error({ title: errorMessage(error, t('detail.deletePublishedError')) })
             throw error
           }
         }}
@@ -372,8 +360,8 @@ export default function PlanningPage() {
             })
             setSelectedContent(response.data)
             toast.success({ title: t('detail.retryEditSuccess') })
-          } catch {
-            toast.error({ title: t('detail.editActionError') })
+          } catch (error) {
+            toast.error({ title: errorMessage(error, t('detail.editActionError')) })
           }
         }}
         onDismissEdit={async (publicationId) => {
@@ -382,8 +370,8 @@ export default function PlanningPage() {
             const response = await dismissEdit.mutateAsync({ brandId, publicationId })
             setSelectedContent(response.data)
             toast.success({ title: t('detail.dismissEditSuccess') })
-          } catch {
-            toast.error({ title: t('detail.editActionError') })
+          } catch (error) {
+            toast.error({ title: errorMessage(error, t('detail.editActionError')) })
           }
         }}
         onDiscardUnknown={async (publicationId) => {
@@ -403,7 +391,7 @@ export default function PlanningPage() {
               ),
             })
           } catch (error) {
-            toast.error({ title: t('detail.discardUnknownError') })
+            toast.error({ title: errorMessage(error, t('detail.discardUnknownError')) })
             throw error
           }
         }}
@@ -423,7 +411,13 @@ function PlanningState({
 }) {
   return (
     <div className="py-8 md:py-16">
-      <EmptyState icon={icon} title={title} description={description} />
+      <EmptyState
+        icon={
+          icon ? <span className="flex h-full items-end justify-center">{icon}</span> : undefined
+        }
+        title={title}
+        description={description}
+      />
     </div>
   )
 }

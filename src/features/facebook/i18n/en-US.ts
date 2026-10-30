@@ -53,9 +53,6 @@ export const facebookEnUS = {
     refreshQueued: 'Refresh requested. New data will appear shortly.',
     refreshTooSoon: 'Data was refreshed recently. Try again in a few minutes.',
     refreshError: "We couldn't request a refresh.",
-    initialTitle: 'Syncing Facebook data for the first time',
-    initialDescription:
-      'SocialOps is importing history for {{count}} Page(s). Figures update automatically when it finishes.',
     issueTitle: '{{count}} Page(s) could not sync',
     issueDescription:
       'Figures for {{pages}} may be out of date. SocialOps keeps retrying; reconnect Facebook if the problem persists.',

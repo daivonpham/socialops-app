@@ -81,6 +81,11 @@ a stable error code plus structured parameters; map the code to a frontend
 translation key. Unknown errors use one localized generic fallback and may log
 the original diagnostic outside the visible UI.
 
+In this app every code lives in the `errors` namespace (`src/shared/i18n/errors`),
+and screens translate through `useApiErrorMessage(ns)(error, fallback)`; a feature
+overrides a code under its own `errors.<CODE>` key. See
+`frontend-shared-platform/references/api-errors.md`.
+
 Validation schemas should produce stable error codes/keys or obtain the active
 translator at schema creation time. Do not create a module-level schema whose
 messages were translated once and then fail to update after a language change.

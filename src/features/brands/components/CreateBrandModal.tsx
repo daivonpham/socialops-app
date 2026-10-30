@@ -4,9 +4,11 @@ import { useToast } from '@/shared/ui'
 import { useActiveBrand, useActiveWorkspace } from '@/shared/scope'
 import { BRAND_QUERY_KEYS, type BrandDto, useCreateBrand, useUploadBrandAvatar } from '../api'
 import { BrandFormModal, type BrandFormSubmit } from './BrandFormModal'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 export function CreateBrandModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useTranslation('brands')
+  const errorMessage = useApiErrorMessage('brands')
   const queryClient = useQueryClient()
   const toast = useToast()
   const { workspaceId } = useActiveWorkspace()
@@ -31,8 +33,8 @@ export function CreateBrandModal({ open, onClose }: { open: boolean; onClose: ()
         name,
         slug: `${slugify(name)}-${crypto.randomUUID().slice(0, 6)}`,
       })
-    } catch {
-      toast.error({ title: t('toast.createError') })
+    } catch (error) {
+      toast.error({ title: errorMessage(error, t('toast.createError')) })
       return
     }
     if (avatar) {
@@ -54,7 +56,7 @@ export function CreateBrandModal({ open, onClose }: { open: boolean; onClose: ()
       open={open}
       pending={pending}
       disabled={workspaceId === null}
-      error={createBrand.isError}
+      error={createBrand.error}
       onClose={close}
       onSubmit={submit}
     />

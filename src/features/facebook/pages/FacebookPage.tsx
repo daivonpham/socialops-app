@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { SOCIAL_ACCOUNT_QUERY_KEYS } from '@/features/social-accounts'
-import { useUrlFilters } from '@/shared/hooks'
+import { useApiErrorMessage, useUrlFilters } from '@/shared/hooks'
 import { hasPermission, usePermissions } from '@/shared/permissions'
 import { useActiveBrand } from '@/shared/scope'
 import {
@@ -37,6 +37,7 @@ import { FacebookPageSwitcher } from '../components/FacebookPageSwitcher'
 import { FacebookSyncBanner, FacebookSyncControl } from '../components/FacebookSyncStatus'
 import { OverviewTab } from '../components/OverviewTab'
 import { FACEBOOK_ACCESS } from '../config/facebook-access'
+import { CodedError, parseErrorCode } from '@/shared/api/errors'
 
 const DEFAULT_FILTERS = {
   tab: 'overview',
@@ -49,6 +50,7 @@ const DEFAULT_FILTERS = {
 
 export default function FacebookPage() {
   const { t } = useTranslation('facebook')
+  const errorMessage = useApiErrorMessage('facebook')
   const toast = useToast()
   const queryClient = useQueryClient()
   const { brandId } = useActiveBrand()
@@ -74,7 +76,12 @@ export default function FacebookPage() {
       }
       if (message?.type !== 'socialops.facebook.oauth') return
       if (message.error || !message.brandId || !message.connectionId) {
-        toast.error({ title: t('oauth.failed') })
+        toast.error({
+          title: errorMessage(
+            new CodedError(parseErrorCode(message.error, 'FACEBOOK_OAUTH_FAILED')),
+            t('oauth.failed'),
+          ),
+        })
         return
       }
       if (message.brandId !== brandId) return
@@ -104,7 +111,7 @@ export default function FacebookPage() {
   const startConnect = () =>
     connect.mutate(
       { brandId: brandId! },
-      { onError: () => toast.error({ title: t('oauth.startError') }) },
+      { onError: (error) => toast.error({ title: errorMessage(error, t('oauth.startError')) }) },
     )
 
   const oauthModal = (

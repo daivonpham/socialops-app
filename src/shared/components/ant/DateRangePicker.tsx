@@ -20,7 +20,6 @@ export function DateRangePicker({ value, presets, onChange, ...props }: DateRang
       format={getDatePickerFormat(i18n.resolvedLanguage)}
       allowClear={false}
       inputReadOnly
-      needConfirm
       popupClassName="app-date-range-picker-popup"
       onChange={(dates) =>
         onChange?.(

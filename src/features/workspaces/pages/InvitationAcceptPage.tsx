@@ -1,5 +1,4 @@
 import { useEffect, type ReactNode } from 'react'
-import { isAxiosError } from 'axios'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { AUTH_ROUTES, forgetPendingInvitation } from '@/features/auth'
@@ -15,6 +14,8 @@ import {
 } from '@/shared/ui'
 import { useAcceptInvitation, useDeclineInvitation, useInvitationPreview } from '../api'
 import { useEnterWorkspace } from '../model/use-enter-workspace'
+import { isApiErrorCode } from '@/shared/api/errors'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 /**
  * GitHub-style invitation landing page: anyone holding the email link can see who invited
@@ -22,6 +23,7 @@ import { useEnterWorkspace } from '../model/use-enter-workspace'
  */
 export default function InvitationAcceptPage() {
   const { t } = useTranslation('workspaces')
+  const errorMessage = useApiErrorMessage('workspaces')
   const navigate = useNavigate()
   const toast = useToast()
   const [params] = useSearchParams()
@@ -49,8 +51,8 @@ export default function InvitationAcceptPage() {
       await enterWorkspace(workspaceId)
       toast.success({ title: t('invitation.accepted', { workspace }) })
       navigate(AUTH_ROUTES.POST_AUTH, { replace: true })
-    } catch {
-      toast.error({ title: t('invitation.actionError') })
+    } catch (error) {
+      toast.error({ title: errorMessage(error, t('invitation.actionError')) })
     }
   }
 
@@ -61,17 +63,21 @@ export default function InvitationAcceptPage() {
         toast.success({ title: t('invitation.declined') })
         navigate(AUTH_ROUTES.POST_AUTH, { replace: true })
       },
-      onError: () => toast.error({ title: t('invitation.actionError') }),
+      onError: (error) => toast.error({ title: errorMessage(error, t('invitation.actionError')) }),
     })
   }
 
   if (!token || preview.isError) {
     const notFound =
-      !token || (isAxiosError(preview.error) && preview.error.response?.status === 404)
+      !token || isApiErrorCode(preview.error, ['INVALID_INVITATION', 'RESOURCE_NOT_FOUND'])
     return (
       <InvitationShell>
         <ClosedState
-          title={notFound ? t('invitation.invalidTitle') : t('invitation.actionError')}
+          title={
+            notFound
+              ? t('invitation.invalidTitle')
+              : errorMessage(preview.error, t('invitation.actionError'))
+          }
           description={notFound ? t('invitation.invalidDescription') : ''}
         />
       </InvitationShell>

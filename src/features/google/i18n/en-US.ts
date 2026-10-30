@@ -3,8 +3,6 @@ export const googleEnUS = {
     completing: 'Connecting your Google account…',
     connected: 'Google account connected. You can close this window.',
     failed: 'Google account could not be connected.',
-    permissionMissing:
-      'SocialOps needs access to the files it creates in Google Drive. Connect again and keep that box ticked.',
     back: 'Back to reports',
   },
   integration: {
@@ -24,5 +22,10 @@ export const googleEnUS = {
     connectedToast: 'Google account connected.',
     error: 'Something went wrong with Google. Please try again.',
     loadError: 'Google connection could not be loaded.',
+  },
+  errors: {
+    GOOGLE_AUTH_FAILED: 'Google account could not be connected.',
+    GOOGLE_PERMISSION_MISSING:
+      'SocialOps needs access to the files it creates in Google Drive. Connect again and keep that box ticked.',
   },
 } as const

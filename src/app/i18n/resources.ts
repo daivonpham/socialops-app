@@ -9,12 +9,13 @@ import { OVERVIEW_I18N } from '@/features/overview'
 import { PRIVACY_I18N } from '@/features/privacy'
 import { REPORTS_I18N } from '@/features/reports'
 import { GOOGLE_I18N } from '@/features/google'
-import { commonEnUS, commonViVN } from '@/shared/i18n'
+import { commonEnUS, commonViVN, errorsEnUS, errorsViVN } from '@/shared/i18n'
 import { appEnUS } from './en-US'
 import { appViVN } from './vi-VN'
 
 export const defaultResources = {
   common: commonEnUS,
+  errors: errorsEnUS,
   app: appEnUS,
   auth: AUTH_I18N['en-US'],
   brands: BRANDS_I18N['en-US'],
@@ -33,6 +34,7 @@ export const resources = {
   'en-US': defaultResources,
   'vi-VN': {
     common: commonViVN,
+    errors: errorsViVN,
     app: appViVN,
     auth: AUTH_I18N['vi-VN'],
     brands: BRANDS_I18N['vi-VN'],

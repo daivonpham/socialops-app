@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useAuth } from '@/shared/auth'
 import { Alert, Button, Form, Input, useToast } from '@/shared/ui'
 import { useChangePassword } from '../api'
-import { getAuthErrorKey } from '../model/auth-error'
+import { SetPasswordPanel } from '../components/SetPasswordPanel'
+import { useNewPasswordRules } from '../model/password-policy'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 type ChangePasswordValues = {
   currentPassword: string
@@ -11,7 +14,15 @@ type ChangePasswordValues = {
 }
 
 export default function ChangePasswordPage({ embedded = false }: { embedded?: boolean }) {
+  const { user } = useAuth()
+  if (user && !user.hasPassword) return <SetPasswordPanel email={user.email} embedded={embedded} />
+  return <ChangePasswordForm embedded={embedded} />
+}
+
+function ChangePasswordForm({ embedded }: { embedded: boolean }) {
   const { t } = useTranslation('auth')
+  const errorMessage = useApiErrorMessage('auth')
+  const newPasswordRules = useNewPasswordRules()
   const toast = useToast()
   const change = useChangePassword()
   const [form] = Form.useForm<ChangePasswordValues>()
@@ -70,7 +81,7 @@ export default function ChangePasswordPage({ embedded = false }: { embedded?: bo
         </header>
         {change.isError ? (
           <div className="mt-6">
-            <Alert variant="soft" tone="error" title={t(getAuthErrorKey(change.error))} />
+            <Alert variant="soft" tone="error" title={errorMessage(change.error)} />
           </div>
         ) : null}
         <Form.Item
@@ -85,11 +96,7 @@ export default function ChangePasswordPage({ embedded = false }: { embedded?: bo
           className="mb-0 border-b border-border-subtle py-6"
           name="newPassword"
           label={t('fields.newPassword')}
-          rules={[
-            { required: true, message: t('validation.passwordRequired') },
-            { min: 12, message: t('validation.passwordMin') },
-            { max: 128, message: t('validation.passwordMax') },
-          ]}
+          rules={newPasswordRules}
         >
           <Input type="password" size="lg" autoComplete="new-password" />
         </Form.Item>

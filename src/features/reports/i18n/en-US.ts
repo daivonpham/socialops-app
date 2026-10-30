@@ -118,7 +118,6 @@ export const reportsEnUS = {
     save: 'Save report',
     saved: 'Report saved.',
     saveError: 'The report could not be saved.',
-    conflict: 'Someone else changed this report. Reload it to see their version.',
     export: 'Export',
     excel: 'Excel (.xlsx)',
     csv: 'CSV (.zip)',
@@ -145,9 +144,6 @@ export const reportsEnUS = {
     sheetsCreated: 'Google Sheets file created in your Drive.',
     openSheet: 'Open spreadsheet',
     sheetsError: 'The Google Sheets file could not be created. Please try again.',
-    sheetsBusy: 'Google is busy. Please try again in a few minutes.',
-    sheetsUnavailable:
-      'Google Sheets export is not enabled yet. Please contact your administrator.',
     sheetsReconnect: 'Google access expired. Export again to reconnect Google.',
     generatedFor: '{{brand}} · {{since}} – {{until}}',
     comparedWith: 'Compared with {{since}} – {{until}}',
@@ -319,5 +315,25 @@ export const reportsEnUS = {
     missing_history: 'Some days are earlier than the available history.',
     post_metrics_frozen: 'Posts older than 90 days use their last updated metrics.',
     audience_current: 'Audience reflects current followers, not the report period.',
+  },
+  errors: {
+    REPORT_VERSION_CONFLICT: 'Someone else changed this report. Reload it to see their version.',
+    GOOGLE_SHEETS_NOT_ENABLED:
+      'Google Sheets export is not enabled yet. Please contact your administrator.',
+    OAUTH_NOT_CONFIGURED:
+      'Google Sheets export is not enabled yet. Please contact your administrator.',
+    GOOGLE_RATE_LIMITED: 'Google is busy. Please try again in a few minutes.',
+    PAGE_DISCONNECTED: 'A channel is disconnected. Reconnect it to include its data.',
+    FACEBOOK_PAGE_DISCONNECTED: 'A channel is disconnected. Reconnect it to include its data.',
+    FACEBOOK_CONNECTION_UNAVAILABLE: 'A channel connection needs to be renewed.',
+    FACEBOOK_PAGE_TOKEN_MISSING: 'A channel needs to be reconnected.',
+    FACEBOOK_TOKEN_MISSING: 'A channel needs to be reconnected.',
+    FACEBOOK_TOKEN_EXPIRED: 'A channel connection expired. Reconnect it.',
+    FACEBOOK_PERMISSION_MISSING: 'A channel is missing permissions. Grant them again.',
+    FACEBOOK_POST_LIST_TOO_LARGE: 'This period has too many posts. Choose a shorter period.',
+    FACEBOOK_RATE_LIMITED: 'The platform is limiting requests. Try again in a few minutes.',
+    FACEBOOK_UNAVAILABLE: 'The platform is temporarily unavailable.',
+    FACEBOOK_REQUEST_FAILED: 'The platform rejected the request.',
+    FACEBOOK_SYNC_FAILED: 'Channel data could not be synced.',
   },
 } as const

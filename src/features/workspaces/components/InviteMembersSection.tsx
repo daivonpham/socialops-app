@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { isAxiosError } from 'axios'
 import { useTranslation } from 'react-i18next'
 import { Button, IconClose, IconMail, IconPlus, Input, Select, useToast } from '@/shared/ui'
 import {
@@ -11,6 +10,7 @@ import {
 import { grantableRoles, isAccessComplete, type InvitableRole } from '../model/member-role'
 import { AccessPickerModal } from './AccessPickerModal'
 import { AccessSummary } from './AccessSummary'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -23,7 +23,8 @@ type InviteRow = {
   email: string
   role: InvitableRole
   access: BrandAccessInput[]
-  error?: 'alreadyMember' | 'failed'
+  /** Translated reason the last send failed; cleared when the row is edited. */
+  error?: string
 }
 
 const newRow = (): InviteRow => ({
@@ -46,6 +47,7 @@ export function InviteMembersSection({
   brandNames: Map<string, string>
 }) {
   const { t } = useTranslation('workspaces')
+  const errorMessage = useApiErrorMessage('workspaces')
   const toast = useToast()
   const invite = useInviteWorkspaceMember()
   const [rows, setRows] = useState<InviteRow[]>(() => [newRow()])
@@ -79,13 +81,7 @@ export function InviteMembersSection({
     const failed = new Map<string, InviteRow['error']>()
     results.forEach((result, index) => {
       if (result.status === 'fulfilled') return
-      const code = isAxiosError<{ error?: { code?: string } }>(result.reason)
-        ? result.reason.response?.data?.error?.code
-        : undefined
-      failed.set(
-        filled[index]!.id,
-        code === 'ALREADY_WORKSPACE_MEMBER' ? 'alreadyMember' : 'failed',
-      )
+      failed.set(filled[index]!.id, errorMessage(result.reason, t('members.inviteError')))
     })
     const sent = filled.length - failed.size
     if (sent) toast.success({ title: t('members.invitesSent') })
@@ -161,13 +157,7 @@ export function InviteMembersSection({
                 onClick={() => setRows((current) => current.filter((item) => item.id !== row.id))}
               />
             </div>
-            {row.error ? (
-              <p className="text-caption text-error-700">
-                {row.error === 'alreadyMember'
-                  ? t('members.alreadyMember')
-                  : t('members.inviteError')}
-              </p>
-            ) : null}
+            {row.error ? <p className="text-caption text-error-700">{row.error}</p> : null}
           </li>
         ))}
       </ul>

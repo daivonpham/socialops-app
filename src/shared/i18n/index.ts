@@ -1,5 +1,7 @@
 export { commonEnUS } from './en-US'
 export { commonViVN } from './vi-VN'
+export { errorsEnUS } from './errors/en-US'
+export { errorsViVN } from './errors/vi-VN'
 export { formatCountryLabel } from './countries'
 export { i18n, initializeI18n } from './config'
 export {

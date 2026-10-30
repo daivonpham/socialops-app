@@ -1,20 +1,21 @@
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, Button, Input } from '@/shared/ui'
+import { Alert, Button, Form, Input } from '@/shared/ui'
 import { useForgotPassword } from '../api'
 import { AuthLayout } from '../components/AuthLayout'
 import { BackToLoginLink } from '../components/BackToLoginLink'
+import { useApiErrorMessage } from '@/shared/hooks'
+
+type ForgotPasswordValues = { email: string }
 
 export default function ForgotPasswordPage() {
   const { t } = useTranslation('auth')
+  const errorMessage = useApiErrorMessage('auth')
   const request = useForgotPassword()
   const [submitted, setSubmitted] = useState(false)
 
-  const submit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    const form = new FormData(event.currentTarget)
-    request.mutate({ email: String(form.get('email')) }, { onSuccess: () => setSubmitted(true) })
-  }
+  const submit = (values: ForgotPasswordValues) =>
+    request.mutate(values, { onSuccess: () => setSubmitted(true) })
 
   return (
     <AuthLayout
@@ -25,24 +26,35 @@ export default function ForgotPasswordPage() {
       {submitted ? (
         <Alert tone="success" variant="soft" title={t('forgot.success')} />
       ) : (
-        <form className="grid gap-5" onSubmit={submit}>
+        <Form<ForgotPasswordValues> layout="vertical" requiredMark={false} onFinish={submit}>
           {request.isError ? (
-            <Alert variant="soft" tone="error" title={t('errors.UNKNOWN')} />
+            <Alert variant="soft" tone="error" title={errorMessage(request.error)} />
           ) : null}
-          <Input
-            id="forgot-email"
+          <Form.Item
             name="email"
-            type="email"
-            size="lg"
             label={t('fields.email')}
-            placeholder={t('fields.emailPlaceholder')}
-            autoComplete="email"
-            required
-          />
-          <Button variant="primary" size="lg" htmlType="submit" loading={request.isPending}>
+            rules={[
+              { required: true, message: t('validation.emailRequired') },
+              Form.rules.email(t('validation.emailInvalid')),
+            ]}
+          >
+            <Input
+              type="email"
+              size="lg"
+              placeholder={t('fields.emailPlaceholder')}
+              autoComplete="email"
+            />
+          </Form.Item>
+          <Button
+            variant="primary"
+            size="lg"
+            htmlType="submit"
+            className="w-full"
+            loading={request.isPending}
+          >
             {t('forgot.submit')}
           </Button>
-        </form>
+        </Form>
       )}
     </AuthLayout>
   )

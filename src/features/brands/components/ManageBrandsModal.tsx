@@ -19,9 +19,11 @@ import {
 import { BRAND_QUERY_KEYS, type BrandDto, useBrands, useDeleteBrand } from '../api'
 import { CreateBrandModal } from './CreateBrandModal'
 import { EditBrandModal } from './EditBrandModal'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 export function ManageBrandsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useTranslation('brands')
+  const errorMessage = useApiErrorMessage('brands')
   const queryClient = useQueryClient()
   const toast = useToast()
   const { workspaceId, setWorkspace } = useActiveWorkspace()
@@ -42,8 +44,8 @@ export function ManageBrandsModal({ open, onClose }: { open: boolean; onClose: (
     if (!brandToDelete || !workspaceId) return
     try {
       await removeBrand.mutateAsync(brandToDelete.id)
-    } catch {
-      toast.error({ title: t('toast.deleteError') })
+    } catch (error) {
+      toast.error({ title: errorMessage(error, t('toast.deleteError')) })
       return
     }
 
@@ -157,7 +159,11 @@ export function ManageBrandsModal({ open, onClose }: { open: boolean; onClose: (
           onChange={(event) => setDeleteConfirmation(event.target.value)}
         />
         {removeBrand.isError ? (
-          <Alert variant="soft" tone="error" title={t('deleteModal.error')} />
+          <Alert
+            variant="soft"
+            tone="error"
+            title={errorMessage(removeBrand.error, t('deleteModal.error'))}
+          />
         ) : null}
       </ConfirmDialog>
     </>

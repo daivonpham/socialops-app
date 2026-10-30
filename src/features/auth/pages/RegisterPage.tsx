@@ -5,33 +5,20 @@ import { Alert, Button, Form, IconGoogle, Input } from '@/shared/ui'
 import { useAuth } from '@/shared/auth'
 import { useLogin, useRegister, useStartGoogleAuth } from '../api'
 import type { RegisterInput } from '../api'
-import { getAuthErrorKey } from '../model/auth-error'
+import { useNewPasswordRules } from '../model/password-policy'
 import { AuthLayout } from '../components/AuthLayout'
 import { BackToLoginLink } from '../components/BackToLoginLink'
 import { AUTH_ROUTES } from '../config/auth.routes'
+import { getInboxUrl } from '../model/inbox-url'
 import { rememberPendingInvitation } from '../model/pending-invitation'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 type RegisterFormValues = { name: string; email: string; password: string }
 
-function getInboxUrl(email: string | undefined) {
-  const domain = email?.split('@')[1]?.toLowerCase()
-
-  if (domain === 'gmail.com' || domain === 'googlemail.com') return 'https://mail.google.com/'
-  if (domain && ['outlook.com', 'hotmail.com', 'live.com', 'msn.com'].includes(domain)) {
-    return 'https://outlook.live.com/mail/'
-  }
-  if (domain === 'yahoo.com') return 'https://mail.yahoo.com/'
-  if (domain && ['icloud.com', 'me.com', 'mac.com'].includes(domain)) {
-    return 'https://www.icloud.com/mail/'
-  }
-  if (domain === 'proton.me' || domain === 'protonmail.com') return 'https://mail.proton.me/'
-  if (domain === 'zoho.com') return 'https://mail.zoho.com/'
-
-  return null
-}
-
 export default function RegisterPage() {
   const { t } = useTranslation('auth')
+  const errorMessage = useApiErrorMessage('auth')
+  const newPasswordRules = useNewPasswordRules()
   const register = useRegister()
   const resend = useRegister()
   const google = useStartGoogleAuth()
@@ -114,7 +101,9 @@ export default function RegisterPage() {
               <p className="mt-2 text-success-700">{t('register.resendSuccess')}</p>
             ) : null}
             {resend.isError ? (
-              <p className="mt-2 text-error-700">{t('register.resendError')}</p>
+              <p className="mt-2 text-error-700">
+                {errorMessage(resend.error, t('register.resendError'))}
+              </p>
             ) : null}
           </div>
 
@@ -153,7 +142,7 @@ export default function RegisterPage() {
         onFinish={submit}
       >
         {register.isError ? (
-          <Alert variant="soft" tone="error" title={t(getAuthErrorKey(register.error))} />
+          <Alert variant="soft" tone="error" title={errorMessage(register.error)} />
         ) : null}
         <Form.Item
           name="name"
@@ -191,12 +180,8 @@ export default function RegisterPage() {
         <Form.Item
           name="password"
           label={t('fields.password')}
-          // extra={t('register.passwordHint')}
-          rules={[
-            { required: true, message: t('validation.passwordRequired') },
-            { min: 12, message: t('validation.passwordMin') },
-            { max: 128, message: t('validation.passwordMax') },
-          ]}
+          // extra={t('register.passwordHint', { min: PASSWORD_MIN_LENGTH })}
+          rules={newPasswordRules}
         >
           <Input
             type="password"

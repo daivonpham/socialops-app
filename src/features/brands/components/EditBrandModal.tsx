@@ -1,13 +1,9 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '@/shared/ui'
-import {
-  BRAND_QUERY_KEYS,
-  type BrandDto,
-  useUpdateBrand,
-  useUploadBrandAvatar,
-} from '../api'
+import { BRAND_QUERY_KEYS, type BrandDto, useUpdateBrand, useUploadBrandAvatar } from '../api'
 import { BrandFormModal, type BrandFormSubmit } from './BrandFormModal'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 export function EditBrandModal({
   brand,
@@ -19,6 +15,7 @@ export function EditBrandModal({
   onClose: () => void
 }) {
   const { t } = useTranslation('brands')
+  const errorMessage = useApiErrorMessage('brands')
   const queryClient = useQueryClient()
   const toast = useToast()
   const updateBrand = useUpdateBrand()
@@ -37,8 +34,8 @@ export function EditBrandModal({
     try {
       await updateBrand.mutateAsync({ brandId: brand.id, name })
       if (avatar) await uploadAvatar.mutateAsync({ brandId: brand.id, avatar })
-    } catch {
-      toast.error({ title: t('toast.updateError') })
+    } catch (error) {
+      toast.error({ title: errorMessage(error, t('toast.updateError')) })
       return
     } finally {
       await Promise.all([
@@ -58,7 +55,7 @@ export function EditBrandModal({
       avatarUrl={brand?.avatarUrl}
       pending={pending}
       disabled={!brand}
-      error={updateBrand.isError || uploadAvatar.isError}
+      error={updateBrand.error ?? uploadAvatar.error}
       onClose={close}
       onSubmit={submit}
     />

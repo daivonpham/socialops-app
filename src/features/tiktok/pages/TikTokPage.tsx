@@ -21,9 +21,12 @@ import {
   useDisconnectTikTok,
   useTikTokIntegration,
 } from '../api'
+import { CodedError, parseErrorCode } from '@/shared/api/errors'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 export default function TikTokPage() {
   const { t } = useTranslation('tiktok')
+  const errorMessage = useApiErrorMessage('tiktok')
   const { brandId } = useActiveBrand()
   const { granted } = usePermissions()
   const toast = useToast()
@@ -45,7 +48,12 @@ export default function TikTokPage() {
       }
       if (result?.type !== 'socialops.tiktok.oauth') return
       if (result.error) {
-        toast.error({ title: t('oauthFailed') })
+        toast.error({
+          title: errorMessage(
+            new CodedError(parseErrorCode(result.error, 'TIKTOK_OAUTH_FAILED')),
+            t('oauthFailed'),
+          ),
+        })
         return
       }
       if (result.brandId !== brandId || !result.accountId) return
@@ -111,7 +119,9 @@ export default function TikTokPage() {
               variant="primary"
               loading={connect.isPending}
               onClick={() =>
-                connect.mutate(brandId, { onError: () => toast.error({ title: t('startError') }) })
+                connect.mutate(brandId, {
+                  onError: (error) => toast.error({ title: errorMessage(error, t('startError')) }),
+                })
               }
             >
               {t('connect')}
@@ -135,7 +145,8 @@ export default function TikTokPage() {
                     setConfirmDisconnect(false)
                     toast.success({ title: t('disconnectSuccess') })
                   },
-                  onError: () => toast.error({ title: t('disconnectError') }),
+                  onError: (error) =>
+                    toast.error({ title: errorMessage(error, t('disconnectError')) }),
                 })
               }
             >

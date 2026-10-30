@@ -1,9 +1,10 @@
-import { isAxiosError } from 'axios'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { formatDateTime } from '@/shared/i18n'
 import { Alert, IconCheck, Logo, SectionSkeleton } from '@/shared/ui'
 import { useFacebookDataDeletionStatus } from '../api'
+import { isApiErrorCode } from '@/shared/api/errors'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 /**
  * Public page Meta links users to after a data deletion request (the `url` returned by the
@@ -11,10 +12,11 @@ import { useFacebookDataDeletionStatus } from '../api'
  */
 export default function FacebookDataDeletionPage() {
   const { t, i18n } = useTranslation('privacy')
+  const errorMessage = useApiErrorMessage('privacy')
   const [params] = useSearchParams()
   const code = params.get('code')
   const status = useFacebookDataDeletionStatus(code)
-  const notFound = !code || (isAxiosError(status.error) && status.error.response?.status === 404)
+  const notFound = !code || isApiErrorCode(status.error, 'RESOURCE_NOT_FOUND')
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-bg-page p-4">
@@ -35,7 +37,11 @@ export default function FacebookDataDeletionPage() {
         ) : status.isPending ? (
           <SectionSkeleton rows={3} />
         ) : status.isError ? (
-          <Alert variant="soft" tone="error" title={t('dataDeletion.error')} />
+          <Alert
+            variant="soft"
+            tone="error"
+            title={errorMessage(status.error, t('dataDeletion.error'))}
+          />
         ) : (
           <div className="grid gap-5">
             <div className="grid justify-items-center gap-3 text-center">

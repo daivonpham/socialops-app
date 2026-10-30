@@ -3,6 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Button, IconGoogle, Spin } from '@/shared/ui'
 import { reportGoogleOAuthResult } from '../api'
+import { CodedError, parseErrorCode } from '@/shared/api/errors'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 const REPORTS_PATH = '/reports'
 
@@ -12,6 +14,7 @@ const REPORTS_PATH = '/reports'
  */
 export default function GoogleSheetsCallbackPage() {
   const { t } = useTranslation('google')
+  const errorMessage = useApiErrorMessage('google')
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const error = params.get('error')
@@ -31,9 +34,10 @@ export default function GoogleSheetsCallbackPage() {
       {error ? (
         <>
           <p className="max-w-md text-body-md text-text-secondary">
-            {error === 'GOOGLE_PERMISSION_MISSING'
-              ? t('callback.permissionMissing')
-              : t('callback.failed')}
+            {errorMessage(
+              new CodedError(parseErrorCode(error, 'GOOGLE_AUTH_FAILED')),
+              t('callback.failed'),
+            )}
           </p>
           <Button onClick={() => navigate(REPORTS_PATH)}>{t('callback.back')}</Button>
         </>

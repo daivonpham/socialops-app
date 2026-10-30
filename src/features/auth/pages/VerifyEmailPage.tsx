@@ -6,9 +6,11 @@ import { useVerifyEmail } from '../api'
 import { AuthLayout } from '../components/AuthLayout'
 import { BackToLoginLink } from '../components/BackToLoginLink'
 import { AUTH_ROUTES } from '../config/auth.routes'
+import { useApiErrorMessage } from '@/shared/hooks'
 
 export default function VerifyEmailPage() {
   const { t } = useTranslation('auth')
+  const errorMessage = useApiErrorMessage('auth')
   const [params] = useSearchParams()
   const token = params.get('token') ?? ''
   const verify = useVerifyEmail()
@@ -34,7 +36,11 @@ export default function VerifyEmailPage() {
         <Alert variant="soft" tone="success" title={t('verify.success')} />
       ) : (
         <div className="grid gap-4">
-          <Alert variant="soft" tone="error" title={t('verify.failure')} />
+          <Alert
+            variant="soft"
+            tone="error"
+            title={errorMessage(verify.error, t('verify.failure'))}
+          />
           <Link
             className="text-center font-semibold text-link hover:text-link-hover"
             to={AUTH_ROUTES.REGISTER}

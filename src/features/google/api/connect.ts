@@ -1,4 +1,5 @@
 import { startGoogleConnect } from './service'
+import { CodedError, parseErrorCode } from '@/shared/api/errors'
 
 export const GOOGLE_OAUTH_CHANNEL = 'socialops.google.oauth'
 
@@ -42,7 +43,11 @@ export function connectGoogleInPopup(): Promise<GoogleOAuthResult> {
     }
     const handle = (result: GoogleOAuthResult | undefined) => {
       if (result?.type !== GOOGLE_OAUTH_CHANNEL) return
-      finish(() => (result.error ? reject(new Error(result.error)) : resolve(result)))
+      finish(() =>
+        result.error
+          ? reject(new CodedError(parseErrorCode(result.error, 'GOOGLE_AUTH_FAILED')))
+          : resolve(result),
+      )
     }
     const receive = (event: MessageEvent) => {
       if (event.origin === window.location.origin) handle(event.data as GoogleOAuthResult)
@@ -54,7 +59,7 @@ export function connectGoogleInPopup(): Promise<GoogleOAuthResult> {
     timer = window.setInterval(() => {
       if (!popup?.closed) return
       window.clearInterval(timer)
-      window.setTimeout(() => finish(() => reject(new Error('GOOGLE_AUTH_CANCELLED'))), 1000)
+      window.setTimeout(() => finish(() => reject(new CodedError('GOOGLE_AUTH_CANCELLED'))), 1000)
     }, 500)
     startGoogleConnect()
       .then(({ authorizationUrl }) => {
