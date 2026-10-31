@@ -99,6 +99,11 @@
     @apply mx-1 mb-1;
   }
 
+  /* Timed month events are a flex row in FullCalendar; the card fills the day instead of its text. */
+  .planning-calendar .fc .fc-daygrid-dot-event > * {
+    @apply min-w-0 flex-1;
+  }
+
   .planning-calendar .fc .fc-timegrid-event-harness-inset .fc-timegrid-event {
     @apply shadow-none;
   }
@@ -109,6 +114,14 @@
 
   .planning-calendar .fc .fc-timegrid-event .planning-calendar-event {
     @apply h-full overflow-hidden;
+  }
+
+  .planning-calendar .fc .fc-timegrid-event .planning-calendar-stack {
+    @apply h-full;
+  }
+
+  .planning-calendar .fc .fc-timegrid-event .planning-calendar-stack__top {
+    @apply flex-1;
   }
 
   .planning-calendar .fc .fc-timegrid-event .planning-calendar-event__primary {
@@ -182,4 +195,13 @@
 
 .planning-calendar .fc .fc-event-selected::after {
   background: transparent;
+}
+
+/* An open stack marks its top card, like other open popup triggers, not the whole stack box. */
+.planning-calendar .planning-calendar-stack.control-active {
+  box-shadow: none;
+}
+
+.planning-calendar .planning-calendar-stack.control-active .planning-calendar-event {
+  @apply border-border-focus ring-2 ring-brand-100;
 }

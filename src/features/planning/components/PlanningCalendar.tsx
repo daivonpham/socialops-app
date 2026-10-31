@@ -45,8 +45,12 @@ import {
 } from '../api'
 import type { PlanningCalendarView } from '../config/planning.filters'
 import { getPlanningDragPolicy } from '../model'
-import { planningCalendarEventDate } from '../model/calendar-event-date'
+import {
+  groupPlanningCalendarContents,
+  planningCalendarEventDate,
+} from '../model/calendar-event-date'
 import { PlanningCalendarEvent } from './PlanningCalendarEvent'
+import { PlanningCalendarStack } from './PlanningCalendarStack'
 import './planning-calendar.css'
 import { useApiErrorMessage } from '@/shared/hooks'
 
@@ -57,8 +61,9 @@ type PendingReschedule = {
   revert: () => void
 }
 
+/** One post, or several stacked posts in time order. */
 type PlanningEventProperties = {
-  content: PlanningContent
+  contents: PlanningContent[]
 }
 
 type CalendarHeading = {
@@ -107,24 +112,33 @@ export function PlanningCalendar({
   })
   const [pendingReschedule, setPendingReschedule] = useState<PendingReschedule | null>(null)
   const [rescheduleError, setRescheduleError] = useState<unknown>(null)
+  const [openStackId, setOpenStackId] = useState<string | null>(null)
   const fullCalendarView = calendarView === 'month' ? 'dayGridMonth' : 'timeGridWeek'
   const uses12HourClock = uses12HourTime(i18n.resolvedLanguage)
   const timeZone = getLocalTimeZone()
   const events = useMemo<EventInput[]>(
     () =>
-      contents.map((content) => {
-        const policy = getPlanningDragPolicy(content.status)
+      groupPlanningCalendarContents(contents, calendarView).map((group) => {
+        const [content] = group
+        const isStack = group.length > 1
         return {
-          id: content.id,
+          id: isStack ? `stack:${content.id}` : content.id,
           title: content.title ?? content.caption,
           start: planningCalendarEventDate(content),
-          editable: policy.draggable,
+          // A stack opens its list on click; its posts are rescheduled one by one from the post.
+          editable: !isStack && getPlanningDragPolicy(content.status).draggable,
           durationEditable: false,
-          extendedProps: { content } satisfies PlanningEventProperties,
+          extendedProps: { contents: group } satisfies PlanningEventProperties,
         }
       }),
-    [contents],
+    [calendarView, contents],
   )
+  const formatEventTime = (date: string) =>
+    formatLocalizedDate(date, i18n.resolvedLanguage, {
+      hour: uses12HourClock ? 'numeric' : '2-digit',
+      minute: '2-digit',
+      hour12: uses12HourClock,
+    })
 
   useEffect(() => {
     const api = calendarRef.current?.getApi()
@@ -153,9 +167,9 @@ export function PlanningCalendar({
   }
 
   const handleEventDrop = (info: EventDropArg) => {
-    const { content } = info.event.extendedProps as PlanningEventProperties
+    const [content] = (info.event.extendedProps as PlanningEventProperties).contents
     const proposedAt = info.event.start?.toISOString()
-    if (!proposedAt) {
+    if (!content || !proposedAt) {
       info.revert()
       return
     }
@@ -382,16 +396,29 @@ export function PlanningCalendar({
           moreLinkContent={(args) => t('calendar.more', { count: args.num })}
           eventAllow={(_, event) => {
             if (!event) return false
-            const { content } = event.extendedProps as PlanningEventProperties
-            return getPlanningDragPolicy(content.status).draggable
+            const { contents } = event.extendedProps as PlanningEventProperties
+            return contents.length === 1 && getPlanningDragPolicy(contents[0].status).draggable
           }}
           eventContent={(args: EventContentArg) => {
-            const { content } = args.event.extendedProps as PlanningEventProperties
-            return <PlanningCalendarEvent content={content} timeText={args.timeText} />
+            const { contents } = args.event.extendedProps as PlanningEventProperties
+            if (contents.length > 1) {
+              return (
+                <PlanningCalendarStack
+                  contents={contents}
+                  timeText={args.timeText}
+                  open={openStackId === args.event.id}
+                  formatTime={formatEventTime}
+                  onClose={() => setOpenStackId(null)}
+                  onSelectContent={onSelectContent}
+                />
+              )
+            }
+            return <PlanningCalendarEvent content={contents[0]} timeText={args.timeText} />
           }}
           eventClick={(args: EventClickArg) => {
-            const { content } = args.event.extendedProps as PlanningEventProperties
-            onSelectContent(content)
+            const { contents } = args.event.extendedProps as PlanningEventProperties
+            if (contents.length > 1) setOpenStackId(args.event.id)
+            else onSelectContent(contents[0])
           }}
           eventDrop={handleEventDrop}
           datesSet={handleDatesSet}

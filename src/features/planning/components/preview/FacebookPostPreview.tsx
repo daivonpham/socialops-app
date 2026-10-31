@@ -54,7 +54,7 @@ export function FacebookPostPreview({
     )
   }
 
-  const imageMedia = media.filter((item) => item.type === 'image').slice(0, 4)
+  const imageMedia = media.filter((item) => item.type === 'image')
   const video = media.find((item) => item.type === 'video')
 
   return (
@@ -76,22 +76,7 @@ export function FacebookPostPreview({
           <VideoPreview key={video.id} src={video.url} className="h-full w-full object-contain" />
         </div>
       ) : imageMedia.length > 0 ? (
-        <div
-          className={`aspect-[6/5] overflow-hidden bg-neutral-200 ${imageMedia.length === 1 ? 'flex justify-center' : imageMedia.length === 2 ? 'grid grid-cols-2 gap-px' : 'grid grid-cols-2 grid-rows-2 gap-px'}`}
-        >
-          {imageMedia.map((item) => (
-            <img
-              key={item.id}
-              src={item.url}
-              alt=""
-              className={
-                imageMedia.length === 1
-                  ? 'h-full w-full object-contain'
-                  : 'h-full w-full object-cover'
-              }
-            />
-          ))}
-        </div>
+        <FacebookImageGrid images={imageMedia} />
       ) : (
         <EmptyMedia className="aspect-[6/5]" />
       )}
@@ -154,7 +139,7 @@ function FacebookVerticalPreview({
           key={`${story ? 'story' : 'reel'}-${primaryMedia.id}`}
           ref={story ? storyVideoRef : undefined}
           src={primaryMedia.url}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-contain"
           progressPosition={story ? 'top' : 'bottom'}
           onPlayingChange={story ? setStoryPlaying : undefined}
         />
@@ -236,6 +221,66 @@ function FacebookVerticalPreview({
       )}
     </div>
   )
+}
+
+function FacebookImageGrid({ images }: { images: ComposerMedia[] }) {
+  const [first, ...rest] = images
+  if (!first) return null
+
+  if (images.length === 1) {
+    return (
+      <div className="flex aspect-[6/5] justify-center overflow-hidden bg-neutral-200">
+        <img src={first.url} alt="" className="h-full w-full object-contain" />
+      </div>
+    )
+  }
+
+  if (images.length === 2) {
+    return (
+      <div className="grid aspect-square grid-rows-2 gap-px overflow-hidden bg-neutral-200">
+        {images.map((item) => (
+          <GridImage key={item.id} src={item.url} />
+        ))}
+      </div>
+    )
+  }
+
+  if (images.length === 3) {
+    return (
+      <div className="flex aspect-square flex-col gap-px overflow-hidden bg-neutral-200">
+        <div className="min-h-0 flex-[2]">
+          <GridImage src={first.url} />
+        </div>
+        <div className="grid min-h-0 flex-1 grid-cols-2 gap-px">
+          {rest.map((item) => (
+            <GridImage key={item.id} src={item.url} />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  const visible = images.slice(0, 4)
+  const hiddenCount = images.length - visible.length
+
+  return (
+    <div className="grid aspect-square grid-cols-2 grid-rows-2 gap-px overflow-hidden bg-neutral-200">
+      {visible.map((item, index) => (
+        <div key={item.id} className="relative min-h-0">
+          <GridImage src={item.url} />
+          {hiddenCount > 0 && index === visible.length - 1 ? (
+            <span className="absolute inset-0 flex items-center justify-center bg-neutral-950/50 text-heading-2 text-text-inverse">
+              +{hiddenCount}
+            </span>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function GridImage({ src }: { src: string }) {
+  return <img src={src} alt="" className="h-full min-h-0 w-full object-cover" />
 }
 
 function FacebookIdentity({

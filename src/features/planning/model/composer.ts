@@ -107,7 +107,13 @@ export function isComposerCaptionMissing(
 
 export function createComposerDraftFromContent(content: PlanningContent): PlanningComposerDraft {
   const defaults = createComposerDraft(content.platform)
-  const publications = content.publications ?? []
+  // A Page removed from the post stays as cancelled for its history; it is not a target any
+  // more, so the form leaves it out unless the whole post was cancelled.
+  const allPublications = content.publications ?? []
+  const activePublications = allPublications.filter(
+    (publication) => publication.status !== 'cancelled',
+  )
+  const publications = activePublications.length ? activePublications : allPublications
   const captionMode =
     content.captionMode ??
     (publications.some((publication) => publication.captionOverride) ? 'per_target' : 'shared')

@@ -12,6 +12,7 @@ import { SocialAccountLabel } from '@/features/social-accounts'
 import {
   Button,
   Checkbox,
+  IconCheck,
   IconChevronDown,
   IconClose,
   IconImage,
@@ -20,6 +21,7 @@ import {
   IconReel,
   IconSettings,
   IconVideo,
+  IconWarning,
   Image,
   Input,
   MediaDropzone,
@@ -46,20 +48,29 @@ const TIKTOK_BOOLEAN_SETTINGS = [
   ['aiGeneratedContent', 'composer.settings.aiGeneratedContent'],
 ] as const
 
+export type MediaUploadState =
+  { status: 'uploading'; percent: number } | { status: 'uploaded' } | { status: 'failed' }
+
 export function PlanningPostEditor({
   draft,
   accounts,
   setDraft,
   publishedMode = false,
+  mediaUploads = {},
 }: {
   draft: PlanningComposerDraft
   accounts: PlanningAccount[]
   setDraft: Dispatch<SetStateAction<PlanningComposerDraft>>
   publishedMode?: boolean
+  mediaUploads?: Record<string, MediaUploadState>
 }) {
   const { t } = useTranslation('planning')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const previewUrls = useRef(new Set<string>())
+  // Each post type keeps its own media: switching tabs starts clean, switching back restores it.
+  const mediaByPostType = useRef<
+    Partial<Record<PlanningComposerDraft['postType'], PlanningComposerDraft['media']>>
+  >({})
   const [captionFocused, setCaptionFocused] = useState(false)
   const [mediaPopoverOpen, setMediaPopoverOpen] = useState(false)
   const selectedAccounts = accounts.filter((account) => draft.targetIds.includes(account.id))
@@ -119,7 +130,15 @@ export function PlanningPostEditor({
           <Tabs
             value={draft.postType}
             ariaLabel={t('composer.postType.title')}
-            onChange={(postType) => setDraft((current) => ({ ...current, postType }))}
+            onChange={(postType) => {
+              if (postType === draft.postType) return
+              mediaByPostType.current[draft.postType] = draft.media
+              setDraft((current) => ({
+                ...current,
+                postType,
+                media: mediaByPostType.current[postType] ?? [],
+              }))
+            }}
             options={
               draft.platform === 'facebook'
                 ? [
@@ -320,46 +339,52 @@ export function PlanningPostEditor({
           <>
             <Divider />
             <div className="flex flex-wrap gap-3">
-              {draft.media.map((item) => (
-                <div
-                  key={item.id}
-                  className="relative size-24 overflow-hidden rounded-lg border border-border-subtle bg-bg-surface-subtle"
-                >
-                  {item.type === 'image' ? (
-                    <Image
-                      src={item.url}
-                      alt={item.name}
-                      className="size-full object-cover"
-                      wrapperClassName="block size-full"
-                      preview={{ mask: false }}
-                    />
-                  ) : (
-                    <video src={item.url} className="h-full w-full object-cover" muted />
-                  )}
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    disabled={published}
-                    icon={
-                      <span className="flex items-center justify-center leading-none">
-                        <IconClose aria-hidden className="block text-icon-sm" />
-                      </span>
-                    }
-                    aria-label={t('composer.media.remove', { name: item.name })}
-                    className="absolute right-1 top-1 flex size-media-action min-w-0 items-center justify-center rounded-pill border-0 bg-neutral-800 p-0 text-text-inverse shadow-sm hover:bg-neutral-900 hover:text-text-inverse"
-                    onClick={() => {
-                      if (item.file) {
-                        URL.revokeObjectURL(item.url)
-                        previewUrls.current.delete(item.url)
-                      }
-                      setDraft((current) => ({
-                        ...current,
-                        media: current.media.filter((media) => media.id !== item.id),
-                      }))
-                    }}
-                  />
-                </div>
-              ))}
+              {draft.media.map((item) => {
+                const upload = mediaUploads[item.id]
+                return (
+                  <div
+                    key={item.id}
+                    className={`relative size-24 overflow-hidden rounded-lg border bg-bg-surface-subtle ${upload?.status === 'failed' ? 'border-error-600' : 'border-border-subtle'}`}
+                  >
+                    {item.type === 'image' ? (
+                      <Image
+                        src={item.url}
+                        alt={item.name}
+                        className="size-full object-cover"
+                        wrapperClassName="block size-full"
+                        preview={{ mask: false }}
+                      />
+                    ) : (
+                      <video src={item.url} className="h-full w-full object-cover" muted />
+                    )}
+                    {upload ? <MediaUploadOverlay name={item.name} upload={upload} /> : null}
+                    {upload?.status === 'uploading' ? null : (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={published}
+                        icon={
+                          <span className="flex items-center justify-center leading-none">
+                            <IconClose aria-hidden className="block text-icon-sm" />
+                          </span>
+                        }
+                        aria-label={t('composer.media.remove', { name: item.name })}
+                        className="absolute right-1 top-1 flex size-media-action min-w-0 items-center justify-center rounded-pill border-0 bg-neutral-800 p-0 text-text-inverse shadow-sm hover:bg-neutral-900 hover:text-text-inverse"
+                        onClick={() => {
+                          if (item.file) {
+                            URL.revokeObjectURL(item.url)
+                            previewUrls.current.delete(item.url)
+                          }
+                          setDraft((current) => ({
+                            ...current,
+                            media: current.media.filter((media) => media.id !== item.id),
+                          }))
+                        }}
+                      />
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </>
         ) : null}
@@ -496,6 +521,41 @@ function FieldGroup({ label, children }: { label: string; children: ReactNode })
 
 function Divider() {
   return <div className="h-px bg-border-subtle" />
+}
+
+function MediaUploadOverlay({ name, upload }: { name: string; upload: MediaUploadState }) {
+  const { t } = useTranslation('planning')
+  if (upload.status === 'uploading') {
+    return (
+      <span
+        role="status"
+        aria-label={t('composer.media.itemUploading', { name, percent: upload.percent })}
+        className="absolute inset-0 flex items-center justify-center bg-neutral-950/50 text-label-md text-text-inverse"
+      >
+        {upload.percent}%
+      </span>
+    )
+  }
+  if (upload.status === 'uploaded') {
+    return (
+      <span
+        role="img"
+        aria-label={t('composer.media.itemUploaded', { name })}
+        className="absolute bottom-1 left-1 flex size-5 items-center justify-center rounded-pill bg-success-500 text-text-inverse shadow-sm"
+      >
+        <IconCheck aria-hidden className="text-icon-sm" />
+      </span>
+    )
+  }
+  return (
+    <span
+      role="img"
+      aria-label={t('composer.media.itemUploadFailed', { name })}
+      className="absolute inset-0 flex items-center justify-center bg-neutral-950/50 text-icon-lg text-text-inverse"
+    >
+      <IconWarning aria-hidden />
+    </span>
+  )
 }
 
 function TabLabel({ icon, label }: { icon: ReactNode; label: string }) {

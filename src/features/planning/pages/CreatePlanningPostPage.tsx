@@ -11,7 +11,6 @@ import {
   IconChevronDown,
   IconChevronLeft,
   IconSend,
-  Progress,
   SectionSkeleton,
   useToast,
 } from '@/shared/ui'
@@ -28,7 +27,10 @@ import {
   type PlanningPublishIntent,
 } from '../api'
 import { uploadPlanningMedia } from '../api/service'
-import { PlanningPostEditor } from '../components/composer/PlanningPostEditor'
+import {
+  PlanningPostEditor,
+  type MediaUploadState,
+} from '../components/composer/PlanningPostEditor'
 import { getPlanningPath } from '../config/planning.routes'
 import { canPublishOnPlatform } from '../config/planning-capabilities'
 import { PlanningPostPreview } from '../components/preview/PlanningPostPreview'
@@ -328,8 +330,8 @@ function PlanningComposerWorkspace({
     }
   })
   const [previewViewport, setPreviewViewport] = useState<PreviewViewport>('mobile')
-  const [uploading, setUploading] = useState(false)
-  const [uploadPercent, setUploadPercent] = useState<number | null>(null)
+  const [submitPhase, setSubmitPhase] = useState<'uploading' | 'saving' | null>(null)
+  const [mediaUploads, setMediaUploads] = useState<Record<string, MediaUploadState>>({})
   const submitting = useRef(false)
   const [submitError, setSubmitError] = useState<unknown>(null)
   const createKey = useRef(crypto.randomUUID())
@@ -345,27 +347,37 @@ function PlanningComposerWorkspace({
   const submit = async (intent: 'draft' | 'approval' | 'publish_now' | 'schedule') => {
     if (submitting.current) return
     submitting.current = true
-    setUploading(true)
     setSubmitError(null)
     try {
       const files = draft.media.filter((item) => item.file)
-      const totalBytes = files.reduce((sum, item) => sum + item.file!.size, 0)
-      const loaded = new Map<string, number>()
-      if (totalBytes) setUploadPercent(0)
+      const setItemUpload = (id: string, upload: MediaUploadState) =>
+        setMediaUploads((current) => ({ ...current, [id]: upload }))
+      if (files.length) {
+        setSubmitPhase('uploading')
+        setMediaUploads(
+          Object.fromEntries(
+            files.map((item) => [item.id, { status: 'uploading', percent: 0 } as const]),
+          ),
+        )
+      } else setSubmitPhase('saving')
       const results = await Promise.allSettled(
-        draft.media.map(async (item) =>
-          item.file
-            ? uploadPlanningMedia(brandId, item.file, (bytes) => {
-                loaded.set(item.id, bytes)
-                setUploadPercent(
-                  Math.floor(
-                    ([...loaded.values()].reduce((sum, value) => sum + value, 0) * 100) /
-                      totalBytes,
-                  ),
-                )
+        draft.media.map(async (item) => {
+          const file = item.file
+          if (!file) return item
+          try {
+            const uploaded = await uploadPlanningMedia(brandId, file, (bytes) => {
+              setItemUpload(item.id, {
+                status: 'uploading',
+                percent: Math.floor((bytes * 100) / (file.size || 1)),
               })
-            : item,
-        ),
+            })
+            setItemUpload(item.id, { status: 'uploaded' })
+            return uploaded
+          } catch (error) {
+            setItemUpload(item.id, { status: 'failed' })
+            throw error
+          }
+        }),
       )
       const media = results.map((result, index) =>
         result.status === 'fulfilled' ? result.value : draft.media[index],
@@ -374,6 +386,7 @@ function PlanningComposerWorkspace({
       if (results.some((result) => result.status === 'rejected'))
         throw new Error('Media upload failed')
       const submittedDraft = { ...draft, media }
+      setSubmitPhase('saving')
       if (content) {
         await updateContent.mutateAsync(
           toUpdatePlanningContentInput(brandId, content, submittedDraft, intent),
@@ -389,8 +402,13 @@ function PlanningComposerWorkspace({
       setSubmitError(error)
     } finally {
       submitting.current = false
-      setUploading(false)
-      setUploadPercent(null)
+      setSubmitPhase(null)
+      // Only failed files keep a marker, so the user sees which ones to replace or retry.
+      setMediaUploads((current) =>
+        Object.fromEntries(
+          Object.entries(current).filter(([, upload]) => upload.status === 'failed'),
+        ),
+      )
     }
   }
 
@@ -427,32 +445,22 @@ function PlanningComposerWorkspace({
         />
       ) : null}
 
-      {uploadPercent !== null ? (
-        <div
-          role="status"
-          aria-live="polite"
-          className="rounded-lg border border-border-subtle bg-bg-surface p-4"
-        >
-          <p className="mb-2 text-body-sm text-text-secondary">
-            {t('composer.media.uploadProgress', { percent: uploadPercent })}
-          </p>
-          <Progress
-            percent={uploadPercent}
-            ariaLabel={t('composer.media.uploadProgress', { percent: uploadPercent })}
-          />
-        </div>
-      ) : null}
-
       <div className="grid min-h-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(28rem,0.9fr)]">
         <div className="grid min-w-0 content-start gap-3">
-          <PlanningPostEditor draft={draft} accounts={accounts} setDraft={setDraft} />
+          <PlanningPostEditor
+            draft={draft}
+            accounts={accounts}
+            setDraft={setDraft}
+            mediaUploads={mediaUploads}
+          />
           <PublishingActionBar
             draft={draft}
             accounts={accounts}
             intent={publishIntent}
             isEditing={Boolean(content)}
             initialIntent={initialIntent}
-            loading={saveContent.isPending || uploading}
+            loading={saveContent.isPending || submitPhase !== null}
+            submitPhase={submitPhase}
             canSubmit={publishIntent === 'draft' || canSubmit}
             onIntentChange={(intent) => {
               setPublishIntent(intent)
@@ -513,6 +521,7 @@ function PublishingActionBar({
   isEditing,
   initialIntent,
   loading,
+  submitPhase,
   canSubmit,
   onIntentChange,
   onDraftChange,
@@ -524,6 +533,7 @@ function PublishingActionBar({
   isEditing: boolean
   initialIntent: PlanningPublishIntent
   loading: boolean
+  submitPhase: 'uploading' | 'saving' | null
   canSubmit: boolean
   onIntentChange: (intent: PlanningPublishIntent) => void
   onDraftChange: Dispatch<SetStateAction<PlanningComposerDraft>>
@@ -544,6 +554,12 @@ function PublishingActionBar({
               : t('composer.actions.schedule'),
           publish_now: t('composer.actions.publish'),
         }[intent]
+  const buttonLabel =
+    submitPhase === 'uploading'
+      ? t('composer.media.uploading')
+      : submitPhase === 'saving'
+        ? t(intent === 'publish_now' ? 'composer.actions.publishing' : 'composer.actions.saving')
+        : actionLabel
   const selectedActionKey =
     intent === 'schedule' && draft.scheduleMode === 'by_account' ? 'schedule_by_account' : intent
   const usesSharedSchedule = intent === 'schedule' && draft.scheduleMode === 'same_time'
@@ -630,7 +646,7 @@ function PublishingActionBar({
             className="rounded-e-none border-[2px] border-e-bg-surface"
             onClick={onSubmit}
           >
-            {actionLabel}
+            {buttonLabel}
           </Button>
           {
             <Dropdown

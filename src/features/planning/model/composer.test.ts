@@ -93,4 +93,35 @@ describe('per-account captions', () => {
       captionOverrides: { 'page-a': 'A', 'page-b': 'B' },
     })
   })
+
+  it('leaves a removed Page out of the form unless the whole post was cancelled', () => {
+    const page = (id: string, status: 'draft' | 'cancelled') => ({
+      id: `p-${id}`,
+      socialAccountId: id,
+      target: { id, name: id },
+      status,
+    })
+    const content = {
+      id: 'content-2',
+      version: 2,
+      caption: 'Hello',
+      mediaType: 'text',
+      type: 'facebook_feed',
+      platform: 'facebook',
+      targets: [],
+      publications: [page('page-a', 'draft'), page('page-b', 'cancelled')],
+      status: 'draft',
+      approvalStatus: 'none',
+      createdAt: '2026-10-30T00:00:00Z',
+      createdBy: 'User',
+    } satisfies PlanningContent
+    expect(createComposerDraftFromContent(content).targetIds).toEqual(['page-a'])
+    expect(
+      createComposerDraftFromContent({
+        ...content,
+        status: 'cancelled',
+        publications: [page('page-a', 'cancelled'), page('page-b', 'cancelled')],
+      }).targetIds,
+    ).toEqual(['page-a', 'page-b'])
+  })
 })

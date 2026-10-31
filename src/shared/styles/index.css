@@ -248,16 +248,23 @@
     transform: translate(-50%, 50%) rotate(45deg);
   }
 
+  /* Ant flips a popup that has no room; follow its final side, not the requested one. */
   .ant-dropdown-placement-bottom .popup-surface,
   .ant-dropdown-placement-bottomLeft .popup-surface,
-  .ant-dropdown-placement-bottomRight .popup-surface {
+  .ant-dropdown-placement-bottomRight .popup-surface,
+  .ant-popover-placement-bottom .popup-surface,
+  .ant-popover-placement-bottomLeft .popup-surface,
+  .ant-popover-placement-bottomRight .popup-surface {
     padding-top: theme(spacing.2);
     padding-bottom: 0;
   }
 
   .ant-dropdown-placement-bottom .popup-surface__caret,
   .ant-dropdown-placement-bottomLeft .popup-surface__caret,
-  .ant-dropdown-placement-bottomRight .popup-surface__caret {
+  .ant-dropdown-placement-bottomRight .popup-surface__caret,
+  .ant-popover-placement-bottom .popup-surface__caret,
+  .ant-popover-placement-bottomLeft .popup-surface__caret,
+  .ant-popover-placement-bottomRight .popup-surface__caret {
     top: 0;
     bottom: auto;
     border-width: 1px 0 0 1px;
@@ -266,14 +273,20 @@
 
   .ant-dropdown-placement-top .popup-surface,
   .ant-dropdown-placement-topLeft .popup-surface,
-  .ant-dropdown-placement-topRight .popup-surface {
+  .ant-dropdown-placement-topRight .popup-surface,
+  .ant-popover-placement-top .popup-surface,
+  .ant-popover-placement-topLeft .popup-surface,
+  .ant-popover-placement-topRight .popup-surface {
     padding-top: 0;
     padding-bottom: theme(spacing.2);
   }
 
   .ant-dropdown-placement-top .popup-surface__caret,
   .ant-dropdown-placement-topLeft .popup-surface__caret,
-  .ant-dropdown-placement-topRight .popup-surface__caret {
+  .ant-dropdown-placement-topRight .popup-surface__caret,
+  .ant-popover-placement-top .popup-surface__caret,
+  .ant-popover-placement-topLeft .popup-surface__caret,
+  .ant-popover-placement-topRight .popup-surface__caret {
     top: auto;
     bottom: 0;
     border-width: 0 1px 1px 0;
