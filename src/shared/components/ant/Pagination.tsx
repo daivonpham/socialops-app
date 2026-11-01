@@ -9,8 +9,8 @@ export function Pagination(props: PaginationProps) {
       pageSize={props.pageSize}
       pageSizeOptions={props.pageSizeOptions}
       showSizeChanger
-      showQuickJumper
-      showTotal={(total, range) => `${range[0]}–${range[1]} / ${total}`}
+      showQuickJumper={!props.compact}
+      showTotal={props.compact ? undefined : (total, range) => `${range[0]}–${range[1]} / ${total}`}
       onChange={props.onChange}
       className={props.className}
     />

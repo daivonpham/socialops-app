@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatDateTime, getLocalTimeZone } from '@/shared/i18n'
+import { hasPermission, usePermissions } from '@/shared/permissions'
 import {
   Avatar,
   Button,
@@ -29,16 +30,18 @@ import type {
   PlanningTarget,
 } from '../api'
 import {
+  approvalStatusLabelKey,
   createComposerDraftFromContent,
   PLANNING_APPROVAL_STATUS_TONE,
   PLANNING_STATUS_TONE,
   type PlanningAccount,
   type PreviewViewport,
 } from '../model'
-import { planningStatusGroup, planningSummaryStatusTone } from '../model/planning-status-group'
 import { FacebookPostPreview } from './preview/FacebookPostPreview'
 import { TikTokPostPreview } from './preview/TikTokPostPreview'
 import { CaptionClamp } from './CaptionClamp'
+import { PlanningStatusTag } from './PlanningStatusTag'
+import { PLANNING_ACCESS } from '../config/planning-access'
 
 export function PlanningPostModal({
   content,
@@ -74,6 +77,11 @@ export function PlanningPostModal({
   onDismissEdit: (publicationId: string) => void
 }) {
   const { t } = useTranslation('planning')
+  const { granted } = usePermissions()
+  // Editors write and submit drafts; publishing decisions (retry, cancel what is scheduled,
+  // edit or delete what is published) need `publishing.publish_direct`.
+  const canWrite = hasPermission(granted, PLANNING_ACCESS.publish[0])
+  const canPublishDirect = hasPermission(granted, PLANNING_ACCESS.publishDirect[0])
   const timeZone = getLocalTimeZone()
   const firstPublished = content?.publications?.find((item) => item.status === 'published') ?? null
   const supportsPublishedEdit =
@@ -132,9 +140,10 @@ export function PlanningPostModal({
   const canEditPublished = supportsPublishedEdit && activePublication?.status === 'published'
   const canCancel =
     content &&
+    (content.status === 'draft' ? canWrite : canPublishDirect) &&
     ['draft', 'scheduled', 'queued', 'failed', 'retry_wait'].includes(content.status) &&
     !content.publications?.some(isOnFacebook)
-  const canEdit = content && ['draft', 'scheduled', 'failed'].includes(content.status)
+  const canEdit = canWrite && content && ['draft', 'scheduled', 'failed'].includes(content.status)
 
   return (
     <>
@@ -161,107 +170,111 @@ export function PlanningPostModal({
               <Button disabled={Boolean(deleting)} onClick={onClose}>
                 {t('common.close')}
               </Button>
-              {hasMultipleAccounts && retryableCount > 0 ? (
-                <Button
-                  icon={<IconRefresh aria-hidden />}
-                  disabled={reconciling}
-                  onClick={() => setRetryTarget('all')}
-                >
-                  {t('detail.retryAllFailed', { count: retryableCount })}
-                </Button>
-              ) : null}
-              {canDeleteAll ? (
-                <Button
-                  variant="destructive"
-                  icon={<IconDelete aria-hidden />}
-                  disabled={reconciling}
-                  onClick={() => setConfirmDeleteAll(true)}
-                >
-                  {t('detail.deleteAll')}
-                </Button>
-              ) : null}
-              {activePublication?.status === 'unknown' && !hasMultipleAccounts ? (
+              {canPublishDirect ? (
                 <>
-                  <Button
-                    icon={<IconRefresh aria-hidden />}
-                    disabled={reconciling}
-                    onClick={() => setRetryTarget(activePublication.id)}
-                  >
-                    {t('detail.retry')}
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    icon={<IconDelete aria-hidden />}
-                    disabled={reconciling}
-                    onClick={() => setDiscardPublication(activePublication)}
-                  >
-                    {t(
-                      activePublication.externalPostId
-                        ? 'detail.discardUnknown'
-                        : 'detail.cancelUnknown',
-                    )}
-                  </Button>
-                </>
-              ) : null}
-              {activePublication?.status === 'delete_unknown' && !hasMultipleAccounts ? (
-                <Button
-                  variant="destructive"
-                  icon={<IconDelete aria-hidden />}
-                  onClick={() => setDiscardPublication(activePublication)}
-                >
-                  {t(
-                    activePublication.externalPostId
-                      ? 'detail.discardUnknown'
-                      : 'detail.cancelUnknown',
-                  )}
-                </Button>
-              ) : null}
-              {activePublication?.status === 'edit_unknown' && !hasMultipleAccounts ? (
-                <>
-                  <Button onClick={() => onDismissEdit(activePublication.id)}>
-                    {t('detail.dismissEdit')}
-                  </Button>
-                  {activePublication.pendingCaption ? (
+                  {hasMultipleAccounts && retryableCount > 0 ? (
+                    <Button
+                      icon={<IconRefresh aria-hidden />}
+                      disabled={reconciling}
+                      onClick={() => setRetryTarget('all')}
+                    >
+                      {t('detail.retryAllFailed', { count: retryableCount })}
+                    </Button>
+                  ) : null}
+                  {canDeleteAll ? (
+                    <Button
+                      variant="destructive"
+                      icon={<IconDelete aria-hidden />}
+                      disabled={reconciling}
+                      onClick={() => setConfirmDeleteAll(true)}
+                    >
+                      {t('detail.deleteAll')}
+                    </Button>
+                  ) : null}
+                  {activePublication?.status === 'unknown' && !hasMultipleAccounts ? (
+                    <>
+                      <Button
+                        icon={<IconRefresh aria-hidden />}
+                        disabled={reconciling}
+                        onClick={() => setRetryTarget(activePublication.id)}
+                      >
+                        {t('detail.retry')}
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        icon={<IconDelete aria-hidden />}
+                        disabled={reconciling}
+                        onClick={() => setDiscardPublication(activePublication)}
+                      >
+                        {t(
+                          activePublication.externalPostId
+                            ? 'detail.discardUnknown'
+                            : 'detail.cancelUnknown',
+                        )}
+                      </Button>
+                    </>
+                  ) : null}
+                  {activePublication?.status === 'delete_unknown' && !hasMultipleAccounts ? (
+                    <Button
+                      variant="destructive"
+                      icon={<IconDelete aria-hidden />}
+                      onClick={() => setDiscardPublication(activePublication)}
+                    >
+                      {t(
+                        activePublication.externalPostId
+                          ? 'detail.discardUnknown'
+                          : 'detail.cancelUnknown',
+                      )}
+                    </Button>
+                  ) : null}
+                  {activePublication?.status === 'edit_unknown' && !hasMultipleAccounts ? (
+                    <>
+                      <Button onClick={() => onDismissEdit(activePublication.id)}>
+                        {t('detail.dismissEdit')}
+                      </Button>
+                      {activePublication.pendingCaption ? (
+                        <Button
+                          variant="primary"
+                          icon={<IconRefresh aria-hidden />}
+                          onClick={() => onRetryEdit(activePublication)}
+                        >
+                          {t('detail.retryEdit')}
+                        </Button>
+                      ) : null}
+                    </>
+                  ) : null}
+                  {activePublication &&
+                  !hasMultipleAccounts &&
+                  activePublication.status !== 'unknown' &&
+                  canRetryPublication(activePublication) ? (
+                    <Button
+                      icon={<IconRefresh aria-hidden />}
+                      onClick={() => void onRetryPublication(activePublication.id)}
+                    >
+                      {t('detail.retry')}
+                    </Button>
+                  ) : null}
+                  {activePublication?.status === 'published' &&
+                  !hasMultipleAccounts &&
+                  content.platform === 'facebook' ? (
+                    <Button
+                      variant="destructive"
+                      icon={<IconDelete aria-hidden />}
+                      onClick={() => setDeletePublication(activePublication)}
+                    >
+                      {t('detail.deletePublishedConfirm')}
+                    </Button>
+                  ) : null}
+                  {canEditPublished && activePublication ? (
                     <Button
                       variant="primary"
-                      icon={<IconRefresh aria-hidden />}
-                      onClick={() => onRetryEdit(activePublication)}
+                      icon={<IconEdit aria-hidden />}
+                      onClick={() => onOpenPublishedEditor(activePublication)}
                     >
-                      {t('detail.retryEdit')}
+                      {t('detail.editPublishedTitle')}
                     </Button>
                   ) : null}
                 </>
-              ) : null}
-              {activePublication &&
-              !hasMultipleAccounts &&
-              activePublication.status !== 'unknown' &&
-              canRetryPublication(activePublication) ? (
-                <Button
-                  icon={<IconRefresh aria-hidden />}
-                  onClick={() => void onRetryPublication(activePublication.id)}
-                >
-                  {t('detail.retry')}
-                </Button>
-              ) : null}
-              {activePublication?.status === 'published' &&
-              !hasMultipleAccounts &&
-              content.platform === 'facebook' ? (
-                <Button
-                  variant="destructive"
-                  icon={<IconDelete aria-hidden />}
-                  onClick={() => setDeletePublication(activePublication)}
-                >
-                  {t('detail.deletePublishedConfirm')}
-                </Button>
-              ) : null}
-              {canEditPublished && activePublication ? (
-                <Button
-                  variant="primary"
-                  icon={<IconEdit aria-hidden />}
-                  onClick={() => onOpenPublishedEditor(activePublication)}
-                >
-                  {t('detail.editPublishedTitle')}
-                </Button>
               ) : null}
               {canCancel ? (
                 <Button
@@ -292,6 +305,7 @@ export function PlanningPostModal({
             timeZone={timeZone}
             selectedAccountId={selectedAccountId}
             onSelectAccount={setSelectedAccountId}
+            canPublishDirect={canPublishDirect}
             onRetryPublication={(id) => {
               const publication = content.publications?.find((item) => item.id === id)
               if (publication?.status === 'unknown') setRetryTarget(id)
@@ -489,6 +503,7 @@ function PlanningPostModalContent({
   timeZone,
   selectedAccountId,
   onSelectAccount,
+  canPublishDirect,
   onRetryPublication,
   retryResults,
   reconciling,
@@ -501,6 +516,7 @@ function PlanningPostModalContent({
   timeZone: string
   selectedAccountId: string | null
   onSelectAccount: (id: string) => void
+  canPublishDirect: boolean
   onRetryPublication: (publicationId: string) => void
   retryResults: PlanningRetryResult[]
   reconciling: boolean
@@ -525,7 +541,6 @@ function PlanningPostModalContent({
     previewPublication?.pendingCaption ?? previewPublication?.captionOverride ?? draft.caption
   const hasIndividualSchedules =
     new Set(content.publications?.map((publication) => publication.scheduledAt ?? null)).size > 1
-  const summaryStatus = planningStatusGroup(content)
 
   useLayoutEffect(() => {
     scrollContainerRef.current?.scrollTo({ top: 0, left: 0 })
@@ -556,15 +571,36 @@ function PlanningPostModalContent({
 
           <div className="grid gap-3 border-t border-border-subtle p-5">
             <StatusRow label={t('detail.postStatus')}>
-              <StatusTag tone={planningSummaryStatusTone(summaryStatus)}>
-                {t(`statusGroup.${summaryStatus}`)}
-              </StatusTag>
+              <PlanningStatusTag content={content} showTime />
             </StatusRow>
             <StatusRow label={t('detail.approvalStatus')}>
               <StatusTag tone={PLANNING_APPROVAL_STATUS_TONE[content.approvalStatus]}>
-                {t(`approvalStatus.${content.approvalStatus}`)}
+                {t(approvalStatusLabelKey(content))}
               </StatusTag>
             </StatusRow>
+            {content.approvalRequestedBy ? (
+              <StatusRow label={t('detail.approvalRequestedBy')}>
+                <ActorStamp
+                  name={content.approvalRequestedBy}
+                  at={content.approvalRequestedAt}
+                  locale={i18n.resolvedLanguage}
+                />
+              </StatusRow>
+            ) : null}
+            {content.approvalReviewedBy &&
+            (content.approvalStatus === 'approved' || content.approvalStatus === 'rejected') ? (
+              <StatusRow
+                label={t(
+                  content.approvalStatus === 'approved' ? 'detail.approvedBy' : 'detail.rejectedBy',
+                )}
+              >
+                <ActorStamp
+                  name={content.approvalReviewedBy}
+                  at={content.approvalReviewedAt}
+                  locale={i18n.resolvedLanguage}
+                />
+              </StatusRow>
+            ) : null}
           </div>
 
           <div className="border-t border-border-subtle p-6">
@@ -596,11 +632,11 @@ function PlanningPostModalContent({
                       )}
                       reconciling={reconciling}
                       showSchedule={hasIndividualSchedules}
-                      onRetryPublication={onRetryPublication}
-                      onDeletePublished={onDeletePublished}
-                      onDiscardUnknown={onDiscardUnknown}
-                      onRetryEdit={onRetryEdit}
-                      onDismissEdit={onDismissEdit}
+                      onRetryPublication={canPublishDirect ? onRetryPublication : undefined}
+                      onDeletePublished={canPublishDirect ? onDeletePublished : undefined}
+                      onDiscardUnknown={canPublishDirect ? onDiscardUnknown : undefined}
+                      onRetryEdit={canPublishDirect ? onRetryEdit : undefined}
+                      onDismissEdit={canPublishDirect ? onDismissEdit : undefined}
                     />
                   ))
                 : content.targets.map((target) => (
@@ -716,6 +752,21 @@ function PlanningPostModalContent({
   )
 }
 
+/** Who did something and when, e.g. who approved a post. */
+function ActorStamp({ name, at, locale }: { name: string; at?: string; locale?: string }) {
+  return (
+    <span className="min-w-0 truncate text-end text-body-sm text-text-primary">
+      {name}
+      {at ? (
+        <span className="text-text-tertiary">
+          <span aria-hidden> · </span>
+          {formatDateTime(at, locale)}
+        </span>
+      ) : null}
+    </span>
+  )
+}
+
 function StatusRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex min-h-8 items-center justify-between gap-3">
@@ -788,13 +839,13 @@ function AccountRow({
         </button>
         {publication ? (
           <div className="flex shrink-0 items-center gap-1">
-            {publication.status === 'published' && multipleAccounts ? (
+            {publication.status === 'published' && multipleAccounts && onDeletePublished ? (
               <Button
                 size="sm"
                 variant="ghost"
                 icon={<IconDelete />}
                 aria-label={t('detail.deletePublishedConfirm')}
-                onClick={() => onDeletePublished?.(publication)}
+                onClick={() => onDeletePublished(publication)}
               />
             ) : null}
             {canRetryPublication(publication) && onRetryPublication ? (

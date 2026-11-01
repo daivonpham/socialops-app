@@ -28,7 +28,15 @@ export function BrandSwitcher() {
 
   const current = brands?.find((brand) => brand.id === brandId)
   const workspaceRole = workspaces?.find((workspace) => workspace.id === workspaceId)?.role
-  const canManageBrands = workspaceRole === 'owner' || workspaceRole === 'admin'
+  // Creating and deleting Brands is Workspace management (Owner, Full access); an Admin only
+  // edits the Brands they are assigned.
+  const canManageBrands = workspaceRole === 'owner' || workspaceRole === 'full_access'
+  const canEditBrands = canManageBrands || workspaceRole === 'admin'
+  const manageAction = {
+    label: t('switcher.manage'),
+    icon: <IconSettingsOutline />,
+    onClick: () => setManageOpen(true),
+  }
 
   return (
     <>
@@ -57,13 +65,11 @@ export function BrandSwitcher() {
                 label: t('switcher.create'),
                 icon: <IconPlus />,
                 onClick: () => setCreateOpen(true),
-                trailingAction: {
-                  label: t('switcher.manage'),
-                  icon: <IconSettingsOutline />,
-                  onClick: () => setManageOpen(true),
-                },
+                trailingAction: manageAction,
               }
-            : undefined
+            : canEditBrands
+              ? manageAction
+              : undefined
         }
       >
         <Button
@@ -89,7 +95,11 @@ export function BrandSwitcher() {
         </Button>
       </Dropdown>
       <CreateBrandModal open={createOpen} onClose={() => setCreateOpen(false)} />
-      <ManageBrandsModal open={manageOpen} onClose={() => setManageOpen(false)} />
+      <ManageBrandsModal
+        open={manageOpen}
+        canCreateAndDelete={canManageBrands}
+        onClose={() => setManageOpen(false)}
+      />
     </>
   )
 }

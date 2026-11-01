@@ -64,6 +64,7 @@ export type DataTableProps<T extends object> = {
   title?: ReactNode
   ariaLabel?: string
   density?: 'sm' | 'md'
+  /** Rows scroll inside the table under a fixed header; the table fills the height its parent allows. */
   stickyHeader?: boolean
   emptyState?: ReactNode
   rowSelection?: Record<string, boolean>

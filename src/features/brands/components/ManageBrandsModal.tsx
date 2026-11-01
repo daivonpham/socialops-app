@@ -21,7 +21,16 @@ import { CreateBrandModal } from './CreateBrandModal'
 import { EditBrandModal } from './EditBrandModal'
 import { useApiErrorMessage } from '@/shared/hooks'
 
-export function ManageBrandsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+/** `canCreateAndDelete`: Owner and Full access; an Admin only edits the Brands they manage. */
+export function ManageBrandsModal({
+  open,
+  canCreateAndDelete,
+  onClose,
+}: {
+  open: boolean
+  canCreateAndDelete: boolean
+  onClose: () => void
+}) {
   const { t } = useTranslation('brands')
   const errorMessage = useApiErrorMessage('brands')
   const queryClient = useQueryClient()
@@ -74,15 +83,17 @@ export function ManageBrandsModal({ open, onClose }: { open: boolean; onClose: (
         onClose={close}
         footer={null}
       >
-        <div className="mb-4 flex justify-end">
-          <Button
-            icon={<IconPlus />}
-            disabled={workspaceId === null}
-            onClick={() => setCreateOpen(true)}
-          >
-            {t('manageModal.create')}
-          </Button>
-        </div>
+        {canCreateAndDelete ? (
+          <div className="mb-4 flex justify-end">
+            <Button
+              icon={<IconPlus />}
+              disabled={workspaceId === null}
+              onClick={() => setCreateOpen(true)}
+            >
+              {t('manageModal.create')}
+            </Button>
+          </div>
+        ) : null}
 
         {isPending ? (
           <div className="flex justify-center py-10">
@@ -112,18 +123,20 @@ export function ManageBrandsModal({ open, onClose }: { open: boolean; onClose: (
                   title={t('manageModal.edit', { name: brand.name })}
                   onClick={() => setEditBrand(brand)}
                 />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  icon={<IconDelete />}
-                  aria-label={t('manageModal.delete', { name: brand.name })}
-                  title={t('manageModal.delete', { name: brand.name })}
-                  onClick={() => {
-                    removeBrand.reset()
-                    setDeleteConfirmation('')
-                    setBrandToDelete(brand)
-                  }}
-                />
+                {canCreateAndDelete ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={<IconDelete />}
+                    aria-label={t('manageModal.delete', { name: brand.name })}
+                    title={t('manageModal.delete', { name: brand.name })}
+                    onClick={() => {
+                      removeBrand.reset()
+                      setDeleteConfirmation('')
+                      setBrandToDelete(brand)
+                    }}
+                  />
+                ) : null}
               </div>
             ))}
           </div>

@@ -21,6 +21,7 @@ import {
 } from '@/shared/ui'
 import {
   useDeleteWorkspaceMember,
+  useLeaveWorkspace,
   useMemberAccessOptions,
   useWorkspaceMembers,
   useWorkspaces,
@@ -29,7 +30,8 @@ import {
 import { AccessSummary } from '../components/AccessSummary'
 import { EditMemberModal } from '../components/EditMemberModal'
 import { InviteMembersSection } from '../components/InviteMembersSection'
-import { memberAccessInput } from '../model/member-role'
+import { canManageMembers, canManageWorkspace, memberAccessInput } from '../model/member-role'
+import { useEnterWorkspace } from '../model/use-enter-workspace'
 import { useApiErrorMessage } from '@/shared/hooks'
 
 const PAGE_SIZE = 20
@@ -39,17 +41,23 @@ export default function MembersPage() {
   const { t } = useTranslation('workspaces')
   const errorMessage = useApiErrorMessage('workspaces')
   const toast = useToast()
-  const { workspaceId } = useActiveWorkspace()
+  const { workspaceId, setWorkspace } = useActiveWorkspace()
+  const enterWorkspace = useEnterWorkspace()
   const { user } = useAuth()
   const [page, setPage] = useState(1)
   const [editMember, setEditMember] = useState<WorkspaceMemberDto | null>(null)
   const [removeMember, setRemoveMember] = useState<WorkspaceMemberDto | null>(null)
+  const [leaveOpen, setLeaveOpen] = useState(false)
   const workspaces = useWorkspaces()
   const members = useWorkspaceMembers(workspaceId, page)
   const brands = useBrands(workspaceId)
   const remove = useDeleteWorkspaceMember()
-  const actorRole = workspaces.data?.find((item) => item.id === workspaceId)?.role
-  const canManage = actorRole === 'owner' || actorRole === 'admin'
+  const leave = useLeaveWorkspace()
+  const workspace = workspaces.data?.find((item) => item.id === workspaceId)
+  const actorRole = workspace?.role
+  const canManage = canManageMembers(actorRole)
+  // An Admin removes members from their own Brands/Pages only; the member stays in the Workspace.
+  const removesFromWorkspace = canManageWorkspace(actorRole)
   // Page names/avatars are only readable by members who can manage access.
   const accessOptions = useMemberAccessOptions(workspaceId, canManage)
   const brandNames = useMemo(
@@ -58,12 +66,6 @@ export default function MembersPage() {
   )
 
   const columns = useMemo<DataTableColumn<WorkspaceMemberDto>[]>(() => {
-    const canManageMember = (member: WorkspaceMemberDto) =>
-      canManage &&
-      member.role !== 'owner' &&
-      member.userId !== user?.id &&
-      (actorRole === 'owner' || member.role !== 'admin')
-
     return [
       {
         key: 'member',
@@ -124,7 +126,7 @@ export default function MembersPage() {
         reorderable: false,
         resizable: false,
         render: (_, member) =>
-          canManageMember(member) ? (
+          member.canManage ? (
             <span className="flex items-center justify-end gap-1">
               <Tooltip title={t('members.remove')}>
                 <span className="inline-flex">
@@ -154,7 +156,7 @@ export default function MembersPage() {
           ) : null,
       },
     ]
-  }, [accessOptions.data, actorRole, brandNames, canManage, t, user?.id])
+  }, [accessOptions.data, brandNames, t, user?.id])
 
   if (!workspaceId) return <EmptyState title={t('members.noWorkspace')} description="" />
   if (members.isPending || workspaces.isPending) return <SectionSkeleton rows={8} />
@@ -215,6 +217,19 @@ export default function MembersPage() {
         </div>
       </SettingsSection>
 
+      {actorRole && actorRole !== 'owner' ? (
+        <SettingsSection
+          title={t('members.leaveTitle')}
+          description={t('members.leaveDescription')}
+        >
+          <div>
+            <Button variant="destructive" onClick={() => setLeaveOpen(true)}>
+              {t('members.leave')}
+            </Button>
+          </div>
+        </SettingsSection>
+      ) : null}
+
       {editMember ? (
         <EditMemberModal
           workspaceId={workspaceId}
@@ -228,10 +243,12 @@ export default function MembersPage() {
       ) : null}
       <ConfirmDialog
         open={Boolean(removeMember)}
-        title={t('members.removeConfirm', {
+        title={t(removesFromWorkspace ? 'members.removeConfirm' : 'members.removeScopedConfirm', {
           name: removeMember?.displayName || removeMember?.email || '',
         })}
-        description={t('members.removeDescription')}
+        description={t(
+          removesFromWorkspace ? 'members.removeDescription' : 'members.removeScopedDescription',
+        )}
         confirmLabel={t('members.remove')}
         loading={remove.isPending}
         onClose={() => setRemoveMember(null)}
@@ -249,6 +266,27 @@ export default function MembersPage() {
                 toast.error({ title: errorMessage(error, t('members.saveError')) }),
             },
           )
+        }}
+      />
+      <ConfirmDialog
+        open={leaveOpen}
+        title={t('members.leaveConfirm', { name: workspace?.name ?? '' })}
+        description={t('members.leaveConfirmDescription')}
+        confirmLabel={t('members.leave')}
+        loading={leave.isPending}
+        onClose={() => setLeaveOpen(false)}
+        onConfirm={() => {
+          leave.mutate(workspaceId, {
+            onSuccess: () => {
+              setLeaveOpen(false)
+              toast.success({ title: t('members.left') })
+              const next = workspaces.data?.find((item) => item.id !== workspaceId)
+              if (next) void enterWorkspace(next.id).catch(() => setWorkspace(next.id))
+              else setWorkspace(null)
+            },
+            onError: (error) =>
+              toast.error({ title: errorMessage(error, t('members.leaveError')) }),
+          })
         }}
       />
     </div>

@@ -25,7 +25,12 @@ export type PlanningApprovalStatus = 'none' | 'pending' | 'approved' | 'rejected
 export type PlanningMediaType = 'image' | 'video' | 'text'
 export type PlanningPostType =
   'facebook_feed' | 'facebook_reel' | 'facebook_story' | 'tiktok_video' | 'tiktok_photo'
-export type PlanningPublishIntent = 'draft' | 'approval' | 'publish_now' | 'schedule'
+/**
+ * `approval_*` submits for approval and goes out (now or at the chosen time) once approved.
+ * `publish_now`/`schedule` skip approval and need `publishing.publish_direct`.
+ */
+export type PlanningPublishIntent =
+  'draft' | 'approval_publish_now' | 'approval_schedule' | 'publish_now' | 'schedule'
 
 export type PlanningMedia = {
   id: string
@@ -70,6 +75,15 @@ export type PlanningContent = {
   publications?: PlanningPublication[]
   status: PlanningStatus
   approvalStatus: PlanningApprovalStatus
+  /** How Content submitted for approval goes out once approved. */
+  approvalIntent?: 'publish_now' | 'schedule'
+  /** Who submitted the post for approval; only they may withdraw it. */
+  approvalRequestedById?: string
+  approvalRequestedBy?: string
+  approvalRequestedAt?: string
+  /** Who approved or rejected the current submission. */
+  approvalReviewedBy?: string
+  approvalReviewedAt?: string
   scheduledAt?: string
   createdAt: string
   createdBy: string
@@ -88,6 +102,7 @@ export type PlanningQuery = {
   to?: string
 }
 
+/** A calendar window returns every post inside it; the list is paginated instead. */
 export type PlanningContentsResponse = {
   items: PlanningContent[]
 }
@@ -157,6 +172,10 @@ export type UpdatePlanningApprovalInput = {
   brandId: string
   contentId: string
   approvalStatus: PlanningApprovalStatus
+  /** When approving: publish now instead of the requested way. */
+  publishNow?: boolean
+  /** When approving: schedule every target at this time instead. */
+  scheduledAt?: string
 }
 
 export type UpdatePlanningContentInput = CreatePlanningContentInput & {

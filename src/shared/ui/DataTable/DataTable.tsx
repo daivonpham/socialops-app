@@ -471,9 +471,13 @@ export function DataTable<T extends object>({
   const rows = table.getRowModel().rows
 
   return (
-    <div className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-border-subtle bg-bg-surface shadow-xs">
+    // With a sticky header the rows scroll inside the table, so the card can shrink to the space
+    // its parent gives it while the header stays in view.
+    <div
+      className={`w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-border-subtle bg-bg-surface shadow-xs ${stickyHeader ? 'flex min-h-0 flex-col' : ''}`}
+    >
       {title || showColumnSettings ? (
-        <div className="flex min-h-12 items-center justify-between gap-3 border-b border-border-subtle px-4 py-2">
+        <div className="flex min-h-12 shrink-0 items-center justify-between gap-3 border-b border-border-subtle px-4 py-2">
           {title ? (
             <h2 className="min-w-0 truncate text-heading-3 text-text-primary">{title}</h2>
           ) : (
@@ -502,7 +506,9 @@ export function DataTable<T extends object>({
           ) : null}
         </div>
       ) : null}
-      <div className="app-scrollbar min-w-0 max-w-full overflow-x-auto overscroll-x-contain">
+      <div
+        className={`app-scrollbar min-w-0 max-w-full ${stickyHeader ? 'min-h-0 flex-1 overflow-auto overscroll-contain' : 'overflow-x-auto overscroll-x-contain'}`}
+      >
         <table
           aria-label={ariaLabel}
           className="min-w-full table-fixed border-collapse text-body-sm text-text-secondary"

@@ -44,6 +44,18 @@ export const workspacesViVN = {
     removeConfirm: 'Xóa {{name}} khỏi workspace này?',
     removeDescription:
       'Người này sẽ mất quyền truy cập mọi thương hiệu và Trang trong workspace ngay lập tức.',
+    removeScopedConfirm: 'Gỡ {{name}} khỏi thương hiệu và Trang của bạn?',
+    removeScopedDescription:
+      'Người này mất quyền với các thương hiệu và Trang bạn quản lý. Quyền ở những nơi khác vẫn giữ nguyên.',
+    roleLocked:
+      'Người này còn làm việc ở thương hiệu hoặc Trang bạn không quản lý nên bạn không đổi được vai trò.',
+    leaveTitle: 'Rời workspace',
+    leaveDescription: 'Bạn sẽ mất quyền truy cập mọi thương hiệu và Trang trong workspace này.',
+    leave: 'Rời workspace',
+    leaveConfirm: 'Rời workspace {{name}}?',
+    leaveConfirmDescription: 'Muốn quay lại, bạn cần được mời lại.',
+    left: 'Đã rời workspace.',
+    leaveError: 'Không thể rời workspace.',
     close: 'Đóng',
     cancel: 'Hủy',
     save: 'Lưu',
@@ -75,14 +87,42 @@ export const workspacesViVN = {
     restrictedPages_one: '{{count}} Trang được chọn',
     restrictedPages_other: '{{count}} Trang được chọn',
   },
+  roleGuide: {
+    open: 'Chi tiết quyền',
+    title: 'Quyền của từng vai trò',
+    description:
+      'Quản trị viên, Biên tập viên và Người xem chỉ làm việc trong các thương hiệu và Trang được giao.',
+    capability: 'Quyền',
+    allowed: 'Được phép',
+    notAllowed: 'Không được phép',
+    scopeAll: 'Mọi thương hiệu',
+    scopeAssigned: 'Được giao',
+    capabilities: {
+      scope: 'Phạm vi',
+      view: 'Xem nội dung và số liệu',
+      createContent: 'Tạo bài viết và gửi duyệt',
+      publishDirect: 'Đăng ngay, lên lịch không cần duyệt',
+      approve: 'Duyệt hoặc từ chối bài viết',
+      managePublished: 'Sửa, xóa bài đã đăng; hủy bài đã duyệt',
+      channels: 'Kết nối, ngắt kết nối Trang',
+      reports: 'Tạo và xuất báo cáo',
+      members: 'Mời và quản lý thành viên',
+      brands: 'Tạo, xóa thương hiệu',
+      ownerOnly: 'Cấp Toàn bộ quyền, xóa workspace',
+    },
+  },
   roleDescriptions: {
-    admin: 'Quản lý thành viên, thương hiệu và mọi Trang. Duyệt nội dung.',
-    editor: 'Tạo, lên lịch, đăng nội dung và kết nối Trang trong các thương hiệu được giao.',
+    owner: 'Toàn quyền với workspace, kể cả xóa workspace và cấp Toàn bộ quyền.',
+    full_access:
+      'Quản lý toàn bộ thương hiệu, Trang, thành viên và nội dung trong workspace. Không thể xóa workspace hay thay đổi chủ sở hữu.',
+    admin:
+      'Quản lý nội dung, duyệt bài, Trang, báo cáo và thành viên trong các thương hiệu, Trang được giao.',
+    editor: 'Tạo nội dung và gửi duyệt trong các thương hiệu, Trang được giao.',
     viewer: 'Xem nội dung và số liệu trong các thương hiệu được giao.',
   },
   access: {
     title: 'Quyền với thương hiệu và Trang',
-    adminNote: 'Admin truy cập được mọi thương hiệu và Trang trong workspace.',
+    fullAccessNote: 'Toàn bộ quyền truy cập được mọi thương hiệu và Trang trong workspace.',
     required: 'Chọn ít nhất một thương hiệu.',
     pagesRequired: 'Chọn ít nhất một Trang cho {{brand}}.',
     noBrands: 'Workspace chưa có thương hiệu nào.',
@@ -180,6 +220,7 @@ export const workspacesViVN = {
   },
   roles: {
     owner: 'Chủ sở hữu',
+    full_access: 'Toàn bộ quyền',
     admin: 'Quản trị viên',
     editor: 'Biên tập viên',
     viewer: 'Người xem',

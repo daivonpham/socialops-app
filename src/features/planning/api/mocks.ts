@@ -262,7 +262,16 @@ export const planningHandlers = [
           dateInRange(content, search.get('from'), search.get('to')),
       ),
     }
-    return HttpResponse.json(envelope(data, `/brands/${String(params.brandId)}/planning`))
+    // Like the API: a calendar window returns everything in it, the list is paginated.
+    if (search.get('from') && search.get('to'))
+      return HttpResponse.json(envelope(data, `/brands/${String(params.brandId)}/planning`))
+    const page = Number(search.get('page') ?? 1)
+    const limit = Number(search.get('limit') ?? 20)
+    const total = data.items.length
+    return HttpResponse.json({
+      data: data.items.slice((page - 1) * limit, page * limit),
+      metadata: { pagination: { page, limit, total, totalPage: Math.ceil(total / limit) } },
+    })
   }),
 
   http.get('/api/brands/:brandId/planning/:contentId', ({ params }) => {
@@ -282,7 +291,9 @@ export const planningHandlers = [
         : body.intent === 'publish_now'
           ? 'publishing'
           : 'draft'
-    const approvalStatus: PlanningApprovalStatus = body.intent === 'approval' ? 'pending' : 'none'
+    const approvalStatus: PlanningApprovalStatus = body.intent.startsWith('approval_')
+      ? 'pending'
+      : 'none'
     const targets = body.publications.map((publication) => target(publication.socialAccountId))
     const content: PlanningContent = {
       id: `content-created-${createdCount}`,
@@ -329,7 +340,9 @@ export const planningHandlers = [
         : body.intent === 'publish_now'
           ? 'publishing'
           : 'draft'
-    const approvalStatus: PlanningApprovalStatus = body.intent === 'approval' ? 'pending' : 'none'
+    const approvalStatus: PlanningApprovalStatus = body.intent.startsWith('approval_')
+      ? 'pending'
+      : 'none'
     const updated: PlanningContent = {
       ...content,
       version: content.version + 1,

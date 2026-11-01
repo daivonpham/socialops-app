@@ -171,11 +171,33 @@ export function createComposerDraftFromContent(content: PlanningContent): Planni
   }
 }
 
-export function getPlanningContentIntent(content: PlanningContent): PlanningPublishIntent {
-  if (content.approvalStatus === 'pending') return 'approval'
+/** Intents that need a publish time for every target. */
+export function isScheduleIntent(intent: PlanningPublishIntent): boolean {
+  return intent === 'schedule' || intent === 'approval_schedule'
+}
+
+/** Without `publish_direct`, publishing goes through approval the same way (now or scheduled). */
+export function allowedIntent(
+  intent: PlanningPublishIntent,
+  canPublishDirect: boolean,
+): PlanningPublishIntent {
+  if (canPublishDirect) return intent
+  if (intent === 'publish_now') return 'approval_publish_now'
+  if (intent === 'schedule') return 'approval_schedule'
+  return intent
+}
+
+export function getPlanningContentIntent(
+  content: PlanningContent,
+  canPublishDirect: boolean,
+): PlanningPublishIntent {
+  if (content.approvalStatus === 'pending')
+    return content.approvalIntent === 'schedule' ? 'approval_schedule' : 'approval_publish_now'
   if (['draft', 'failed', 'cancelled'].includes(content.status)) return 'draft'
-  if (content.status === 'scheduled') return 'schedule'
-  return 'publish_now'
+  return allowedIntent(
+    content.status === 'scheduled' ? 'schedule' : 'publish_now',
+    canPublishDirect,
+  )
 }
 
 export function canSubmitComposer(draft: PlanningComposerDraft): boolean {
@@ -245,7 +267,7 @@ function plannedAt(
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return undefined
   // A past planned date is only meaningful for scheduling; drafts silently drop it.
-  if (intent !== 'schedule' && date.getTime() <= Date.now()) return undefined
+  if (!isScheduleIntent(intent) && date.getTime() <= Date.now()) return undefined
   return date.toISOString()
 }
 

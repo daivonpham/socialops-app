@@ -116,8 +116,19 @@
     @apply h-full overflow-hidden;
   }
 
+  /* In the week grid an event is only as tall as its slot: the stacked layers peek out above
+     the card instead of taking its height, so the top card keeps its status and Page count. */
+  .planning-calendar .fc .fc-timegrid-event,
+  .planning-calendar .fc .fc-timegrid-event .fc-event-main {
+    @apply overflow-visible;
+  }
+
   .planning-calendar .fc .fc-timegrid-event .planning-calendar-stack {
-    @apply h-full;
+    @apply relative h-full;
+  }
+
+  .planning-calendar .fc .fc-timegrid-event .planning-calendar-stack__layers {
+    @apply pointer-events-none absolute inset-x-0 bottom-full;
   }
 
   .planning-calendar .fc .fc-timegrid-event .planning-calendar-stack__top {
@@ -204,4 +215,10 @@
 
 .planning-calendar .planning-calendar-stack.control-active .planning-calendar-event {
   @apply border-border-focus ring-2 ring-brand-100;
+}
+
+/* Dragging a post out of a stack's list: hide the list so every day stays reachable. The
+   dragged copy lives outside it, and the list stays mounted so the drag continues. */
+body.planning-stack-dragging .ant-popover:has(.planning-calendar-stack-list) {
+  visibility: hidden;
 }

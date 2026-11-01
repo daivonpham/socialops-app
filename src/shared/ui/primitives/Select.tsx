@@ -18,6 +18,8 @@ export type SelectProps = {
   showSearch?: boolean
   placeholder?: string
   'aria-label'?: string
+  /** Action shown below the options, after a divider (e.g. "Permission details"). */
+  footerAction?: { label: ReactNode; icon?: ReactNode; onClick: () => void }
 }
 
 export { Select } from '@/shared/components/ant/Select'

@@ -23,11 +23,30 @@ export async function getPlanningAccounts(brandId: string) {
   ).data
 }
 
-export async function getPlanningContents(brandId: string, query: PlanningQuery) {
+/** One page of the post list (`metadata.pagination` tells the total). */
+export async function getPlanningContentPage(
+  brandId: string,
+  query: PlanningQuery,
+  page: number,
+  limit: number,
+) {
+  return (
+    await apiClient.get<CommonApiResponse<PlanningContent[]>>(`/brands/${brandId}/planning`, {
+      params: { ...query, page, limit },
+    })
+  ).data
+}
+
+/** Every post whose calendar time falls in the window (at most 100 days). */
+export async function getPlanningCalendarContents(
+  brandId: string,
+  query: PlanningQuery,
+  window: { from: string; to: string },
+) {
   return (
     await apiClient.get<CommonApiResponse<PlanningContentsResponse>>(
       `/brands/${brandId}/planning`,
-      { params: query },
+      { params: { ...query, ...window } },
     )
   ).data
 }
@@ -60,11 +79,11 @@ export async function reschedulePlanningContent(input: ReschedulePlanningContent
 }
 
 export async function updatePlanningApproval(input: UpdatePlanningApprovalInput) {
-  const { brandId, contentId, approvalStatus } = input
+  const { brandId, contentId, ...body } = input
   return (
     await apiClient.patch<CommonApiResponse<PlanningContent>>(
       `/brands/${brandId}/planning/${contentId}/approval`,
-      { approvalStatus },
+      body,
     )
   ).data
 }

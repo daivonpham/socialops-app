@@ -20,11 +20,13 @@ import {
 } from '../api'
 import {
   grantableRoles,
+  hasFullAccess,
   isAccessComplete,
   memberAccessInput,
   type InvitableRole,
 } from '../model/member-role'
 import { MemberAccessEditor } from './MemberAccessEditor'
+import { RoleGuideModal } from './RoleGuideModal'
 import { useApiErrorMessage } from '@/shared/hooks'
 
 /** Role and Brand/Page access for one member, saved together. */
@@ -48,17 +50,21 @@ export function EditMemberModal({
   const [role, setRole] = useState<InvitableRole>(member.role as InvitableRole)
   const [access, setAccess] = useState(() => memberAccessInput(member))
   const [failure, setFailure] = useState<unknown>(null)
+  const [guideOpen, setGuideOpen] = useState(false)
   const saving = updateRole.isPending || updateAccess.isPending
   const name = member.displayName || member.email
-  const canSave = !saving && (role === 'admin' || isAccessComplete(access))
+  const fullAccess = hasFullAccess(role)
+  const canSave = !saving && (fullAccess || isAccessComplete(access))
+  // An Admin changes the role only of members working entirely inside the Admin's scope.
+  const roles = member.canChangeRole ? grantableRoles(actorRole) : [member.role as InvitableRole]
 
   const save = async () => {
     setFailure(null)
     try {
-      // Change the role first: access only applies to Editor/Viewer.
+      // Change the role first: access does not apply to Full access.
       if (role !== member.role)
         await updateRole.mutateAsync({ workspaceId, memberId: member.id, role })
-      if (role !== 'admin')
+      if (!fullAccess)
         await updateAccess.mutateAsync({ workspaceId, memberId: member.id, brands: access })
       toast.success({ title: t('members.saved') })
       onClose()
@@ -111,7 +117,7 @@ export function EditMemberModal({
           <legend className="mb-2">
             <SectionLabel>{t('members.role')}</SectionLabel>
           </legend>
-          {grantableRoles(actorRole).map((item) => (
+          {roles.map((item) => (
             <label
               key={item}
               className={`flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 transition-colors has-[:focus-visible]:focus-ring ${
@@ -136,13 +142,26 @@ export function EditMemberModal({
               </span>
             </label>
           ))}
+          {member.canChangeRole ? null : (
+            <p className="text-body-sm text-text-tertiary">{t('members.roleLocked')}</p>
+          )}
+          <div className="mt-1 border-t border-border-subtle pt-2">
+            <button
+              type="button"
+              className="flex items-center gap-2 rounded-md text-body-sm text-text-secondary outline-none transition-colors duration-fast hover:text-text-primary focus-visible:focus-ring"
+              onClick={() => setGuideOpen(true)}
+            >
+              <span>{t('roleGuide.open')}</span>
+              <IconInfo aria-hidden className="text-icon-sm text-text-tertiary" />
+            </button>
+          </div>
         </fieldset>
         <div className="grid gap-2">
           <SectionLabel>{t('access.title')}</SectionLabel>
-          {role === 'admin' ? (
+          {fullAccess ? (
             <div className="flex items-center gap-3 rounded-xl border border-border-subtle bg-bg-surface-subtle px-4 py-3">
               <IconInfo aria-hidden className="shrink-0 text-icon-sm text-text-tertiary" />
-              <p className="text-body-sm text-text-secondary">{t('access.adminNote')}</p>
+              <p className="text-body-sm text-text-secondary">{t('access.fullAccessNote')}</p>
             </div>
           ) : options.isPending ? (
             <SectionSkeleton rows={3} />
@@ -153,6 +172,7 @@ export function EditMemberModal({
           )}
         </div>
       </div>
+      {guideOpen ? <RoleGuideModal onClose={() => setGuideOpen(false)} /> : null}
     </Modal>
   )
 }

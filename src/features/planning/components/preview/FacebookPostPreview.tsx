@@ -18,6 +18,8 @@ import {
   IconPlaySolid,
   IconSpeakerHigh,
   IconSpeakerMuted,
+  Image,
+  ImagePreviewGroup,
   VideoPreview,
   type VideoPreviewHandle,
 } from '@/shared/ui'
@@ -144,7 +146,7 @@ function FacebookVerticalPreview({
           onPlayingChange={story ? setStoryPlaying : undefined}
         />
       ) : primaryMedia ? (
-        <img src={primaryMedia.url} alt="" className="h-full w-full object-cover" />
+        <PreviewImage media={primaryMedia} />
       ) : (
         <EmptyMedia className="h-full text-neutral-400" dark />
       )}
@@ -224,13 +226,21 @@ function FacebookVerticalPreview({
 }
 
 function FacebookImageGrid({ images }: { images: ComposerMedia[] }) {
+  return (
+    <ImagePreviewGroup items={images.map((item) => item.url)}>
+      <FacebookImageLayout images={images} />
+    </ImagePreviewGroup>
+  )
+}
+
+function FacebookImageLayout({ images }: { images: ComposerMedia[] }) {
   const [first, ...rest] = images
   if (!first) return null
 
   if (images.length === 1) {
     return (
       <div className="flex aspect-[6/5] justify-center overflow-hidden bg-neutral-200">
-        <img src={first.url} alt="" className="h-full w-full object-contain" />
+        <PreviewImage media={first} fit="contain" />
       </div>
     )
   }
@@ -239,7 +249,7 @@ function FacebookImageGrid({ images }: { images: ComposerMedia[] }) {
     return (
       <div className="grid aspect-square grid-rows-2 gap-px overflow-hidden bg-neutral-200">
         {images.map((item) => (
-          <GridImage key={item.id} src={item.url} />
+          <PreviewImage key={item.id} media={item} />
         ))}
       </div>
     )
@@ -249,11 +259,11 @@ function FacebookImageGrid({ images }: { images: ComposerMedia[] }) {
     return (
       <div className="flex aspect-square flex-col gap-px overflow-hidden bg-neutral-200">
         <div className="min-h-0 flex-[2]">
-          <GridImage src={first.url} />
+          <PreviewImage media={first} />
         </div>
         <div className="grid min-h-0 flex-1 grid-cols-2 gap-px">
           {rest.map((item) => (
-            <GridImage key={item.id} src={item.url} />
+            <PreviewImage key={item.id} media={item} />
           ))}
         </div>
       </div>
@@ -267,9 +277,9 @@ function FacebookImageGrid({ images }: { images: ComposerMedia[] }) {
     <div className="grid aspect-square grid-cols-2 grid-rows-2 gap-px overflow-hidden bg-neutral-200">
       {visible.map((item, index) => (
         <div key={item.id} className="relative min-h-0">
-          <GridImage src={item.url} />
+          <PreviewImage media={item} />
           {hiddenCount > 0 && index === visible.length - 1 ? (
-            <span className="absolute inset-0 flex items-center justify-center bg-neutral-950/50 text-heading-2 text-text-inverse">
+            <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-neutral-950/50 text-heading-2 text-text-inverse">
               +{hiddenCount}
             </span>
           ) : null}
@@ -279,8 +289,22 @@ function FacebookImageGrid({ images }: { images: ComposerMedia[] }) {
   )
 }
 
-function GridImage({ src }: { src: string }) {
-  return <img src={src} alt="" className="h-full min-h-0 w-full object-cover" />
+function PreviewImage({
+  media,
+  fit = 'cover',
+}: {
+  media: ComposerMedia
+  fit?: 'cover' | 'contain'
+}) {
+  return (
+    <Image
+      src={media.url}
+      alt={media.name}
+      className={`h-full w-full ${fit === 'contain' ? 'object-contain' : 'object-cover'}`}
+      wrapperClassName="block h-full min-h-0 w-full"
+      preview={{ mask: false }}
+    />
+  )
 }
 
 function FacebookIdentity({

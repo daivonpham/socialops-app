@@ -1,15 +1,30 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, IconClose, IconMail, IconPlus, Input, Select, useToast } from '@/shared/ui'
+import {
+  Button,
+  IconClose,
+  IconInfo,
+  IconMail,
+  IconPlus,
+  Input,
+  Select,
+  useToast,
+} from '@/shared/ui'
 import {
   useInviteWorkspaceMember,
   type AccessOptionBrandDto,
   type BrandAccessInput,
   type WorkspaceMemberRole,
 } from '../api'
-import { grantableRoles, isAccessComplete, type InvitableRole } from '../model/member-role'
+import {
+  grantableRoles,
+  hasFullAccess,
+  isAccessComplete,
+  type InvitableRole,
+} from '../model/member-role'
 import { AccessPickerModal } from './AccessPickerModal'
 import { AccessSummary } from './AccessSummary'
+import { RoleGuideModal } from './RoleGuideModal'
 import { useApiErrorMessage } from '@/shared/hooks'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -53,9 +68,11 @@ export function InviteMembersSection({
   const [rows, setRows] = useState<InviteRow[]>(() => [newRow()])
   const [accessRowId, setAccessRowId] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
+  const [guideOpen, setGuideOpen] = useState(false)
   const filled = rows.filter((row) => row.email.trim())
   const isRowValid = (row: InviteRow) =>
-    EMAIL_PATTERN.test(row.email.trim()) && (row.role === 'admin' || isAccessComplete(row.access))
+    EMAIL_PATTERN.test(row.email.trim()) &&
+    (hasFullAccess(row.role) || isAccessComplete(row.access))
   const canSend = filled.length > 0 && filled.every(isRowValid) && !sending
   const accessRow = rows.find((row) => row.id === accessRowId)
 
@@ -73,7 +90,7 @@ export function InviteMembersSection({
           workspaceId,
           email: row.email.trim(),
           role: row.role,
-          brands: row.role === 'admin' ? [] : row.access,
+          brands: hasFullAccess(row.role) ? [] : row.access,
         }),
       ),
     )
@@ -127,14 +144,19 @@ export function InviteMembersSection({
                   value: role,
                   label: t(`roles.${role}`),
                 }))}
+                footerAction={{
+                  label: t('roleGuide.open'),
+                  icon: <IconInfo aria-hidden />,
+                  onClick: () => setGuideOpen(true),
+                }}
               />
               <Button
                 className="h-9 w-full justify-start px-3"
-                disabled={row.role === 'admin'}
+                disabled={hasFullAccess(row.role)}
                 title={t(`roleDescriptions.${row.role}`)}
                 onClick={() => setAccessRowId(row.id)}
               >
-                {row.role !== 'admin' && !row.access.length ? (
+                {!hasFullAccess(row.role) && !row.access.length ? (
                   <span className="truncate text-body-sm text-text-tertiary">
                     {t('members.chooseAccess')}
                   </span>
@@ -179,6 +201,7 @@ export function InviteMembersSection({
           {t('members.sendInvites')}
         </Button>
       </div>
+      {guideOpen ? <RoleGuideModal onClose={() => setGuideOpen(false)} /> : null}
       {accessRow ? (
         <AccessPickerModal
           workspaceId={workspaceId}

@@ -80,11 +80,13 @@ export const appEnUS = {
     manageChannels: 'Manage channels',
     publishContent: 'Publish content',
     approveContent: 'Approve content',
+    publishDirect: 'Publish without approval',
     manageWorkspace: 'Manage workspace',
     viewAnalytics: 'View analytics',
     viewReports: 'View reports',
     manageReports: 'Manage reports',
     viewMembers: 'View members',
+    manageMembers: 'Manage members',
     viewSettings: 'View settings',
   },
 } as const

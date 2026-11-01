@@ -19,6 +19,7 @@ import {
 import { WORKSPACE_QUERY_KEYS, type WorkspaceDto, useDeleteWorkspace, useWorkspaces } from '../api'
 import { CreateWorkspaceModal } from './CreateWorkspaceModal'
 import { EditWorkspaceModal } from './EditWorkspaceModal'
+import { canManageWorkspace } from '../model/member-role'
 import { useApiErrorMessage } from '@/shared/hooks'
 
 export function ManageWorkspacesModal({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -95,7 +96,7 @@ export function ManageWorkspacesModal({ open, onClose }: { open: boolean; onClos
         ) : (
           <div className="grid gap-2">
             {(workspaces ?? []).map((workspace) => {
-              const canEdit = workspace.role === 'owner' || workspace.role === 'admin'
+              const canEdit = canManageWorkspace(workspace.role)
               const canDelete = workspace.role === 'owner'
               return (
                 <div

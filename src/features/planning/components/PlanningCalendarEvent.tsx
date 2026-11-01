@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { IconFacebook, IconTikTok, Tooltip } from '@/shared/ui'
 import type { PlanningContent } from '../api'
+import { pendingApprovalIntent } from '../model/approval'
 import { planningStatusGroup, type PlanningSummaryStatus } from '../model/planning-status-group'
 import { PlanningMediaThumbnail } from './PlanningMediaThumbnail'
 
@@ -24,11 +25,14 @@ export function PlanningCalendarEvent({
 }) {
   const { t } = useTranslation('planning')
   const summaryStatus = planningStatusGroup(content)
+  // Waiting for approval reads as how the post will go out once approved.
+  const pending = pendingApprovalIntent(content)
+  const statusLabel = pending ? t(`pendingIntent.${pending}`) : t(`statusGroup.${summaryStatus}`)
   const label = t('calendar.eventLabel', {
     time: timeText,
     platform: t(`platform.${content.platform}`),
     caption: content.title ?? content.caption,
-    status: t(`statusGroup.${summaryStatus}`),
+    status: statusLabel,
     count: content.targets.length,
   })
 
@@ -52,7 +56,7 @@ export function PlanningCalendarEvent({
             <IconTikTok aria-label={t('platform.tiktok')} className="text-text-primary" />
           )}
         </span>
-        <span className="truncate">{t(`statusGroup.${summaryStatus}`)}</span>
+        <span className="truncate">{statusLabel}</span>
         <span aria-hidden>·</span>
         <span className="truncate">
           {t(

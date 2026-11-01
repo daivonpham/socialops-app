@@ -67,6 +67,14 @@ export function PlanningFilters({
         setDraftType('all')
         setDraftAttention('all')
         setDraftApprovalStatus('all')
+        // Reset takes effect right away; there is nothing left to choose.
+        onChange({
+          accountId: 'all',
+          statusGroup: 'all',
+          type: 'all',
+          attention: 'all',
+          approvalStatus: 'all',
+        })
       }}
       onApply={() =>
         onChange({

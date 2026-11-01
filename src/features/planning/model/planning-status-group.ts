@@ -1,6 +1,7 @@
 import type { StatusTone } from '@/shared/ui'
 import type { PlanningContent } from '../api'
 import type { PlanningStatusGroup } from '../config/planning.filters'
+import { pendingApprovalIntent } from './approval'
 
 export type PlanningSummaryStatus = PlanningStatusGroup | 'deleted'
 
@@ -52,7 +53,12 @@ export function planningStatusGroup(content: PlanningContent): PlanningSummarySt
     ['published', 'partial'].includes(content.status)
   )
     return 'published'
-  if (content.status === 'scheduled' || statuses.some((status) => status === 'scheduled'))
+  // A post waiting for approval to go out at a set time is scheduled, not a draft.
+  if (
+    content.status === 'scheduled' ||
+    statuses.some((status) => status === 'scheduled') ||
+    pendingApprovalIntent(content) === 'schedule'
+  )
     return 'scheduled'
   if (['cancelled', 'deleted'].includes(content.status)) return 'deleted'
   return 'draft'

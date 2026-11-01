@@ -35,11 +35,14 @@ import { getPlanningPath } from '../config/planning.routes'
 import { canPublishOnPlatform } from '../config/planning-capabilities'
 import { PlanningPostPreview } from '../components/preview/PlanningPostPreview'
 import {
+  allowedIntent,
   canSubmitComposer,
+  canWithdrawApproval,
   composerCaptionFor,
   createComposerDraft,
   createComposerDraftFromContent,
   getPlanningContentIntent,
+  isScheduleIntent,
   toCreatePlanningContentInput,
   toUpdatePlanningContentInput,
   usesCaptionPerAccount,
@@ -48,6 +51,9 @@ import {
   type PreviewViewport,
 } from '../model'
 import { useApiErrorMessage } from '@/shared/hooks'
+import { useAuth } from '@/shared/auth'
+import { hasPermission, usePermissions } from '@/shared/permissions'
+import { PLANNING_ACCESS } from '../config/planning-access'
 
 export default function CreatePlanningPostPage() {
   const { t } = useTranslation('planning')
@@ -336,15 +342,23 @@ function PlanningComposerWorkspace({
   const [submitError, setSubmitError] = useState<unknown>(null)
   const createKey = useRef(crypto.randomUUID())
   const [previewAccountId, setPreviewAccountId] = useState('')
+  const { granted } = usePermissions()
+  const canPublishDirect = hasPermission(granted, PLANNING_ACCESS.publishDirect[0])
+  const { user } = useAuth()
+  // Saving someone else's pending post as a plain draft would withdraw their request.
+  const canSaveDraft =
+    !content || content.approvalStatus !== 'pending' || canWithdrawApproval(content, user?.id)
   const [initialIntent] = useState<PlanningPublishIntent>(() =>
-    content ? getPlanningContentIntent(content) : shouldSchedule ? 'schedule' : 'publish_now',
+    content
+      ? getPlanningContentIntent(content, canPublishDirect)
+      : allowedIntent(shouldSchedule ? 'schedule' : 'publish_now', canPublishDirect),
   )
   const [publishIntent, setPublishIntent] = useState<PlanningPublishIntent>(initialIntent)
   const createContent = useCreatePlanningContent(brandId)
   const updateContent = useUpdatePlanningContent(brandId)
   const setPreviewAccount = useCallback((accountId: string) => setPreviewAccountId(accountId), [])
 
-  const submit = async (intent: 'draft' | 'approval' | 'publish_now' | 'schedule') => {
+  const submit = async (intent: PlanningPublishIntent) => {
     if (submitting.current) return
     submitting.current = true
     setSubmitError(null)
@@ -459,6 +473,8 @@ function PlanningComposerWorkspace({
             intent={publishIntent}
             isEditing={Boolean(content)}
             initialIntent={initialIntent}
+            canPublishDirect={canPublishDirect}
+            canSaveDraft={canSaveDraft}
             loading={saveContent.isPending || submitPhase !== null}
             submitPhase={submitPhase}
             canSubmit={publishIntent === 'draft' || canSubmit}
@@ -466,7 +482,7 @@ function PlanningComposerWorkspace({
               setPublishIntent(intent)
               setDraft((current) => ({
                 ...current,
-                publishMode: intent === 'schedule' ? 'schedule' : 'publish_now',
+                publishMode: isScheduleIntent(intent) ? 'schedule' : 'publish_now',
               }))
             }}
             onDraftChange={setDraft}
@@ -514,12 +530,51 @@ function toDateKey(date: Date): string {
   return `${year}-${month}-${day}`
 }
 
+type PublishActionLabel =
+  | 'saveDraft'
+  | 'submitApprovalNow'
+  | 'submitApprovalSchedule'
+  | 'submitApprovalScheduleByAccount'
+  | 'schedule'
+  | 'scheduleByAccount'
+  | 'publish'
+
+/** Composer actions; `direct` ones skip approval and need `publishing.publish_direct`. */
+const PUBLISH_ACTIONS: Array<{
+  key: string
+  intent: PlanningPublishIntent
+  label: PublishActionLabel
+  byAccount?: boolean
+  direct?: boolean
+}> = [
+  { key: 'draft', intent: 'draft', label: 'saveDraft' },
+  { key: 'approval_publish_now', intent: 'approval_publish_now', label: 'submitApprovalNow' },
+  { key: 'approval_schedule', intent: 'approval_schedule', label: 'submitApprovalSchedule' },
+  {
+    key: 'approval_schedule_by_account',
+    intent: 'approval_schedule',
+    label: 'submitApprovalScheduleByAccount',
+    byAccount: true,
+  },
+  { key: 'schedule', intent: 'schedule', label: 'schedule', direct: true },
+  {
+    key: 'schedule_by_account',
+    intent: 'schedule',
+    label: 'scheduleByAccount',
+    byAccount: true,
+    direct: true,
+  },
+  { key: 'publish_now', intent: 'publish_now', label: 'publish', direct: true },
+]
+
 function PublishingActionBar({
   draft,
   accounts,
   intent,
   isEditing,
   initialIntent,
+  canPublishDirect,
+  canSaveDraft,
   loading,
   submitPhase,
   canSubmit,
@@ -532,6 +587,8 @@ function PublishingActionBar({
   intent: PlanningPublishIntent
   isEditing: boolean
   initialIntent: PlanningPublishIntent
+  canPublishDirect: boolean
+  canSaveDraft: boolean
   loading: boolean
   submitPhase: 'uploading' | 'saving' | null
   canSubmit: boolean
@@ -541,42 +598,37 @@ function PublishingActionBar({
 }) {
   const { t } = useTranslation('planning')
   const selectedAccounts = accounts.filter((account) => draft.targetIds.includes(account.id))
+  const byAccount = isScheduleIntent(intent) && draft.scheduleMode === 'by_account'
+  const selectedActionKey = byAccount ? `${intent}_by_account` : intent
+  // Members without `publish_direct` only submit for approval; it goes out once approved.
+  const actions = PUBLISH_ACTIONS.filter(
+    (action) => (canPublishDirect || !action.direct) && (canSaveDraft || action.intent !== 'draft'),
+  )
+  const selectedAction = PUBLISH_ACTIONS.find((action) => action.key === selectedActionKey)
   // Editing keeps "Save changes" until the user picks a different action (e.g. schedule a draft).
   const actionLabel =
     isEditing && intent === initialIntent
       ? t('composer.actions.saveChanges')
-      : {
-          draft: t('composer.actions.saveDraft'),
-          approval: t('composer.actions.submitApproval'),
-          schedule:
-            draft.scheduleMode === 'by_account'
-              ? t('composer.actions.scheduleByAccount')
-              : t('composer.actions.schedule'),
-          publish_now: t('composer.actions.publish'),
-        }[intent]
+      : t(`composer.actions.${selectedAction?.label ?? 'saveDraft'}`)
   const buttonLabel =
     submitPhase === 'uploading'
       ? t('composer.media.uploading')
       : submitPhase === 'saving'
         ? t(intent === 'publish_now' ? 'composer.actions.publishing' : 'composer.actions.saving')
         : actionLabel
-  const selectedActionKey =
-    intent === 'schedule' && draft.scheduleMode === 'by_account' ? 'schedule_by_account' : intent
-  const usesSharedSchedule = intent === 'schedule' && draft.scheduleMode === 'same_time'
-  const usesAccountSchedule = intent === 'schedule' && draft.scheduleMode === 'by_account'
+  const usesSharedSchedule = isScheduleIntent(intent) && draft.scheduleMode === 'same_time'
+  const usesAccountSchedule = byAccount
   const hasNoScheduledAccounts = usesAccountSchedule && selectedAccounts.length === 0
 
   const selectAction = (key: string) => {
-    if (key === 'schedule' || key === 'schedule_by_account') {
+    const action = PUBLISH_ACTIONS.find((item) => item.key === key)
+    if (!action) return
+    if (isScheduleIntent(action.intent))
       onDraftChange((current) => ({
         ...current,
-        scheduleMode: key === 'schedule_by_account' ? 'by_account' : 'same_time',
+        scheduleMode: action.byAccount ? 'by_account' : 'same_time',
       }))
-      onIntentChange('schedule')
-      return
-    }
-
-    onIntentChange(key as PlanningPublishIntent)
+    onIntentChange(action.intent)
   }
 
   return (
@@ -652,53 +704,15 @@ function PublishingActionBar({
             <Dropdown
               placement="topRight"
               selectedKey={selectedActionKey}
-              items={[
-                {
-                  key: 'draft',
-                  label: (
-                    <PublishOption
-                      title={t('composer.actions.saveDraft')}
-                      description={t('composer.actions.saveDraftHint')}
-                    />
-                  ),
-                },
-                {
-                  key: 'approval',
-                  label: (
-                    <PublishOption
-                      title={t('composer.actions.submitApproval')}
-                      description={t('composer.actions.submitApprovalHint')}
-                    />
-                  ),
-                },
-                {
-                  key: 'schedule',
-                  label: (
-                    <PublishOption
-                      title={t('composer.actions.schedule')}
-                      description={t('composer.actions.scheduleHint')}
-                    />
-                  ),
-                },
-                {
-                  key: 'schedule_by_account',
-                  label: (
-                    <PublishOption
-                      title={t('composer.actions.scheduleByAccount')}
-                      description={t('composer.actions.scheduleByAccountHint')}
-                    />
-                  ),
-                },
-                {
-                  key: 'publish_now',
-                  label: (
-                    <PublishOption
-                      title={t('composer.actions.publish')}
-                      description={t('composer.actions.publishHint')}
-                    />
-                  ),
-                },
-              ]}
+              items={actions.map((action) => ({
+                key: action.key,
+                label: (
+                  <PublishOption
+                    title={t(`composer.actions.${action.label}`)}
+                    description={t(`composer.actions.${action.label}Hint`)}
+                  />
+                ),
+              }))}
               onSelect={selectAction}
             >
               <Button

@@ -83,11 +83,13 @@ export const appViVN = {
     manageChannels: 'Quản lý kênh',
     publishContent: 'Xuất bản nội dung',
     approveContent: 'Duyệt nội dung',
+    publishDirect: 'Đăng không cần duyệt',
     manageWorkspace: 'Quản lý không gian làm việc',
     viewAnalytics: 'Xem phân tích',
     viewReports: 'Xem báo cáo',
     manageReports: 'Quản lý báo cáo',
     viewMembers: 'Xem thành viên',
+    manageMembers: 'Quản lý thành viên',
     viewSettings: 'Xem cài đặt',
   },
 } as const satisfies TranslationShape<typeof appEnUS>

@@ -9,29 +9,28 @@ import {
   EmptyState,
   IconEdit,
   IconView,
-  StatusTag,
   Tooltip,
   type DataTableColumn,
 } from '@/shared/ui'
-import {
-  useUpdatePlanningApproval,
-  type PlanningApprovalStatus,
-  type PlanningContent,
-  type PlanningPostType,
-} from '../api'
+import { SocialAccountLabel } from '@/features/social-accounts'
+import { type PlanningApprovalStatus, type PlanningContent, type PlanningPostType } from '../api'
+import type { PlanningAccount } from '../model'
 import {
   PLANNING_FILTER_APPROVAL_STATUSES,
   PLANNING_FILTER_STATUS_GROUPS,
   type PlanningStatusGroup,
 } from '../config/planning.filters'
-import { planningStatusGroup, planningSummaryStatusTone } from '../model/planning-status-group'
 import { ApprovalStatusSelect } from './ApprovalStatusSelect'
+import { PlanningStatusTag } from './PlanningStatusTag'
 import { PLANNING_ACCESS } from '../config/planning-access'
 import { PlanningMediaThumbnail } from './PlanningMediaThumbnail'
 
 export function PlanningList({
   brandId,
   contents,
+  accounts,
+  platform,
+  accountId,
   statusGroup,
   approvalStatus,
   hasActiveFilters,
@@ -42,11 +41,16 @@ export function PlanningList({
 }: {
   brandId: string
   contents: PlanningContent[]
+  /** Accounts the posts can be filtered by; the column filter shows only with two or more. */
+  accounts: PlanningAccount[]
+  platform: 'all' | PlanningAccount['platform']
+  accountId: string
   statusGroup: 'all' | PlanningStatusGroup
   approvalStatus: 'all' | PlanningApprovalStatus
   hasActiveFilters: boolean
   onClearFilters: () => void
   onFiltersChange: (filters: {
+    accountId?: string
     statusGroup?: 'all' | PlanningStatusGroup
     approvalStatus?: 'all' | PlanningApprovalStatus
   }) => void
@@ -56,12 +60,12 @@ export function PlanningList({
   const { t, i18n } = useTranslation('planning')
   const { granted } = usePermissions()
   const canApprove = hasPermission(granted, PLANNING_ACCESS.approve[0])
+  const canSubmit = hasPermission(granted, PLANNING_ACCESS.publish[0])
   const locale = i18n.resolvedLanguage as AppLocale
-  const {
-    mutate: updateApproval,
-    isPending: approvalPending,
-    variables: approvalVariables,
-  } = useUpdatePlanningApproval(brandId)
+  const filterAccounts = useMemo(
+    () => accounts.filter((account) => platform === 'all' || account.platform === platform),
+    [accounts, platform],
+  )
   const columns = useMemo<DataTableColumn<PlanningContent>[]>(
     () => [
       {
@@ -96,6 +100,20 @@ export function PlanningList({
         key: 'accounts',
         title: t('list.accounts'),
         width: 'wide',
+        ...(filterAccounts.length > 1
+          ? {
+              filterValue: accountId,
+              filterDefaultValue: 'all',
+              filterOptions: [
+                { value: 'all', label: t('filters.allAccounts') },
+                ...filterAccounts.map((account) => ({
+                  value: account.id,
+                  label: <SocialAccountLabel name={account.name} avatarUrl={account.avatarUrl} />,
+                })),
+              ],
+              onFilterChange: (value: string) => onFiltersChange({ accountId: value }),
+            }
+          : {}),
         render: (_, row) => {
           const visibleTargets = row.targets.slice(0, 3)
           const remainingCount = Math.max(0, row.targets.length - visibleTargets.length)
@@ -159,12 +177,9 @@ export function PlanningList({
             publications.some((item) =>
               ['failed', 'unknown', 'edit_unknown', 'delete_unknown'].includes(item.status),
             ) || ['failed', 'unknown', 'edit_unknown', 'delete_unknown'].includes(row.status)
-          const group = planningStatusGroup(row)
           return (
             <div className="grid gap-1">
-              <StatusTag tone={planningSummaryStatusTone(group)}>
-                {t(`statusGroup.${group}`)}
-              </StatusTag>
+              <PlanningStatusTag content={row} showTime />
               {publications.length > 1 &&
                 !['draft', 'scheduled', 'cancelled'].includes(row.status) && (
                   <span className="text-caption text-text-secondary">
@@ -196,18 +211,14 @@ export function PlanningList({
           onFiltersChange({
             approvalStatus: value as 'all' | PlanningApprovalStatus,
           }),
-        render: (_, row) =>
-          canApprove ? (
-            <ApprovalStatusSelect
-              value={row.approvalStatus}
-              disabled={approvalPending && approvalVariables?.contentId === row.id}
-              onChange={(approvalStatus) => {
-                updateApproval({ brandId, contentId: row.id, approvalStatus })
-              }}
-            />
-          ) : (
-            t(`approvalStatus.${row.approvalStatus}`)
-          ),
+        render: (_, row) => (
+          <ApprovalStatusSelect
+            brandId={brandId}
+            content={row}
+            canApprove={canApprove}
+            canSubmit={canSubmit}
+          />
+        ),
       },
       {
         key: 'scheduledAt',
@@ -284,6 +295,7 @@ export function PlanningList({
       },
     ],
     [
+      accountId,
       approvalStatus,
       brandId,
       locale,
@@ -292,10 +304,9 @@ export function PlanningList({
       onSelectContent,
       statusGroup,
       t,
-      updateApproval,
-      approvalPending,
-      approvalVariables,
       canApprove,
+      canSubmit,
+      filterAccounts,
     ],
   )
 

@@ -4,7 +4,7 @@ import type { WorkspaceDto } from './types'
 
 export const MOCK_WORKSPACES: WorkspaceDto[] = [
   { id: 'ws-north', name: 'North Agency', role: 'owner' },
-  { id: 'ws-south', name: 'South Studio', role: 'admin' },
+  { id: 'ws-south', name: 'South Studio', role: 'full_access' },
 ]
 
 export const workspaceHandlers = [

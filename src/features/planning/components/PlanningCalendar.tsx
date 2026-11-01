@@ -10,7 +10,7 @@ import type {
 } from '@fullcalendar/core'
 import viLocale from '@fullcalendar/core/locales/vi'
 import dayGridPlugin from '@fullcalendar/daygrid'
-import interactionPlugin from '@fullcalendar/interaction'
+import interactionPlugin, { type DropArg } from '@fullcalendar/interaction'
 import FullCalendar from '@fullcalendar/react'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import { useTranslation } from 'react-i18next'
@@ -21,7 +21,6 @@ import {
   uses12HourTime,
 } from '@/shared/i18n'
 import {
-  Alert,
   Button,
   DatePicker,
   Dropdown,
@@ -36,6 +35,7 @@ import {
   IconVideo,
   Modal,
   Select,
+  useToast,
 } from '@/shared/ui'
 import {
   useReschedulePlanningContent,
@@ -53,6 +53,8 @@ import { PlanningCalendarEvent } from './PlanningCalendarEvent'
 import { PlanningCalendarStack } from './PlanningCalendarStack'
 import './planning-calendar.css'
 import { useApiErrorMessage } from '@/shared/hooks'
+import { hasPermission, usePermissions } from '@/shared/permissions'
+import { PLANNING_ACCESS } from '../config/planning-access'
 
 type PendingReschedule = {
   content: PlanningContent
@@ -103,6 +105,8 @@ export function PlanningCalendar({
   const createButtonRoots = useRef(new Map<HTMLElement, Root>())
   const createButtonCleanups = useRef(new Map<HTMLElement, () => void>())
   const reschedule = useReschedulePlanningContent(brandId)
+  const { granted } = usePermissions()
+  const canPublishDirect = hasPermission(granted, PLANNING_ACCESS.publishDirect[0])
   const [calendarHeading, setCalendarHeading] = useState<CalendarHeading>({
     title: '',
     range: '',
@@ -111,7 +115,7 @@ export function PlanningCalendar({
     week: 0,
   })
   const [pendingReschedule, setPendingReschedule] = useState<PendingReschedule | null>(null)
-  const [rescheduleError, setRescheduleError] = useState<unknown>(null)
+  const toast = useToast()
   const [openStackId, setOpenStackId] = useState<string | null>(null)
   const fullCalendarView = calendarView === 'month' ? 'dayGridMonth' : 'timeGridWeek'
   const uses12HourClock = uses12HourTime(i18n.resolvedLanguage)
@@ -126,12 +130,12 @@ export function PlanningCalendar({
           title: content.title ?? content.caption,
           start: planningCalendarEventDate(content),
           // A stack opens its list on click; its posts are rescheduled one by one from the post.
-          editable: !isStack && getPlanningDragPolicy(content.status).draggable,
+          editable: !isStack && getPlanningDragPolicy(content.status, canPublishDirect).draggable,
           durationEditable: false,
           extendedProps: { contents: group } satisfies PlanningEventProperties,
         }
       }),
-    [calendarView, contents],
+    [calendarView, canPublishDirect, contents],
   )
   const formatEventTime = (date: string) =>
     formatLocalizedDate(date, i18n.resolvedLanguage, {
@@ -157,12 +161,11 @@ export function PlanningCalendar({
     proposedAt: string,
     revert: () => void,
   ) => {
-    setRescheduleError(null)
     try {
       await reschedule.mutateAsync({ brandId, contentId: content.id, scheduledAt: proposedAt })
     } catch (error) {
       revert()
-      setRescheduleError(error)
+      toast.error({ title: errorMessage(error, t('reschedule.error')) })
     }
   }
 
@@ -174,7 +177,7 @@ export function PlanningCalendar({
       return
     }
 
-    const policy = getPlanningDragPolicy(content.status)
+    const policy = getPlanningDragPolicy(content.status, canPublishDirect)
     if (!policy.draggable) {
       info.revert()
       return
@@ -190,6 +193,31 @@ export function PlanningCalendar({
     }
 
     void persistReschedule(content, proposedAt, info.revert)
+  }
+
+  /** A post dragged out of a stack's list onto another day or time. */
+  const handleStackItemDrop = (info: DropArg) => {
+    setOpenStackId(null)
+    const content = contents.find((item) => item.id === info.draggedEl.dataset.planningDragId)
+    if (!content) return
+    const policy = getPlanningDragPolicy(content.status, canPublishDirect)
+    if (!policy.draggable) return
+    const previousAt = planningCalendarEventDate(content)
+    const proposed = new Date(info.date)
+    // A month cell is a whole day: keep the post's time, like dragging a single event.
+    if (info.allDay) {
+      const previous = new Date(previousAt)
+      proposed.setHours(previous.getHours(), previous.getMinutes(), 0, 0)
+    }
+    const proposedAt = proposed.toISOString()
+    if (proposed.getTime() === new Date(previousAt).getTime()) return
+    // Nothing moved on the calendar yet, so there is nothing to revert.
+    const revert = () => undefined
+    if (policy.requiresConfirmation) {
+      setPendingReschedule({ content, previousAt, proposedAt, revert })
+      return
+    }
+    void persistReschedule(content, proposedAt, revert)
   }
 
   const closeRescheduleConfirmation = () => {
@@ -354,18 +382,6 @@ export function PlanningCalendar({
         </div>
       </div>
 
-      {rescheduleError ? (
-        <div className="p-4 pb-0">
-          <Alert
-            variant="soft"
-            tone="error"
-            title={errorMessage(rescheduleError, t('reschedule.error'))}
-            closable
-            onClose={() => setRescheduleError(null)}
-          />
-        </div>
-      ) : null}
-
       <div className="planning-calendar app-scrollbar min-h-0 flex-1 overflow-auto">
         <FullCalendar
           key={createPlatform ?? 'read-only'}
@@ -397,7 +413,10 @@ export function PlanningCalendar({
           eventAllow={(_, event) => {
             if (!event) return false
             const { contents } = event.extendedProps as PlanningEventProperties
-            return contents.length === 1 && getPlanningDragPolicy(contents[0].status).draggable
+            return (
+              contents.length === 1 &&
+              getPlanningDragPolicy(contents[0].status, canPublishDirect).draggable
+            )
           }}
           eventContent={(args: EventContentArg) => {
             const { contents } = args.event.extendedProps as PlanningEventProperties
@@ -408,6 +427,9 @@ export function PlanningCalendar({
                   timeText={args.timeText}
                   open={openStackId === args.event.id}
                   formatTime={formatEventTime}
+                  canDrag={(content) =>
+                    getPlanningDragPolicy(content.status, canPublishDirect).draggable
+                  }
                   onClose={() => setOpenStackId(null)}
                   onSelectContent={onSelectContent}
                 />
@@ -421,6 +443,9 @@ export function PlanningCalendar({
             else onSelectContent(contents[0])
           }}
           eventDrop={handleEventDrop}
+          droppable
+          dropAccept="[data-planning-drag-id]"
+          drop={handleStackItemDrop}
           datesSet={handleDatesSet}
           dayCellDidMount={mountCreateButton}
           dayCellWillUnmount={unmountCreateButton}

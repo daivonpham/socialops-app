@@ -1,7 +1,7 @@
 export interface WorkspaceDto {
   id: string
   name: string
-  role: 'owner' | 'admin' | 'editor' | 'viewer'
+  role: 'owner' | 'full_access' | 'admin' | 'editor' | 'viewer'
 }
 
 export type CreateWorkspaceInput = { name: string }
@@ -16,8 +16,15 @@ export interface WorkspaceMemberDto {
   role: WorkspaceMemberRole
   avatarUrl: string | null
   brandIds: string[]
-  /** Empty for owners and admins, who always see every Brand and Page. */
+  /**
+   * Empty for Owner/Full access, who always see every Brand and Page. For an Admin caller,
+   * only the part inside the caller's own Brands/Pages.
+   */
   brands: MemberBrandAccessDto[]
+  /** Whether the caller may edit or remove this member. */
+  canManage: boolean
+  /** Whether the caller may change this member's role (an Admin needs the whole scope). */
+  canChangeRole: boolean
   createdAt: string
 }
 

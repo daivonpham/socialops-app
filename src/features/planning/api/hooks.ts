@@ -1,9 +1,16 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+  type UseQueryResult,
+} from '@tanstack/react-query'
 import {
   createPlanningContent,
   getPlanningAccounts,
   getPlanningContent,
-  getPlanningContents,
+  getPlanningCalendarContents,
+  getPlanningContentPage,
   reschedulePlanningContent,
   updatePlanningApproval,
   updatePlanningContent,
@@ -21,6 +28,7 @@ import {
 } from './service'
 import type {
   CreatePlanningContentInput,
+  PlanningContent,
   PlanningQuery,
   ReschedulePlanningContentInput,
   UpdatePlanningApprovalInput,
@@ -30,8 +38,10 @@ import type {
 export const PLANNING_QUERY_KEYS = {
   root: (brandId: string | null) => ['planning', brandId] as const,
   accounts: (brandId: string | null) => [...PLANNING_QUERY_KEYS.root(brandId), 'accounts'] as const,
-  contents: (brandId: string | null, query: PlanningQuery) =>
-    [...PLANNING_QUERY_KEYS.root(brandId), 'contents', query] as const,
+  contentPage: (brandId: string | null, query: PlanningQuery, page: number, limit: number) =>
+    [...PLANNING_QUERY_KEYS.root(brandId), 'contents', 'page', query, page, limit] as const,
+  calendar: (brandId: string | null, query: PlanningQuery, from: string) =>
+    [...PLANNING_QUERY_KEYS.root(brandId), 'contents', 'calendar', query, from] as const,
   summary: (brandId: string | null, range: { since?: string; until?: string }) =>
     [...PLANNING_QUERY_KEYS.root(brandId), 'summary', range] as const,
   detail: (brandId: string | null, contentId: string | null) =>
@@ -47,32 +57,90 @@ export function usePlanningAccounts(brandId: string | null) {
   })
 }
 
-export function usePlanningContents(brandId: string | null, query: PlanningQuery) {
+const ACTIVE_STATUSES = [
+  'queued',
+  'publishing',
+  'processing',
+  'verifying',
+  'retry_wait',
+  'edit_queued',
+  'editing',
+  'deleting',
+]
+
+/** Poll while something is publishing (fast) or scheduled (slow), so statuses stay fresh. */
+function pollInterval(items: PlanningContent[] | undefined): number | false {
+  const statuses = items?.map((item) => item.status) ?? []
+  if (statuses.some((status) => ACTIVE_STATUSES.includes(status))) return 5000
+  return statuses.includes('scheduled') ? 30000 : false
+}
+
+/** One page of the post list; the previous page stays on screen while the next loads. */
+export function usePlanningContentPage(
+  brandId: string | null,
+  query: PlanningQuery,
+  page: number,
+  limit: number,
+) {
   return useQuery({
-    queryKey: PLANNING_QUERY_KEYS.contents(brandId, query),
-    queryFn: () => getPlanningContents(brandId!, query),
+    queryKey: PLANNING_QUERY_KEYS.contentPage(brandId, query, page, limit),
+    queryFn: () => getPlanningContentPage(brandId!, query, page, limit),
     enabled: brandId !== null,
-    select: (response) => response.data,
-    refetchInterval: (current) => {
-      const statuses = current.state.data?.data.items.map((item) => item.status) ?? []
-      if (
-        statuses.some((status) =>
-          [
-            'queued',
-            'publishing',
-            'processing',
-            'verifying',
-            'retry_wait',
-            'edit_queued',
-            'editing',
-            'deleting',
-          ].includes(status),
-        )
-      )
-        return 5000
-      return statuses.includes('scheduled') ? 30000 : false
-    },
+    refetchInterval: (current) => pollInterval(current.state.data?.data),
     placeholderData: (previous) => previous,
+  })
+}
+
+export type PlanningCalendarContents = {
+  items: PlanningContent[]
+  /** Nothing loaded yet for any window. */
+  isPending: boolean
+  isFetching: boolean
+  isError: boolean
+  refetch: () => void
+}
+
+function combineCalendarWindows(
+  results: UseQueryResult<PlanningContent[]>[],
+): PlanningCalendarContents {
+  const seen = new Set<string>()
+  const items: PlanningContent[] = []
+  for (const result of results)
+    for (const item of result.data ?? [])
+      if (!seen.has(item.id)) {
+        seen.add(item.id)
+        items.push(item)
+      }
+  return {
+    items,
+    isPending: results.every((result) => result.isPending),
+    isFetching: results.some((result) => result.isFetching),
+    isError: results.some((result) => result.isError),
+    refetch: () => results.forEach((result) => void result.refetch()),
+  }
+}
+
+/**
+ * Calendar posts loaded window by window (see `planningCalendarWindows`). Each window is
+ * cached on its own, so navigating reuses loaded weeks and only fetches new ones.
+ */
+export function usePlanningCalendarContents(
+  brandId: string | null,
+  query: PlanningQuery,
+  windows: Array<{ from: string; to: string }>,
+): PlanningCalendarContents {
+  return useQueries({
+    queries: windows.map((window) => ({
+      queryKey: PLANNING_QUERY_KEYS.calendar(brandId, query, window.from),
+      queryFn: () => getPlanningCalendarContents(brandId!, query, window),
+      enabled: brandId !== null,
+      select: (response: Awaited<ReturnType<typeof getPlanningCalendarContents>>) =>
+        response.data.items,
+      staleTime: 30_000,
+      refetchInterval: (current: { state: { data?: { data: { items: PlanningContent[] } } } }) =>
+        pollInterval(current.state.data?.data.items),
+    })),
+    combine: combineCalendarWindows,
   })
 }
 

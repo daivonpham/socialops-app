@@ -68,6 +68,10 @@ export async function deleteWorkspaceMember({
   await apiClient.delete(`/workspaces/${workspaceId}/members/${memberId}`)
 }
 
+export async function leaveWorkspace(workspaceId: string) {
+  await apiClient.post(`/workspaces/${workspaceId}/leave`)
+}
+
 export async function assignWorkspaceMemberBrand({
   workspaceId,
   memberId,

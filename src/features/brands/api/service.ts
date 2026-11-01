@@ -24,10 +24,7 @@ export async function createBrand({ workspaceId, ...input }: CreateBrandInput) {
 }
 
 export async function updateBrand({ brandId, ...input }: UpdateBrandInput) {
-  const { data } = await apiClient.patch<CommonApiResponse<BrandDto>>(
-    `/brands/${brandId}`,
-    input,
-  )
+  const { data } = await apiClient.patch<CommonApiResponse<BrandDto>>(`/brands/${brandId}`, input)
   return data.data
 }
 

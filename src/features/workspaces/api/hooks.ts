@@ -18,6 +18,7 @@ import {
   getInvitationPreview,
   getMemberAccessOptions,
   updateWorkspaceMemberAccess,
+  leaveWorkspace,
 } from './service'
 
 export const WORKSPACE_QUERY_KEYS = {
@@ -64,6 +65,14 @@ export function useUpdateWorkspaceMember() {
 
 export function useDeleteWorkspaceMember() {
   return useMutation({ mutationFn: deleteWorkspaceMember })
+}
+
+export function useLeaveWorkspace() {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: leaveWorkspace,
+    onSuccess: () => client.invalidateQueries({ queryKey: WORKSPACE_QUERY_KEYS.list() }),
+  })
 }
 
 export function useAssignWorkspaceMemberBrand() {

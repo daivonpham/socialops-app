@@ -11,13 +11,15 @@ import { useActiveBrand } from '@/shared/scope'
 import {
   EmptyState,
   IconCalendar,
+  Pagination,
   SectionError,
   SectionSkeleton,
   Tabs,
   useToast,
 } from '@/shared/ui'
 import {
-  usePlanningContents,
+  usePlanningCalendarContents,
+  usePlanningContentPage,
   usePlanningContent,
   usePlanningAccounts,
   useCancelPlanningContent,
@@ -55,6 +57,7 @@ import { PlanningCalendar } from '../components/PlanningCalendar'
 import { PlanningFilters } from '../components/PlanningFilters'
 import { PlanningList } from '../components/PlanningList'
 import { PlanningPostModal } from '../components/PlanningPostDrawer'
+import { planningCalendarWindows } from '../model/calendar-window'
 
 /** Failures that reconnecting the Page fixes; their toast offers to reconnect it. */
 const FACEBOOK_RECONNECT_CODES = [
@@ -67,6 +70,9 @@ const FACEBOOK_RECONNECT_CODES = [
   'FACEBOOK_PUBLISH_PERMISSION_MISSING',
   'PAGE_DISCONNECTED',
 ]
+
+const PLANNING_LIST_PAGE_SIZE = 12
+const PLANNING_LIST_PAGE_SIZE_OPTIONS = [12, 24, 48, 96]
 
 export default function PlanningPage() {
   const { t } = useTranslation('planning')
@@ -151,8 +157,36 @@ export default function PlanningPage() {
       attention: 'all',
       approvalStatus: 'all',
     })
+  // The list pages through posts; the calendar loads the weeks around the visible ones. A new
+  // filter starts the list again from its first page.
+  const filterKey = JSON.stringify(query)
+  const [listPageState, setListPageState] = useState({
+    filterKey,
+    page: 1,
+    pageSize: PLANNING_LIST_PAGE_SIZE,
+  })
+  const listPage = listPageState.filterKey === filterKey ? listPageState.page : 1
+  const listPageSize = listPageState.pageSize
+  const calendarWindows = useMemo(
+    () => (view === 'calendar' ? planningCalendarWindows(selectedDate, calendarView) : []),
+    [calendarView, selectedDate, view],
+  )
   const accountsQuery = usePlanningAccounts(brandId)
-  const contentsQuery = usePlanningContents(brandId, query)
+  const listQuery = usePlanningContentPage(
+    view === 'list' ? brandId : null,
+    query,
+    listPage,
+    listPageSize,
+  )
+  const calendarQuery = usePlanningCalendarContents(brandId, query, calendarWindows)
+  const contentsQuery =
+    view === 'list'
+      ? {
+          isPending: listQuery.isPending,
+          isError: listQuery.isError,
+          refetch: () => void listQuery.refetch(),
+        }
+      : calendarQuery
   const selectedContentQuery = usePlanningContent(brandId, selectedContent?.id ?? null)
   useEffect(() => {
     if (selectedContentQuery.data) setSelectedContent(selectedContentQuery.data)
@@ -190,7 +224,7 @@ export default function PlanningPage() {
         ? platform
         : undefined
   const canCreatePost = hasPermission(granted, PLANNING_ACCESS.publish[0])
-  const contents = contentsQuery.data?.items ?? []
+  const listPagination = listQuery.data?.metadata?.pagination
   const editContent = useCallback(
     (content: PlanningContent) => {
       setSelectedContent(null)
@@ -275,7 +309,7 @@ export default function PlanningPage() {
       {view === 'calendar' ? (
         <PlanningCalendar
           brandId={brandId}
-          contents={contents}
+          contents={calendarQuery.items}
           createPlatform={canCreatePost ? createPlatform : undefined}
           calendarView={calendarView}
           selectedDate={selectedDate}
@@ -288,17 +322,43 @@ export default function PlanningPage() {
           }}
         />
       ) : (
-        <PlanningList
-          brandId={brandId}
-          contents={contents}
-          statusGroup={statusGroup}
-          approvalStatus={approvalStatus}
-          hasActiveFilters={hasActiveFilters}
-          onClearFilters={clearFilters}
-          onFiltersChange={setUrlFilters}
-          onSelectContent={openDetails}
-          onEditContent={editContent}
-        />
+        // The table shrinks to the space left and scrolls its rows under a sticky header, keeping
+        // the pagination in view below it.
+        <div className="flex min-h-0 flex-1 flex-col gap-4">
+          <PlanningList
+            brandId={brandId}
+            contents={listQuery.data?.data ?? []}
+            accounts={accounts}
+            platform={platform}
+            accountId={query.accountId}
+            statusGroup={statusGroup}
+            approvalStatus={approvalStatus}
+            hasActiveFilters={hasActiveFilters}
+            onClearFilters={clearFilters}
+            onFiltersChange={setUrlFilters}
+            onSelectContent={openDetails}
+            onEditContent={editContent}
+          />
+          {listPagination && listPagination.total > 0 ? (
+            <div className="flex shrink-0 justify-end pb-1">
+              <Pagination
+                compact
+                current={listPage}
+                pageSize={listPageSize}
+                pageSizeOptions={PLANNING_LIST_PAGE_SIZE_OPTIONS}
+                total={listPagination.total}
+                onChange={(page, pageSize) =>
+                  setListPageState({
+                    filterKey,
+                    // A new page size starts again from the first page.
+                    page: pageSize === listPageSize ? page : 1,
+                    pageSize,
+                  })
+                }
+              />
+            </div>
+          ) : null}
+        </div>
       )}
 
       <PlanningPostModal
