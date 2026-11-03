@@ -5,7 +5,6 @@ import type {
   CreateFacebookPostInput,
   FacebookDetailsDto,
   FacebookIntegrationDto,
-  FacebookOverviewDetailsDto,
   FacebookOverviewSummaryDto,
   FacebookDashboardDto,
   FacebookPageActionInput,
@@ -89,15 +88,6 @@ export async function getFacebookOverviewSummary(brandId: string, query: Faceboo
   return (
     await apiClient.get<CommonApiResponse<FacebookOverviewSummaryDto>>(
       `/brands/${brandId}/facebook/overview/summary`,
-      { params: query },
-    )
-  ).data
-}
-
-export async function getFacebookOverviewDetails(brandId: string, query: FacebookQuery) {
-  return (
-    await apiClient.get<CommonApiResponse<FacebookOverviewDetailsDto>>(
-      `/brands/${brandId}/facebook/overview/details`,
       { params: query },
     )
   ).data

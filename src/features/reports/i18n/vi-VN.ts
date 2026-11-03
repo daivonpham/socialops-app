@@ -312,7 +312,7 @@ export const reportsViVN = {
     meta_day_boundary: 'Số liệu theo ngày của mỗi kênh dùng ranh giới ngày của nền tảng đó.',
     followers_estimated: 'Số người theo dõi trước khi có ảnh chụp hằng ngày là số ước tính.',
     unique_viewers_summed:
-      'Người xem được cộng theo ngày; một người xem nhiều ngày được tính nhiều lần.',
+      'Người xem chỉ chính xác với kỳ đúng 7 hoặc 28 ngày của một kênh; trường hợp khác là số cộng gộp, có thể tính một người nhiều lần.',
     missing_history: 'Một số ngày nằm trước mốc dữ liệu lịch sử hiện có.',
     post_metrics_frozen: 'Bài cũ hơn 90 ngày dùng số liệu cập nhật lần cuối.',
     audience_current: 'Khán giả là số liệu hiện tại, không theo kỳ báo cáo.',

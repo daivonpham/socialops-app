@@ -311,7 +311,7 @@ export const reportsEnUS = {
     meta_day_boundary: 'Each channel’s daily metrics follow its platform’s day boundaries.',
     followers_estimated: 'Followers before daily snapshots began are estimated.',
     unique_viewers_summed:
-      'Viewers are summed by day; the same viewer can be counted on multiple days.',
+      'Viewers are exact only for a period of exactly 7 or 28 days on one channel; otherwise they are added up and may count someone several times.',
     missing_history: 'Some days are earlier than the available history.',
     post_metrics_frozen: 'Posts older than 90 days use their last updated metrics.',
     audience_current: 'Audience reflects current followers, not the report period.',

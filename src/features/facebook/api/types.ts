@@ -67,12 +67,6 @@ export type FacebookOverviewSummaryDto = {
   pagePerformance: Array<Omit<FacebookOverviewDto['pagePerformance'][number], 'publishedPosts'>>
 }
 
-export type FacebookOverviewDetailsDto = {
-  publishedMetric: MetricDto
-  publishedPostsByPage: Array<{ pageId: string; publishedPosts: number }>
-  topPosts: FacebookPostDto[]
-}
-
 export type PostStatus = 'draft' | 'scheduled' | 'publishing' | 'published' | 'failed'
 export type FacebookPostDto = {
   id: string

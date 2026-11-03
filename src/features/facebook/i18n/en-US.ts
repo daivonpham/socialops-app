@@ -203,7 +203,6 @@ export const facebookEnUS = {
     estimated: 'Estimated',
     estimatedHint:
       'Meta reports exact viewers only per Page for 7 or 28 days. Other periods or several Pages are added up, so the number may be higher than the actual one.',
-    noComparison: 'No comparison',
     trend: {
       title: 'Content trend',
       description: 'Hover the chart to see each day',
@@ -220,7 +219,8 @@ export const facebookEnUS = {
     },
     interactions: {
       title: 'Engagement mix',
-      description: 'How viewers engage with the content',
+      description:
+        'From posts published in the period, including link clicks, so it can differ from Page engagements',
       total: 'engagements',
       reactions: 'Reactions',
       comments: 'Comments',

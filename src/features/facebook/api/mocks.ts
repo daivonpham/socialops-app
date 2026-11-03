@@ -431,28 +431,6 @@ export const facebookHandlers = [
       ),
     )
   }),
-  http.get('/api/brands/:brandId/facebook/overview/details', async ({ params, request }) => {
-    await delay(700)
-    const pageId = new URL(request.url).searchParams.get('pageId') ?? 'all'
-    const overview = overviewFor(String(params.brandId))
-    const rows =
-      pageId === 'all'
-        ? overview.pagePerformance
-        : overview.pagePerformance.filter((row) => row.pageId === pageId)
-    return HttpResponse.json(
-      envelope(
-        {
-          publishedMetric: overview.metrics.find((metric) => metric.key === 'published'),
-          publishedPostsByPage: rows.map((row) => ({
-            pageId: row.pageId,
-            publishedPosts: row.publishedPosts,
-          })),
-          topPosts: overview.topPosts.filter((post) => pageId === 'all' || post.pageId === pageId),
-        },
-        `/brands/${String(params.brandId)}/facebook/overview/details`,
-      ),
-    )
-  }),
   http.get('/api/brands/:brandId/facebook/recent-posts', async ({ params, request }) => {
     await delay(350)
     const url = new URL(request.url)

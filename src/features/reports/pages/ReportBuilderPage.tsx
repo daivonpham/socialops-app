@@ -41,7 +41,7 @@ import {
   requestReportRefresh,
   updateReport,
 } from '../api/service'
-import type { ReportConfig, ReportMetricId, ReportRefresh, ReportTemplate } from '../api/types'
+import type { ReportConfig, ReportMetricId, ReportRefresh } from '../api/types'
 import { ReportExportMenu, type ExportFormat } from '../components/ReportExportMenu'
 import { ReportFreshnessBar } from '../components/ReportFreshnessBar'
 import { ReportPagesPicker } from '../components/ReportPagesPicker'
@@ -54,7 +54,7 @@ import {
   defaultReportConfig,
   hydrateReportConfig,
   REPORT_METRIC_IDS,
-  REPORT_TEMPLATES,
+  reportConfigFromSearch,
 } from '../model/report-config'
 import { periodDates, reportDatePresets } from '../model/report-period'
 import { CodedError } from '@/shared/api/errors'
@@ -79,14 +79,7 @@ export default function ReportBuilderPage() {
   const canManage = hasPermission(granted, PERMISSIONS.REPORTS_MANAGE.key)
   const { reportId } = useParams<{ reportId: string }>()
   const [searchParams] = useSearchParams()
-  const requested = searchParams.get('template') as ReportTemplate | null
-  const initialConfig = useMemo(
-    () =>
-      defaultReportConfig(
-        requested && requested in REPORT_TEMPLATES ? requested : 'period_overview',
-      ),
-    [requested],
-  )
+  const initialConfig = useMemo(() => reportConfigFromSearch(searchParams), [searchParams])
 
   const [config, setConfig] = useState<ReportConfig>(initialConfig)
   const [previewConfig, setPreviewConfig] = useState<ReportConfig>(initialConfig)

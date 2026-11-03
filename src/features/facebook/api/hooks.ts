@@ -9,7 +9,6 @@ import {
   getFacebookDetails,
   getAvailableFacebookPages,
   getFacebookIntegration,
-  getFacebookOverviewDetails,
   getFacebookRecentPosts,
   getFacebookSyncStatus,
   requestFacebookSync,
@@ -40,8 +39,6 @@ export const FACEBOOK_QUERY_KEYS = {
     ['facebook', brandId, 'dashboard', query] as const,
   overviewSummary: (brandId: string | null, query: FacebookQuery) =>
     ['facebook', brandId, 'overview', 'summary', query] as const,
-  overviewDetails: (brandId: string | null, query: FacebookQuery) =>
-    ['facebook', brandId, 'overview', 'details', query] as const,
   recentPosts: (brandId: string | null, query: FacebookRecentPostsQuery) =>
     ['facebook', brandId, 'recent-posts', query] as const,
   posts: (brandId: string | null, query: FacebookPostQuery) =>
@@ -102,15 +99,6 @@ export function useFacebookDetails(brandId: string | null, query: FacebookQuery)
   return useQuery({
     queryKey: FACEBOOK_QUERY_KEYS.details(brandId, query),
     queryFn: () => getFacebookDetails(brandId!, query),
-    enabled: brandId !== null,
-    select: (response) => response.data,
-  })
-}
-
-export function useFacebookOverviewDetails(brandId: string | null, query: FacebookQuery) {
-  return useQuery({
-    queryKey: FACEBOOK_QUERY_KEYS.overviewDetails(brandId, query),
-    queryFn: () => getFacebookOverviewDetails(brandId!, query),
     enabled: brandId !== null,
     select: (response) => response.data,
   })

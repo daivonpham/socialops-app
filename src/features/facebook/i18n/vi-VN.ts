@@ -206,7 +206,6 @@ export const facebookViVN = {
     estimated: 'Ước tính',
     estimatedHint:
       'Meta chỉ cho số người xem chính xác theo 7 hoặc 28 ngày của từng Trang. Kỳ khác hoặc nhiều Trang được cộng gộp nên có thể lớn hơn thực tế.',
-    noComparison: 'Không so sánh',
     trend: {
       title: 'Xu hướng nội dung',
       description: 'Rê chuột lên biểu đồ để xem chi tiết từng ngày',
@@ -223,7 +222,8 @@ export const facebookViVN = {
     },
     interactions: {
       title: 'Cơ cấu tương tác',
-      description: 'Người xem tương tác với nội dung theo cách nào',
+      description:
+        'Từ các bài đăng trong kỳ, gồm cả lượt nhấp liên kết nên có thể khác tổng tương tác của Trang',
       total: 'lượt tương tác',
       reactions: 'Cảm xúc',
       comments: 'Bình luận',

@@ -82,7 +82,7 @@ export function FacebookDashboard({
       ) : null}
       <div className="grid gap-4 xl:grid-cols-3">
         <TopPostsCard className="xl:col-span-2" topPosts={data.topPosts} />
-        <HighlightsCard dashboard={data} compare={compare} />
+        <HighlightsCard dashboard={data} compare={compare} pageId={query.pageId} />
       </div>
     </div>
   )

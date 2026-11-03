@@ -134,3 +134,27 @@ export function hydrateReportConfig(config: ReportConfig): ReportConfig {
     trendMetrics: config.trendMetrics ?? defaults.trendMetrics,
   }
 }
+
+const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/
+
+/**
+ * A new report's starting point from its link, so another screen can open the builder on what
+ * it was showing: `template`, `since` + `until` and `pageId`. Anything invalid is ignored.
+ */
+export function reportConfigFromSearch(search: URLSearchParams): ReportConfig {
+  const template = search.get('template')
+  const config = defaultReportConfig(
+    template && template in REPORT_TEMPLATES ? (template as ReportTemplate) : 'period_overview',
+  )
+  const since = search.get('since')
+  const until = search.get('until')
+  const pageId = search.get('pageId')
+  return {
+    ...config,
+    ...(since && until && DATE_KEY.test(since) && DATE_KEY.test(until) && since <= until
+      ? { period: { preset: 'custom' as const, since, until } }
+      : {}),
+    ...(pageId && pageId !== 'all' ? { pageIds: [pageId] } : {}),
+    ...(search.get('compare') === 'none' ? { compare: false } : {}),
+  }
+}

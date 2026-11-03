@@ -16,10 +16,13 @@ import {
 export function HighlightsCard({
   dashboard,
   compare,
+  pageId,
   className = '',
 }: {
   dashboard: FacebookDashboardDto
   compare: boolean
+  /** Selected Page, or `all`; the report starts on it and on the period shown. */
+  pageId: string
   className?: string
 }) {
   const { t, i18n } = useTranslation('facebook')
@@ -131,7 +134,17 @@ export function HighlightsCard({
       <Button
         variant="primary"
         className="mt-auto w-full"
-        onClick={() => navigate('/reports/new?template=period_overview')}
+        onClick={() =>
+          navigate(
+            `/reports/new?${new URLSearchParams({
+              template: 'period_overview',
+              since: dashboard.period.since,
+              until: dashboard.period.until,
+              pageId,
+              compare: compare ? 'previous' : 'none',
+            }).toString()}`,
+          )
+        }
       >
         {t('dashboard.highlights.addToReport')}
       </Button>
