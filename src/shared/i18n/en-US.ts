@@ -34,7 +34,7 @@ export const commonEnUS = {
     resetColumns: 'Reset columns',
     columnSettingsDescription: 'Show, hide, and drag columns into your preferred order.',
     toggleColumn: 'Show or hide {{column}}',
-    noRows: 'No rows to display.',
+    noRows: 'No data',
     pageSummary: 'Page {{page}} of {{pageCount}} · {{rowCount}} rows',
     rowsPerPage: 'Rows per page',
     rowsCount: '{{count}} rows',

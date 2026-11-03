@@ -5,8 +5,7 @@ import {
   createFacebookPost,
   disconnectFacebook,
   disconnectFacebookPage,
-  getFacebookAnalyticsDetails,
-  getFacebookAnalyticsSummary,
+  getFacebookDashboard,
   getFacebookDetails,
   getAvailableFacebookPages,
   getFacebookIntegration,
@@ -37,6 +36,8 @@ export const FACEBOOK_QUERY_KEYS = {
   details: (brandId: string | null, query: FacebookQuery) =>
     ['facebook', brandId, 'details', query] as const,
 
+  dashboard: (brandId: string | null, query: FacebookQuery) =>
+    ['facebook', brandId, 'dashboard', query] as const,
   overviewSummary: (brandId: string | null, query: FacebookQuery) =>
     ['facebook', brandId, 'overview', 'summary', query] as const,
   overviewDetails: (brandId: string | null, query: FacebookQuery) =>
@@ -45,10 +46,6 @@ export const FACEBOOK_QUERY_KEYS = {
     ['facebook', brandId, 'recent-posts', query] as const,
   posts: (brandId: string | null, query: FacebookPostQuery) =>
     ['facebook', brandId, 'posts', query] as const,
-  analyticsSummary: (brandId: string | null, query: FacebookQuery) =>
-    ['facebook', brandId, 'analytics', 'summary', query] as const,
-  analyticsDetails: (brandId: string | null, query: FacebookQuery) =>
-    ['facebook', brandId, 'analytics', 'details', query] as const,
 }
 
 export function useFacebookIntegration(brandId: string | null) {
@@ -78,6 +75,17 @@ export function useRequestFacebookSync(brandId: string | null) {
     onSuccess: (response) => {
       client.setQueryData(FACEBOOK_QUERY_KEYS.sync(brandId), response)
     },
+  })
+}
+
+export function useFacebookDashboard(brandId: string | null, query: FacebookQuery) {
+  return useQuery({
+    queryKey: FACEBOOK_QUERY_KEYS.dashboard(brandId, query),
+    queryFn: () => getFacebookDashboard(brandId!, query),
+    enabled: brandId !== null,
+    select: (response) => response.data,
+    // Switching period or Page keeps the previous numbers on screen until the new ones arrive.
+    placeholderData: (previous) => previous,
   })
 }
 
@@ -129,24 +137,6 @@ export function useFacebookPosts(brandId: string | null, query: FacebookPostQuer
     enabled: brandId !== null,
     select: (response) => response.data,
     placeholderData: (previous) => previous,
-  })
-}
-
-export function useFacebookAnalyticsSummary(brandId: string | null, query: FacebookQuery) {
-  return useQuery({
-    queryKey: FACEBOOK_QUERY_KEYS.analyticsSummary(brandId, query),
-    queryFn: () => getFacebookAnalyticsSummary(brandId!, query),
-    enabled: brandId !== null,
-    select: (response) => response.data,
-  })
-}
-
-export function useFacebookAnalyticsDetails(brandId: string | null, query: FacebookQuery) {
-  return useQuery({
-    queryKey: FACEBOOK_QUERY_KEYS.analyticsDetails(brandId, query),
-    queryFn: () => getFacebookAnalyticsDetails(brandId!, query),
-    enabled: brandId !== null,
-    select: (response) => response.data,
   })
 }
 

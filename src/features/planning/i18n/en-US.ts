@@ -40,6 +40,7 @@ export const planningEnUS = {
   },
   statusGroup: {
     draft: 'Draft',
+    pending_approval: 'Pending approval',
     scheduled: 'Scheduled',
     in_progress: 'In progress',
     published: 'Published',

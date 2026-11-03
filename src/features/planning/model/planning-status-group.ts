@@ -8,6 +8,7 @@ export type PlanningSummaryStatus = PlanningStatusGroup | 'deleted'
 export function planningSummaryStatusTone(status: PlanningSummaryStatus): StatusTone {
   if (status === 'published') return 'success'
   if (status === 'needs_action') return 'error'
+  if (status === 'pending_approval') return 'warning'
   if (status === 'scheduled' || status === 'in_progress') return 'info'
   return 'neutral'
 }
@@ -53,12 +54,8 @@ export function planningStatusGroup(content: PlanningContent): PlanningSummarySt
     ['published', 'partial'].includes(content.status)
   )
     return 'published'
-  // A post waiting for approval to go out at a set time is scheduled, not a draft.
-  if (
-    content.status === 'scheduled' ||
-    statuses.some((status) => status === 'scheduled') ||
-    pendingApprovalIntent(content) === 'schedule'
-  )
+  if (pendingApprovalIntent(content)) return 'pending_approval'
+  if (content.status === 'scheduled' || statuses.some((status) => status === 'scheduled'))
     return 'scheduled'
   if (['cancelled', 'deleted'].includes(content.status)) return 'deleted'
   return 'draft'

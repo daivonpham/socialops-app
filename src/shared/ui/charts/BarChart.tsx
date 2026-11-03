@@ -7,7 +7,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { color, componentToken, radius, semanticColor, shadow, space } from '@/shared/styles/tokens'
+import { color, componentToken, semanticColor, space } from '@/shared/styles/tokens'
+import { CHART_TOOLTIP_STYLE } from './tooltip'
 
 export type BarChartDatum = { label: string; value: number }
 
@@ -37,14 +38,7 @@ export function BarChart({
     <Tooltip
       formatter={(value) => formatValue(Number(value))}
       cursor={{ fill: semanticColor.bg['surface-subtle'] }}
-      contentStyle={{
-        background: semanticColor.bg.elevated,
-        border: `1px solid ${semanticColor.border.DEFAULT}`,
-        borderRadius: radius.lg,
-        boxShadow: shadow.md,
-      }}
-      labelStyle={{ color: semanticColor.text.primary }}
-      itemStyle={{ color: semanticColor.text.secondary }}
+      {...CHART_TOOLTIP_STYLE}
     />
   )
 

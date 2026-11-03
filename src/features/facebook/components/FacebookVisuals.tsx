@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { formatNumber, type AppLocale } from '@/shared/i18n'
 import {
-  BarChart,
   IconArrowDown,
   IconArrowUp,
   IconHeart,
@@ -12,11 +11,18 @@ import {
   IconReports,
   IconView,
   LineChart,
-  Progress,
+  Tooltip,
 } from '@/shared/ui'
 import type { MetricDto, MetricKey, TrendPointDto } from '../api'
 
-export function MetricCards({ metrics }: { metrics: MetricDto[] }) {
+export function MetricCards({
+  metrics,
+  estimatedHint,
+}: {
+  metrics: MetricDto[]
+  /** Explains estimated values on hover. */
+  estimatedHint?: string
+}) {
   const { t, i18n } = useTranslation('facebook')
   const locale = i18n.resolvedLanguage as AppLocale
 
@@ -38,7 +44,13 @@ export function MetricCards({ metrics }: { metrics: MetricDto[] }) {
                   {t(`metrics.${metric.key}`)}
                 </span>
                 {metric.estimated ? (
-                  <span className="text-caption text-text-disabled">{t('metrics.estimated')}</span>
+                  <Tooltip title={estimatedHint}>
+                    <span
+                      className={`text-caption text-text-disabled ${estimatedHint ? 'cursor-help underline decoration-dotted' : ''}`}
+                    >
+                      {t('metrics.estimated')}
+                    </span>
+                  </Tooltip>
                 ) : null}
               </div>
               <strong className="truncate text-heading-1 tabular-nums text-text-primary">
@@ -130,70 +142,5 @@ export function TrendChart({
         })
       }
     />
-  )
-}
-
-export function BarBreakdown({
-  items,
-  ariaLabel,
-}: {
-  items: Array<{ label: string; value: number }>
-  ariaLabel: string
-}) {
-  const { t, i18n } = useTranslation('facebook')
-  const locale = i18n.resolvedLanguage as AppLocale
-  return (
-    <BarChart
-      data={items}
-      ariaLabel={ariaLabel}
-      domain={[0, 100]}
-      orientation="vertical"
-      tone="primary"
-      valueFormatter={(value) => t('common.percentage', { value: formatNumber(value, locale) })}
-    />
-  )
-}
-
-export function RankedBreakdown({
-  items,
-  ariaLabel,
-}: {
-  items: Array<{ label: string; value: number }>
-  ariaLabel: string
-}) {
-  const { t, i18n } = useTranslation('facebook')
-  const locale = i18n.resolvedLanguage as AppLocale
-
-  return (
-    <ol className="grid max-h-[270px] gap-3 overflow-y-auto pr-2" aria-label={ariaLabel}>
-      {items.map((item, index) => {
-        const percentage = Math.max(0, Math.min(100, item.value))
-        return (
-          <li key={item.label} className="flex items-center gap-3">
-            <span className="w-5 shrink-0 text-center text-caption tabular-nums text-text-disabled">
-              {index + 1}
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-4">
-                <span className="truncate text-body-sm text-text-secondary" title={item.label}>
-                  {item.label}
-                </span>
-                <strong className="shrink-0 text-label-sm tabular-nums text-text-primary">
-                  {t('common.percentage', {
-                    value: formatNumber(item.value, locale, { maximumFractionDigits: 1 }),
-                  })}
-                </strong>
-              </div>
-              <Progress
-                percent={percentage}
-                ariaLabel={`${item.label}: ${formatNumber(item.value, locale, {
-                  maximumFractionDigits: 1,
-                })}%`}
-              />
-            </div>
-          </li>
-        )
-      })}
-    </ol>
   )
 }

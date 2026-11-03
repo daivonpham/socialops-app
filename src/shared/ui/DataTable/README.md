@@ -26,7 +26,7 @@ matching controlled callbacks.
 Set `showColumnSettings` only on tables that should expose this end-user
 configuration. Omit it for a regular table without the toolbar control.
 
-Set `columnPersistenceKey` to retain the chosen column order in this browser.
+Set `columnPersistenceKey` to retain the chosen column order, widths and hidden columns in this browser.
 For example, `columnPersistenceKey="facebook-posts"` stores the order under
 `socialops:data-table:column-order:facebook-posts`. A controlled
 `columnOrder` always takes precedence over browser storage.

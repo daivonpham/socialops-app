@@ -62,6 +62,8 @@ export type DataTableProps<T extends object> = {
   columns: readonly DataTableColumn<T>[]
   getRowId: (row: T) => string
   title?: ReactNode
+  /** Controls beside the title, such as a search box. */
+  toolbar?: ReactNode
   ariaLabel?: string
   density?: 'sm' | 'md'
   /** Rows scroll inside the table under a fixed header; the table fills the height its parent allows. */

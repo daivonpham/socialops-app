@@ -22,7 +22,9 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
       description={
         <div>
           <h3 className="text-heading-4 text-text-primary">{title}</h3>
-          <p className="mt-1 text-body-sm text-text-tertiary">{description}</p>
+          {description ? (
+            <p className="mt-1 text-body-sm text-text-tertiary">{description}</p>
+          ) : null}
         </div>
       }
     >

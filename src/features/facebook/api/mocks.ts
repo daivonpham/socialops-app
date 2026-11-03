@@ -2,6 +2,7 @@ import { delay, http, HttpResponse } from 'msw'
 import { envelope } from '@/mocks/envelope'
 import type {
   FacebookAnalyticsDto,
+  FacebookDashboardDto,
   FacebookIntegrationDto,
   FacebookOverviewDto,
   FacebookPageDto,
@@ -241,20 +242,6 @@ function metricsForPage(row: FacebookOverviewDto['pagePerformance'][number]): Me
   return METRICS.map((metric) => ({ ...metric, value: values[metric.key] ?? metric.value }))
 }
 
-function analyticsMetricsForPage(row: FacebookOverviewDto['pagePerformance'][number]): MetricDto[] {
-  const values: Partial<Record<MetricDto['key'], number>> = {
-    mediaViews: row.mediaViews,
-    uniqueViewers: Math.round(row.mediaViews * 0.72),
-    contentInteractions: row.contentInteractions,
-    followers: row.followersCount,
-    published: row.publishedPosts,
-  }
-  return ANALYTICS_METRICS.map((metric) => ({
-    ...metric,
-    value: values[metric.key] ?? metric.value,
-  }))
-}
-
 function scaleTrend(points: typeof MEDIA_VIEWS_TREND, ratio: number) {
   return points.map((point) => ({
     ...point,
@@ -403,6 +390,20 @@ export const facebookHandlers = [
           }
     return HttpResponse.json(envelope(data, `/brands/${String(params.brandId)}/facebook/overview`))
   }),
+  http.get('/api/brands/:brandId/facebook/dashboard', async ({ params, request }) => {
+    await ok()
+    const search = new URL(request.url).searchParams
+    const pageId = search.get('pageId') ?? 'all'
+    const days = Number((search.get('range') ?? '28d').slice(0, -1)) || 28
+    const overview = overviewFor(String(params.brandId))
+    const rows = overview.pagePerformance.filter((row) => pageId === 'all' || row.pageId === pageId)
+    return HttpResponse.json(
+      envelope(
+        dashboardFor(rows, overview.topPosts, days),
+        `/brands/${String(params.brandId)}/facebook/dashboard`,
+      ),
+    )
+  }),
   http.get('/api/brands/:brandId/facebook/overview/summary', async ({ params, request }) => {
     await ok()
     const pageId = new URL(request.url).searchParams.get('pageId') ?? 'all'
@@ -550,86 +551,6 @@ export const facebookHandlers = [
       envelope(createdPosts, `/brands/${String(params.brandId)}/facebook/posts`),
     )
   }),
-  http.get('/api/brands/:brandId/facebook/analytics', async ({ params, request }) => {
-    await ok()
-    const pageId = new URL(request.url).searchParams.get('pageId') ?? 'all'
-    const analytics = analyticsFor(String(params.brandId))
-    const selectedRow = analytics.rows.find((row) => row.pageId === pageId)
-    const overviewRow = overviewFor(String(params.brandId)).pagePerformance.find(
-      (row) => row.pageId === pageId,
-    )
-    const ratio = overviewRow
-      ? overviewRow.mediaViews / (METRICS.find((metric) => metric.key === 'mediaViews')?.value ?? 1)
-      : 1
-    const data =
-      pageId === 'all' || !selectedRow || !overviewRow
-        ? analytics
-        : {
-            ...analytics,
-            metrics: analyticsMetricsForPage(overviewRow),
-            mediaViewsTrend: scaleTrend(analytics.mediaViewsTrend, ratio),
-            contentInteractionsTrend: scaleTrend(analytics.contentInteractionsTrend, ratio),
-            rows: [selectedRow],
-          }
-    return HttpResponse.json(envelope(data, `/brands/${String(params.brandId)}/facebook/analytics`))
-  }),
-  http.get('/api/brands/:brandId/facebook/analytics/summary', async ({ params, request }) => {
-    await ok()
-    const pageId = new URL(request.url).searchParams.get('pageId') ?? 'all'
-    const analytics = analyticsFor(String(params.brandId))
-    const rows =
-      pageId === 'all' ? analytics.rows : analytics.rows.filter((row) => row.pageId === pageId)
-    return HttpResponse.json(
-      envelope(
-        {
-          insightsAvailable: analytics.insightsAvailable,
-          metrics: analytics.metrics.filter((metric) => metric.key !== 'published'),
-          mediaViewsTrend: analytics.mediaViewsTrend,
-          uniqueViewersTrend: analytics.uniqueViewersTrend,
-          contentInteractionsTrend: analytics.contentInteractionsTrend,
-          followerGrowthTrend: analytics.followerGrowthTrend,
-          rows: rows.map((row) => ({
-            pageId: row.pageId,
-            pageName: row.pageName,
-            avatarUrl: row.avatarUrl,
-            mediaViews: row.mediaViews,
-            uniqueViewers: row.uniqueViewers,
-            contentInteractions: row.contentInteractions,
-            followersCount: row.followersCount,
-            profileViews: row.profileViews,
-            netFollows: row.netFollows,
-            engagementRate: row.engagementRate,
-          })),
-          availableMetrics: analytics.availableMetrics,
-          unavailableMetrics: analytics.unavailableMetrics,
-          lastUpdatedAt: analytics.lastUpdatedAt,
-        },
-        `/brands/${String(params.brandId)}/facebook/analytics/summary`,
-      ),
-    )
-  }),
-  http.get('/api/brands/:brandId/facebook/analytics/details', async ({ params, request }) => {
-    await delay(700)
-    const pageId = new URL(request.url).searchParams.get('pageId') ?? 'all'
-    const analytics = analyticsFor(String(params.brandId))
-    const rows =
-      pageId === 'all' ? analytics.rows : analytics.rows.filter((row) => row.pageId === pageId)
-    return HttpResponse.json(
-      envelope(
-        {
-          publishedMetric: analytics.metrics.find((metric) => metric.key === 'published'),
-          audienceCountries: analytics.audienceCountries,
-          audienceCities: analytics.audienceCities,
-          contentBreakdown: analytics.contentBreakdown,
-          publishedPostsByPage: rows.map((row) => ({
-            pageId: row.pageId,
-            publishedPosts: row.publishedPosts,
-          })),
-        },
-        `/brands/${String(params.brandId)}/facebook/analytics/details`,
-      ),
-    )
-  }),
   http.get('/api/brands/:brandId/facebook/details', async ({ params, request }) => {
     await delay(700)
     const pageId = new URL(request.url).searchParams.get('pageId') ?? 'all'
@@ -686,5 +607,173 @@ function syncStatusFor(brandId: string): FacebookSyncStatusDto {
       backfillCompleted: true,
       lastErrorCode: null,
     })),
+  }
+}
+
+/** Deterministic dashboard numbers shaped like the API, scaled by each Page's views. */
+function dashboardFor(
+  rows: FacebookOverviewDto['pagePerformance'],
+  posts: FacebookPostDto[],
+  days: number,
+): FacebookDashboardDto {
+  const start = new Date(Date.now() - (days - 1) * 86_400_000)
+  const labels = Array.from({ length: days }, (_, index) =>
+    new Date(start.getTime() + index * 86_400_000).toISOString().slice(0, 10),
+  )
+  const scale = rows.reduce((sum, row) => sum + row.mediaViews, 0) / 30
+  const wave = (offset: number, factor: number) =>
+    labels.map((_, index) =>
+      Math.round(scale * factor * (1 + 0.35 * Math.sin((index + offset) / 2.3))),
+    )
+  const sum = (values: number[]) => values.reduce((total, value) => total + value, 0)
+  const views = { current: wave(0, 1), previous: wave(3, 0.92) }
+  const viewers = { current: wave(1, 0.6), previous: wave(4, 0.55) }
+  const engagements = { current: wave(2, 0.06), previous: wave(5, 0.055) }
+  const videoViews = { current: wave(0, 0.4), previous: wave(2, 0.38) }
+  const follows = wave(1, 0.004)
+  const unfollows = wave(6, 0.0015)
+  const kpi = (current: number[], previous: number[]) => {
+    const value = sum(current)
+    const before = sum(previous)
+    return {
+      value,
+      previous: before,
+      change: before ? Math.round(((value - before) / before) * 1000) / 10 : 0,
+      series: current,
+    }
+  }
+  const viewerTotal = Math.round(sum(viewers.current) * 0.45)
+  const previousViewers = Math.round(sum(viewers.previous) * 0.45)
+  const engagementTotal = sum(engagements.current)
+  const followers = rows.reduce((total, row) => total + row.followersCount, 0)
+  const toPost = (post: FacebookPostDto, index: number) => ({
+    id: post.id,
+    pageId: post.pageId,
+    pageName: post.pageName,
+    message: post.message,
+    format: (['reel', 'video', 'photo', 'album', 'link'] as const)[index % 5]!,
+    createdAt: post.createdAt,
+    thumbnailUrl: post.thumbnailUrl,
+    permalinkUrl: post.permalinkUrl,
+    viewers: Math.round(post.mediaViews * 0.7),
+    engagements: post.contentInteractions,
+    comments: post.comments ?? 0,
+    engagementRate: post.mediaViews
+      ? Math.round((post.contentInteractions / (post.mediaViews * 0.7)) * 10_000) / 100
+      : 0,
+  })
+  const top = posts.slice(0, 5).map(toPost)
+  return {
+    insightsAvailable: rows.length > 0,
+    period: { since: labels[0]!, until: labels.at(-1)!, days, timeZone: 'Asia/Ho_Chi_Minh' },
+    kpis: {
+      viewers: {
+        ...kpi(viewers.current, viewers.previous),
+        value: viewerTotal,
+        previous: previousViewers,
+        estimated: rows.length > 1 || (days !== 7 && days !== 28),
+      },
+      views: {
+        ...kpi(views.current, views.previous),
+        frequency: viewerTotal ? Math.round((sum(views.current) / viewerTotal) * 100) / 100 : 0,
+      },
+      engagements: kpi(engagements.current, engagements.previous),
+      engagementRate: {
+        value: viewerTotal ? Math.round((engagementTotal / viewerTotal) * 10_000) / 100 : 0,
+        previous: 5.4,
+        change: 4.1,
+        series: engagements.current.map((value, index) =>
+          viewers.current[index] ? (value / viewers.current[index]!) * 100 : 0,
+        ),
+      },
+      netFollows: {
+        ...kpi(
+          follows.map((value, index) => value - (unfollows[index] ?? 0)),
+          follows.map((value, index) => Math.round((value - (unfollows[index] ?? 0)) * 0.9)),
+        ),
+        followers,
+      },
+      videoViews: kpi(videoViews.current, videoViews.previous),
+      followers: { value: followers, previous: followers - 12, change: 0.7, series: [] },
+      posts: { value: 18, previous: 15, change: 20, series: [] },
+      pageViews: kpi(wave(3, 0.02), wave(1, 0.018)),
+    },
+    trend: { labels, viewers, views, engagements, videoViews },
+    interactions: {
+      reactions: Math.round(engagementTotal * 0.6),
+      comments: Math.round(engagementTotal * 0.13),
+      shares: Math.round(engagementTotal * 0.12),
+      linkClicks: Math.round(engagementTotal * 0.15),
+      reactionTypes: [
+        { type: 'like', value: Math.round(engagementTotal * 0.42) },
+        { type: 'love', value: Math.round(engagementTotal * 0.11) },
+        { type: 'haha', value: Math.round(engagementTotal * 0.03) },
+        { type: 'care', value: Math.round(engagementTotal * 0.02) },
+        { type: 'wow', value: Math.round(engagementTotal * 0.01) },
+      ],
+    },
+    followers: {
+      labels,
+      follows,
+      unfollows,
+      totalFollows: sum(follows),
+      totalUnfollows: sum(unfollows),
+      net: sum(follows) - sum(unfollows),
+      total: followers,
+    },
+    postingTimes: {
+      cells: Array.from({ length: 7 * 12 }, (_, index) => ({
+        day: index % 7,
+        slot: Math.floor(index / 7),
+        posts: 1 + (index % 3),
+        engagementRate: Math.round((2 + 4 * Math.abs(Math.sin(index / 5))) * 100) / 100,
+      })).filter((cell) => cell.slot >= 3),
+      best: { day: 6, slot: 10 },
+    },
+    audience: {
+      countries: [
+        { label: 'VN', value: 92.4 },
+        { label: 'US', value: 2.1 },
+        { label: 'JP', value: 1.3 },
+        { label: 'other', value: 4.2 },
+      ],
+      cities: [
+        { label: 'Ho Chi Minh City', value: 66 },
+        { label: 'Bình Dương', value: 8 },
+        { label: 'Đồng Nai', value: 6 },
+        { label: 'Hanoi', value: 5 },
+        { label: 'Cần Thơ', value: 4 },
+        { label: 'other', value: 11 },
+      ],
+    },
+    formats: [
+      { format: 'reel', posts: 4, averageViewers: 17_100, engagementRate: 7.8 },
+      { format: 'video', posts: 3, averageViewers: 10_800, engagementRate: 6.1 },
+      { format: 'album', posts: 2, averageViewers: 8_443, engagementRate: 5.9 },
+      { format: 'photo', posts: 6, averageViewers: 6_969, engagementRate: 5.4 },
+      { format: 'text', posts: 1, averageViewers: 3_038, engagementRate: 3.1 },
+      { format: 'link', posts: 2, averageViewers: 4_110, engagementRate: 2.3 },
+    ],
+    pages: rows.map((row, index) => ({
+      pageId: row.pageId,
+      pageName: row.pageName,
+      avatarUrl: row.avatarUrl,
+      followers: row.followersCount,
+      netFollows: Math.round(row.followersCount * 0.012),
+      viewers: Math.round(row.mediaViews * 0.6),
+      viewersChange: [4.3, -5.5, 5.6][index % 3]!,
+      engagements: row.contentInteractions,
+      engagementRate: row.mediaViews
+        ? Math.round((row.contentInteractions / (row.mediaViews * 0.6)) * 10_000) / 100
+        : 0,
+      posts: row.publishedPosts,
+      pageViews: Math.round(row.mediaViews * 0.04),
+      viewersSeries: wave(index * 2, row.mediaViews / Math.max(1, scale * 30)),
+    })),
+    topPosts: {
+      viewers: [...top].sort((left, right) => right.viewers - left.viewers),
+      engagements: [...top].sort((left, right) => right.engagements - left.engagements),
+      engagementRate: [...top].sort((left, right) => right.engagementRate - left.engagementRate),
+    },
   }
 }

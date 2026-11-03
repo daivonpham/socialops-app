@@ -43,6 +43,7 @@ export const planningViVN = {
   },
   statusGroup: {
     draft: 'Bản nháp',
+    pending_approval: 'Chờ duyệt',
     scheduled: 'Đã lên lịch',
     in_progress: 'Đang xử lý',
     published: 'Đã đăng',

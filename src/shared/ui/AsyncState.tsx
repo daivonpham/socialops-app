@@ -5,7 +5,7 @@ export type SectionErrorProps = { title: string; retryLabel: string; onRetry: ()
 export type EmptyStateProps = {
   icon?: ReactNode
   title: string
-  description: string
+  description?: string
   action?: ReactNode
 }
 

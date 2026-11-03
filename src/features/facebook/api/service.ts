@@ -3,12 +3,11 @@ import type { CommonApiResponse } from '@/shared/api/types'
 import type {
   ConnectFacebookInput,
   CreateFacebookPostInput,
-  FacebookAnalyticsDetailsDto,
-  FacebookAnalyticsSummaryDto,
   FacebookDetailsDto,
   FacebookIntegrationDto,
   FacebookOverviewDetailsDto,
   FacebookOverviewSummaryDto,
+  FacebookDashboardDto,
   FacebookPageActionInput,
   FacebookPostQuery,
   FacebookPostDto,
@@ -77,6 +76,15 @@ export async function disconnectFacebook(brandId: string) {
   ).data
 }
 
+export async function getFacebookDashboard(brandId: string, query: FacebookQuery) {
+  return (
+    await apiClient.get<CommonApiResponse<FacebookDashboardDto>>(
+      `/brands/${brandId}/facebook/dashboard`,
+      { params: query },
+    )
+  ).data
+}
+
 export async function getFacebookOverviewSummary(brandId: string, query: FacebookQuery) {
   return (
     await apiClient.get<CommonApiResponse<FacebookOverviewSummaryDto>>(
@@ -118,24 +126,6 @@ export async function getFacebookPosts(brandId: string, query: FacebookPostQuery
     await apiClient.get<CommonApiResponse<FacebookPostsDto>>(`/brands/${brandId}/facebook/posts`, {
       params: query,
     })
-  ).data
-}
-
-export async function getFacebookAnalyticsSummary(brandId: string, query: FacebookQuery) {
-  return (
-    await apiClient.get<CommonApiResponse<FacebookAnalyticsSummaryDto>>(
-      `/brands/${brandId}/facebook/analytics/summary`,
-      { params: query },
-    )
-  ).data
-}
-
-export async function getFacebookAnalyticsDetails(brandId: string, query: FacebookQuery) {
-  return (
-    await apiClient.get<CommonApiResponse<FacebookAnalyticsDetailsDto>>(
-      `/brands/${brandId}/facebook/analytics/details`,
-      { params: query },
-    )
   ).data
 }
 

@@ -19,12 +19,13 @@ import {
 import {
   useConnectFacebook,
   useFacebookIntegration,
+  FACEBOOK_POST_CONTENT_TYPES,
   FACEBOOK_QUERY_KEYS,
   type DateRange,
+  type FacebookPostContentType,
   type FacebookQuery,
   type FacebookTab,
 } from '../api'
-import { AnalyticsTab } from '../components/AnalyticsTab'
 import { FacebookConnectionHealthBanner } from '../components/FacebookConnectionHealthBanner'
 import { FacebookDisconnected } from '../components/FacebookDisconnected'
 import { FacebookFilters } from '../components/FacebookFilters'
@@ -33,19 +34,21 @@ import {
   type FacebookOAuthResult,
 } from '../components/FacebookOAuthResultModal'
 import { ManageFacebookPagesDrawer } from '../components/ManageFacebookPagesDrawer'
+import { FacebookPostsTab } from '../components/FacebookPostsTab'
 import { FacebookPageSwitcher } from '../components/FacebookPageSwitcher'
 import { FacebookSyncBanner, FacebookSyncControl } from '../components/FacebookSyncStatus'
-import { OverviewTab } from '../components/OverviewTab'
+import { FacebookDashboard } from '../components/dashboard/FacebookDashboard'
 import { FACEBOOK_ACCESS } from '../config/facebook-access'
 import { CodedError, parseErrorCode } from '@/shared/api/errors'
 
 const DEFAULT_FILTERS = {
   tab: 'overview',
   pageId: 'all',
-  range: '30d',
+  range: '28d',
   since: '',
   until: '',
   compare: 'previous',
+  contentType: 'all',
 }
 
 export default function FacebookPage() {
@@ -165,7 +168,7 @@ export default function FacebookPage() {
   )
   const unhealthyPages = visiblePages.filter((page) => page.health !== 'connected')
   const tab = (
-    ['overview', 'analytics'].includes(filters.tab) ? filters.tab : 'overview'
+    ['overview', 'posts'].includes(filters.tab) ? filters.tab : 'overview'
   ) as FacebookTab
   const selectedPageId =
     filters.pageId === 'all' || connectedPages.some((page) => page.id === filters.pageId)
@@ -178,6 +181,10 @@ export default function FacebookPage() {
     until: filters.until || undefined,
     compare: filters.compare,
   }
+
+  const contentType =
+    FACEBOOK_POST_CONTENT_TYPES.find((value) => value === filters.contentType) ??
+    ('all' satisfies FacebookPostContentType)
 
   return (
     <div className="grid gap-6">
@@ -236,7 +243,7 @@ export default function FacebookPage() {
           onChange={(value) => setFilters({ tab: value })}
           options={[
             { value: 'overview', label: t('tabs.overview') },
-            { value: 'analytics', label: t('tabs.analytics') },
+            { value: 'posts', label: t('tabs.posts') },
           ]}
         />
         <div className="flex flex-wrap items-center justify-end gap-3">
@@ -246,12 +253,26 @@ export default function FacebookPage() {
             since={query.since}
             until={query.until}
             compare={query.compare}
+            contentType={tab === 'posts' ? contentType : undefined}
             onChange={setFilters}
           />
         </div>
       </div>
-      {tab === 'overview' ? <OverviewTab brandId={brandId} query={query} /> : null}
-      {tab === 'analytics' ? <AnalyticsTab brandId={brandId} query={query} /> : null}
+      {tab === 'overview' ? (
+        <FacebookDashboard
+          brandId={brandId}
+          query={query}
+          pages={visiblePages}
+          onSelectPage={(pageId) => setFilters({ pageId })}
+        />
+      ) : (
+        <FacebookPostsTab
+          brandId={brandId}
+          query={query}
+          contentType={contentType}
+          onClearContentType={() => setFilters({ contentType: 'all' })}
+        />
+      )}
       <ManageFacebookPagesDrawer
         brandId={brandId}
         integration={{ ...data, pages: visiblePages }}

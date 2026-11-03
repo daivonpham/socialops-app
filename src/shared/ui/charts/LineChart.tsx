@@ -7,7 +7,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { color, componentToken, radius, semanticColor, shadow, space } from '@/shared/styles/tokens'
+import { color, componentToken, semanticColor, space } from '@/shared/styles/tokens'
+import { CHART_TOOLTIP_STYLE } from './tooltip'
 
 export type LineChartDatum = Record<string, string | number | undefined>
 
@@ -82,14 +83,7 @@ export function LineChart({ data, xAxisKey, series, ariaLabel, valueFormatter }:
             />
             <Tooltip
               formatter={(value, name) => [formatValue(Number(value)), String(name)]}
-              contentStyle={{
-                background: semanticColor.bg.elevated,
-                border: `1px solid ${semanticColor.border.DEFAULT}`,
-                borderRadius: radius.lg,
-                boxShadow: shadow.md,
-              }}
-              labelStyle={{ color: semanticColor.text.primary }}
-              itemStyle={{ color: semanticColor.text.secondary }}
+              {...CHART_TOOLTIP_STYLE}
               cursor={{ stroke: semanticColor.border.DEFAULT }}
             />
             {series.map((item) => {

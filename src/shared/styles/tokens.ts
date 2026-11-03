@@ -49,6 +49,11 @@ export const color = {
   },
   info: { 50: '#EFF6FF', 100: '#DBEAFE', 500: '#3B82F6', 700: '#1D4ED8', 900: '#1E3A8A' },
   approval: { 50: '#FAF5FF', 100: '#F3E8FF', 500: '#A855F7', 700: '#7E22CE', 900: '#581C87' },
+  /**
+   * Secondary data-visualization hue (orange) for series that contrast with the brand green,
+   * e.g. unfollows or comparison categories. Charts only, never UI chrome.
+   */
+  accent: { 50: '#FBF5EF', 100: '#FBEBDC', 300: '#E9A45C', 500: '#D9822B', 700: '#A65A12' },
   /** Contextual identifiers only — never product-brand surfaces (design.md §3.6). */
   platform: { facebook: '#1877F2', tiktok: '#111111' },
 } as const
@@ -115,7 +120,7 @@ export const radius = {
   '2xl': 16,
   '3xl': 24,
   pill: 9999,
-  full: '50%',
+  full: 9999,
 } as const
 
 /** Typography — design.md §5 (family, weights, scale, letter spacing) + §11 (icon sizes). */

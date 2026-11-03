@@ -26,8 +26,10 @@ import {
   type RowSelectionState,
   type SortingState,
   type TableState,
+  type Updater,
 } from '@tanstack/react-table'
 import { componentToken } from '@/shared/styles/tokens'
+import { EmptyState } from '../AsyncState'
 import { Button } from '../primitives/Button'
 import { Checkbox } from '../primitives/Checkbox'
 import { Dropdown } from '../primitives/Dropdown'
@@ -60,6 +62,7 @@ const EMPTY_FILTERS: ColumnFiltersState = []
 const EMPTY_COLUMN_SIZING: Record<string, number> = {}
 const COLUMN_ORDER_STORAGE_PREFIX = 'socialops:data-table:column-order:'
 const COLUMN_SIZING_STORAGE_PREFIX = 'socialops:data-table:column-sizing:'
+const COLUMN_VISIBILITY_STORAGE_PREFIX = 'socialops:data-table:column-visibility:'
 
 type DataTableColumnMeta = {
   align: DataTableAlignment
@@ -192,6 +195,34 @@ function persistColumnSizing(key: string, sizing: Record<string, number>) {
   }
 }
 
+function readPersistedColumnVisibility(key?: string): Record<string, boolean> {
+  if (!key || typeof window === 'undefined') return EMPTY_VISIBILITY
+  try {
+    const value = window.localStorage.getItem(`${COLUMN_VISIBILITY_STORAGE_PREFIX}${key}`)
+    if (!value) return EMPTY_VISIBILITY
+    const parsed: unknown = JSON.parse(value)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return EMPTY_VISIBILITY
+    return Object.fromEntries(
+      Object.entries(parsed).filter(
+        (entry): entry is [string, boolean] => typeof entry[1] === 'boolean',
+      ),
+    )
+  } catch {
+    return EMPTY_VISIBILITY
+  }
+}
+
+function persistColumnVisibility(key: string, visibility: Record<string, boolean>) {
+  try {
+    window.localStorage.setItem(
+      `${COLUMN_VISIBILITY_STORAGE_PREFIX}${key}`,
+      JSON.stringify(visibility),
+    )
+  } catch {
+    // Storage may be unavailable; the choice still applies for the current session.
+  }
+}
+
 function renderValue(value: unknown): ReactNode {
   if (value === null || value === undefined || value === '') return '—'
   return String(value)
@@ -206,6 +237,7 @@ export function DataTable<T extends object>({
   columns,
   getRowId,
   title,
+  toolbar,
   ariaLabel,
   density = 'md',
   stickyHeader = false,
@@ -242,7 +274,15 @@ export function DataTable<T extends object>({
   const [persistedColumnSizing, setPersistedColumnSizing] = useState(() =>
     readPersistedColumnSizing(columnPersistenceKey),
   )
+  const [persistedColumnVisibility, setPersistedColumnVisibility] = useState(() =>
+    readPersistedColumnVisibility(columnPersistenceKey),
+  )
   const shouldPersistColumnOrder = Boolean(columnPersistenceKey && columnOrder === undefined)
+  const shouldPersistColumnVisibility = Boolean(
+    columnPersistenceKey && columnVisibility === undefined,
+  )
+  const controlledColumnVisibility =
+    columnVisibility ?? (shouldPersistColumnVisibility ? persistedColumnVisibility : undefined)
   const controlledRowSelection = useMemo(() => toRowSelection(rowSelection), [rowSelection])
   const controlledSorting = useMemo(() => toSorting(sorting), [sorting])
   const controlledFilters = useMemo(() => toColumnFilters(columnFilters), [columnFilters])
@@ -323,7 +363,9 @@ export function DataTable<T extends object>({
   const state = useMemo<Partial<TableState<typeof DATA_TABLE_FEATURES>>>(
     () => ({
       ...(rowSelection !== undefined ? { rowSelection: controlledRowSelection } : {}),
-      ...(columnVisibility !== undefined ? { columnVisibility } : {}),
+      ...(controlledColumnVisibility !== undefined
+        ? { columnVisibility: controlledColumnVisibility }
+        : {}),
       ...(columnOrder !== undefined || shouldPersistColumnOrder
         ? { columnOrder: controlledColumnOrder }
         : {}),
@@ -338,7 +380,7 @@ export function DataTable<T extends object>({
     [
       columnFilters,
       columnOrder,
-      columnVisibility,
+      controlledColumnVisibility,
       controlledColumnOrder,
       controlledFilters,
       controlledRowSelection,
@@ -361,7 +403,7 @@ export function DataTable<T extends object>({
     initialState: {
       columnOrder: controlledColumnOrder,
       columnSizing: persistedColumnSizing,
-      columnVisibility: columnVisibility ?? EMPTY_VISIBILITY,
+      columnVisibility: controlledColumnVisibility ?? EMPTY_VISIBILITY,
       rowSelection: controlledRowSelection,
       sorting: controlledSorting,
       columnFilters: controlledFilters,
@@ -388,16 +430,29 @@ export function DataTable<T extends object>({
     manualPagination: !pagination || pagination.mode === 'server',
     rowCount: pagination?.rowCount,
     pageCount: pagination?.pageCount,
-    onRowSelectionChange: onRowSelectionChange
-      ? (updater) => onRowSelectionChange(functionalUpdate(updater, controlledRowSelection))
-      : undefined,
-    onColumnVisibilityChange: onColumnVisibilityChange
-      ? (updater) =>
-          onColumnVisibilityChange(functionalUpdate(updater, columnVisibility ?? EMPTY_VISIBILITY))
-      : undefined,
-    onColumnOrderChange:
-      onColumnOrderChange || shouldPersistColumnOrder
-        ? (updater) => {
+    // A handler is only passed when there is one: an explicit `undefined` would replace TanStack's
+    // default handler, and the table would ignore every change to that state.
+    ...(onRowSelectionChange
+      ? {
+          onRowSelectionChange: (updater: Updater<RowSelectionState>) =>
+            onRowSelectionChange(functionalUpdate(updater, controlledRowSelection)),
+        }
+      : {}),
+    ...(onColumnVisibilityChange || shouldPersistColumnVisibility
+      ? {
+          onColumnVisibilityChange: (updater: Updater<Record<string, boolean>>) => {
+            const next = functionalUpdate(updater, controlledColumnVisibility ?? EMPTY_VISIBILITY)
+            if (shouldPersistColumnVisibility && columnPersistenceKey) {
+              setPersistedColumnVisibility(next)
+              persistColumnVisibility(columnPersistenceKey, next)
+            }
+            onColumnVisibilityChange?.(next)
+          },
+        }
+      : {}),
+    ...(onColumnOrderChange || shouldPersistColumnOrder
+      ? {
+          onColumnOrderChange: (updater: Updater<string[]>) => {
             const next = completeColumnOrder(
               functionalUpdate(updater, controlledColumnOrder),
               columnKeys,
@@ -408,35 +463,47 @@ export function DataTable<T extends object>({
               persistColumnOrder(columnPersistenceKey, next)
             }
             onColumnOrderChange?.(next)
-          }
-        : undefined,
-    onColumnSizingChange: columnPersistenceKey
-      ? (updater) => {
-          const next = functionalUpdate(updater, persistedColumnSizing)
-          setPersistedColumnSizing(next)
-          persistColumnSizing(columnPersistenceKey, next)
+          },
         }
-      : undefined,
-    onSortingChange: onSortingChange
-      ? (updater) => onSortingChange(fromSorting(functionalUpdate(updater, controlledSorting)))
-      : undefined,
-    onColumnFiltersChange: onColumnFiltersChange
-      ? (updater) =>
-          onColumnFiltersChange(fromColumnFilters(functionalUpdate(updater, controlledFilters)))
-      : undefined,
-    onGlobalFilterChange: onGlobalFilterChange
-      ? (updater) => onGlobalFilterChange(String(functionalUpdate(updater, globalFilter ?? '')))
-      : undefined,
-    onPaginationChange:
-      onPaginationChange && pagination
-        ? (updater) =>
+      : {}),
+    ...(columnPersistenceKey
+      ? {
+          onColumnSizingChange: (updater: Updater<Record<string, number>>) => {
+            const next = functionalUpdate(updater, persistedColumnSizing)
+            setPersistedColumnSizing(next)
+            persistColumnSizing(columnPersistenceKey, next)
+          },
+        }
+      : {}),
+    ...(onSortingChange
+      ? {
+          onSortingChange: (updater: Updater<typeof controlledSorting>) =>
+            onSortingChange(fromSorting(functionalUpdate(updater, controlledSorting))),
+        }
+      : {}),
+    ...(onColumnFiltersChange
+      ? {
+          onColumnFiltersChange: (updater: Updater<typeof controlledFilters>) =>
+            onColumnFiltersChange(fromColumnFilters(functionalUpdate(updater, controlledFilters))),
+        }
+      : {}),
+    ...(onGlobalFilterChange
+      ? {
+          onGlobalFilterChange: (updater: Updater<string>) =>
+            onGlobalFilterChange(String(functionalUpdate(updater, globalFilter ?? ''))),
+        }
+      : {}),
+    ...(onPaginationChange && pagination
+      ? {
+          onPaginationChange: (updater: Updater<{ pageIndex: number; pageSize: number }>) =>
             onPaginationChange(
               functionalUpdate(updater, {
                 pageIndex: pagination.pageIndex,
                 pageSize: pagination.pageSize,
               }),
-            )
-        : undefined,
+            ),
+        }
+      : {}),
   })
 
   const moveColumn = (activeId: string, targetId: string) => {
@@ -459,6 +526,7 @@ export function DataTable<T extends object>({
 
   const resetColumns = () => {
     table.setColumnOrder(columnKeys)
+    table.setColumnVisibility(() => EMPTY_VISIBILITY)
     if (columnPersistenceKey) {
       setPersistedColumnSizing(EMPTY_COLUMN_SIZING)
       window.localStorage.removeItem(`${COLUMN_SIZING_STORAGE_PREFIX}${columnPersistenceKey}`)
@@ -476,34 +544,37 @@ export function DataTable<T extends object>({
     <div
       className={`w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-border-subtle bg-bg-surface shadow-xs ${stickyHeader ? 'flex min-h-0 flex-col' : ''}`}
     >
-      {title || showColumnSettings ? (
-        <div className="flex min-h-12 shrink-0 items-center justify-between gap-3 border-b border-border-subtle px-4 py-2">
+      {title || toolbar || showColumnSettings ? (
+        <div className="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-4 py-2">
           {title ? (
             <h2 className="min-w-0 truncate text-heading-3 text-text-primary">{title}</h2>
           ) : (
             <span />
           )}
-          {showColumnSettings ? (
-            <Dropdown
-              placement="bottomRight"
-              content={
-                <DataTableColumnSettings
-                  table={table}
-                  moveColumn={moveColumn}
-                  resetColumns={resetColumns}
-                  enableColumnReordering={enableColumnReordering}
+          <div className="flex min-w-0 items-center gap-2">
+            {toolbar}
+            {showColumnSettings ? (
+              <Dropdown
+                placement="bottomRight"
+                content={
+                  <DataTableColumnSettings
+                    table={table}
+                    moveColumn={moveColumn}
+                    resetColumns={resetColumns}
+                    enableColumnReordering={enableColumnReordering}
+                  />
+                }
+              >
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={<IconSettings />}
+                  aria-label={t('dataTable.columnSettings')}
+                  title={t('dataTable.columnSettings')}
                 />
-              }
-            >
-              <Button
-                size="sm"
-                variant="ghost"
-                icon={<IconSettings />}
-                aria-label={t('dataTable.columnSettings')}
-                title={t('dataTable.columnSettings')}
-              />
-            </Dropdown>
-          ) : null}
+              </Dropdown>
+            ) : null}
+          </div>
         </div>
       ) : null}
       <div
@@ -758,7 +829,7 @@ export function DataTable<T extends object>({
                   colSpan={visibleColumnCount}
                   className="px-4 py-10 text-center text-body-sm text-text-tertiary"
                 >
-                  {emptyState ?? t('dataTable.noRows')}
+                  {emptyState ?? <EmptyState title={t('dataTable.noRows')} />}
                 </td>
               </tr>
             )}

@@ -7,6 +7,7 @@ import { PlanningMediaThumbnail } from './PlanningMediaThumbnail'
 
 export const PLANNING_EVENT_STATUS_CLASS: Record<PlanningSummaryStatus, string> = {
   draft: 'border-border-subtle bg-bg-surface-subtle',
+  pending_approval: 'border-warning-100 bg-warning-50',
   scheduled: 'border-info-100 bg-info-50',
   in_progress: 'border-info-100 bg-info-50',
   published: 'border-success-100 bg-success-50',

@@ -37,7 +37,7 @@ export const commonViVN = {
     resetColumns: 'Đặt lại cột',
     columnSettingsDescription: 'Ẩn, hiện và kéo thả cột theo thứ tự bạn muốn.',
     toggleColumn: 'Ẩn hoặc hiện cột {{column}}',
-    noRows: 'Không có dữ liệu để hiển thị.',
+    noRows: 'Không có dữ liệu',
     pageSummary: 'Trang {{page}} / {{pageCount}} · {{rowCount}} hàng',
     rowsPerPage: 'Số hàng mỗi trang',
     rowsCount: '{{count}} hàng',

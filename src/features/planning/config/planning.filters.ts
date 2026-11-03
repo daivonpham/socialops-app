@@ -4,10 +4,11 @@ export type PlanningView = 'calendar' | 'list'
 export type PlanningCalendarView = 'month' | 'week'
 
 export type PlanningStatusGroup =
-  'draft' | 'scheduled' | 'in_progress' | 'published' | 'needs_action'
+  'draft' | 'pending_approval' | 'scheduled' | 'in_progress' | 'published' | 'needs_action'
 
 export const PLANNING_FILTER_STATUS_GROUPS: PlanningStatusGroup[] = [
   'draft',
+  'pending_approval',
   'scheduled',
   'in_progress',
   'published',
