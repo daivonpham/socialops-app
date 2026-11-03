@@ -22,19 +22,25 @@ export function PlanningMediaThumbnail({
   content: PlanningContent
   className: string
 }) {
-  const [failedUrl, setFailedUrl] = useState<string>()
+  const [failedUrls, setFailedUrls] = useState<string[]>([])
+  // A published post shows the picture Facebook holds; our file is the fallback when its link
+  // has expired, such as after the Page was disconnected.
+  const pictureUrl = content.pictureUrl
+  const showPicture = Boolean(pictureUrl && !failedUrls.includes(pictureUrl))
   const latestUrl = content.media?.[0]?.url ?? content.thumbnailUrl
   const mediaIdentity = content.media?.[0]?.id ?? content.id
-  const url = latestUrl ? stableMediaUrl(mediaIdentity, latestUrl) : undefined
-  const isVideo = content.media?.[0]?.type === 'video' || content.mediaType === 'video'
+  const fileUrl = latestUrl ? stableMediaUrl(mediaIdentity, latestUrl) : undefined
+  const url = showPicture ? pictureUrl : fileUrl
+  const isVideo =
+    !showPicture && (content.media?.[0]?.type === 'video' || content.mediaType === 'video')
 
   const handleError = () => {
     if (!url) return
-    stableMediaUrls.delete(mediaIdentity)
-    setFailedUrl(url)
+    if (!showPicture) stableMediaUrls.delete(mediaIdentity)
+    setFailedUrls((current) => [...current, url])
   }
 
-  if (url && failedUrl !== url) {
+  if (url && !failedUrls.includes(url)) {
     if (isVideo) {
       return (
         <video

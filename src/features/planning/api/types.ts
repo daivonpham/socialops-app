@@ -65,6 +65,8 @@ export type PlanningContent = {
   captionMode?: PlanningCaptionMode
   title?: string
   thumbnailUrl?: string
+  /** Picture Facebook holds once the post is published. */
+  pictureUrl?: string
   mediaType: PlanningMediaType
   type?: PlanningPostType
   link?: string
