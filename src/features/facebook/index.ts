@@ -9,7 +9,7 @@ export {
   useReconnectFacebookPages,
 } from './api/hooks'
 export { FacebookFilters } from './components/FacebookFilters'
-export { FacebookSyncBanner, FacebookSyncControl } from './components/FacebookSyncStatus'
+export { FacebookSyncBanner } from './components/FacebookSyncStatus'
 export { MetricCards, TrendChart } from './components/FacebookVisuals'
 export type {
   DateRange,

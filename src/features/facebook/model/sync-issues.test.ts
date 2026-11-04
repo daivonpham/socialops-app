@@ -12,6 +12,7 @@ const page = (overrides: Partial<Page>): Page => ({
   status: 'error',
   failureCount: 1,
   lastSyncedAt: hoursAgo(1),
+  refreshAvailableAt: null,
   historyStartAt: null,
   backfillCompleted: true,
   lastErrorCode: 'FACEBOOK_SYNC_FAILED',

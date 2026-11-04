@@ -213,7 +213,6 @@ export type FacebookSyncStatusDto = {
   syncing: boolean
   /** Oldest successful sync across the Brand's Pages; null until every Page has synced once. */
   lastSyncedAt: string | null
-  refreshAvailableAt: string | null
   pages: Array<{
     pageId: string
     name: string
@@ -224,6 +223,8 @@ export type FacebookSyncStatusDto = {
     historyStartAt: string | null
     backfillCompleted: boolean
     lastErrorCode: string | null
+    /** When this Page can be refreshed by hand; null when it can be now. */
+    refreshAvailableAt: string | null
   }>
 }
 

@@ -36,7 +36,7 @@ import {
 import { ManageFacebookPagesDrawer } from '../components/ManageFacebookPagesDrawer'
 import { FacebookPostsTab } from '../components/FacebookPostsTab'
 import { FacebookPageSwitcher } from '../components/FacebookPageSwitcher'
-import { FacebookSyncBanner, FacebookSyncControl } from '../components/FacebookSyncStatus'
+import { FacebookSyncBanner } from '../components/FacebookSyncStatus'
 import { FacebookDashboard } from '../components/dashboard/FacebookDashboard'
 import { FACEBOOK_ACCESS } from '../config/facebook-access'
 import { CodedError, parseErrorCode } from '@/shared/api/errors'
@@ -247,7 +247,6 @@ export default function FacebookPage() {
           ]}
         />
         <div className="flex flex-wrap items-center justify-end gap-3">
-          <FacebookSyncControl brandId={brandId} />
           <FacebookFilters
             range={query.range}
             since={query.since}
@@ -280,6 +279,7 @@ export default function FacebookPage() {
         onClose={() => setIsPageManagerOpen(false)}
         onAddPage={startConnect}
         isAddingPage={connect.isPending}
+        canManage={canManageConnection}
       />
       {oauthModal}
     </div>

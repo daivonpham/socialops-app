@@ -574,7 +574,6 @@ function syncStatusFor(brandId: string): FacebookSyncStatusDto {
   return {
     syncing: false,
     lastSyncedAt: syncedAt,
-    refreshAvailableAt: null,
     pages: (PAGE_IDS[brandId] ?? []).map((pageId) => ({
       pageId,
       name: `Page ${pageId}`,
@@ -584,6 +583,7 @@ function syncStatusFor(brandId: string): FacebookSyncStatusDto {
       historyStartAt: null,
       backfillCompleted: true,
       lastErrorCode: null,
+      refreshAvailableAt: null,
     })),
   }
 }

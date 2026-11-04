@@ -52,10 +52,12 @@ export const facebookViVN = {
     loadError: 'Không thể tải mục này.',
   },
   sync: {
-    updatedAt: 'Cập nhật {{time}}',
-    neverSynced: 'Chưa đồng bộ',
     syncing: 'Đang đồng bộ…',
     refresh: 'Làm mới dữ liệu',
+    refreshHint:
+      'Lấy bài đăng gần đây và số liệu mới nhất của mọi Trang từ Facebook. Dữ liệu vẫn tự cập nhật mỗi 1–2 giờ.',
+    refreshAvailableIn: 'Có thể làm mới lại sau {{minutes}} phút',
+    pageRateLimited: 'Facebook đang giới hạn, sẽ tự thử lại',
     refreshQueued: 'Đã yêu cầu làm mới. Dữ liệu mới sẽ xuất hiện trong ít phút.',
     refreshTooSoon: 'Dữ liệu vừa được làm mới. Vui lòng thử lại sau vài phút.',
     refreshError: 'Không thể yêu cầu làm mới dữ liệu.',

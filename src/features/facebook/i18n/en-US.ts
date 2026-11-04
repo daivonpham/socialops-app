@@ -49,10 +49,12 @@ export const facebookEnUS = {
     loadError: "We couldn't load this section.",
   },
   sync: {
-    updatedAt: 'Updated {{time}}',
-    neverSynced: 'Not synced yet',
     syncing: 'Syncing…',
     refresh: 'Refresh data',
+    refreshHint:
+      'Fetches recent posts and the latest numbers of every Page from Facebook. Data also updates by itself every 1–2 hours.',
+    refreshAvailableIn: 'Can refresh again in {{minutes}} min',
+    pageRateLimited: 'Facebook is limiting requests; retrying automatically',
     refreshQueued: 'Refresh requested. New data will appear shortly.',
     refreshTooSoon: 'Data was refreshed recently. Try again in a few minutes.',
     refreshError: "We couldn't request a refresh.",

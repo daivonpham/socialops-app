@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import {
   FacebookFilters,
   FacebookSyncBanner,
-  FacebookSyncControl,
   MetricCards,
   TrendChart,
   useFacebookDetails,
@@ -92,7 +91,6 @@ export default function AllPlatformsPage() {
           <p className="mt-1 text-body-sm text-text-secondary">{t('subtitle')}</p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-3">
-          {analyticsBrandId ? <FacebookSyncControl brandId={analyticsBrandId} /> : null}
           <FacebookFilters
             range={range}
             since={query.since}
