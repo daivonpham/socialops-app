@@ -1,6 +1,6 @@
 # SocialOps App: bản đồ cho agent
 
-Frontend React + Vite + TypeScript, Ant Design làm nền hành vi, TanStack Query. API nằm ở repo kế bên `../socialops-api` (NestJS, cổng 3000). App chạy cổng 5073. Hai dev server do người dùng tự chạy: không khởi động lại.
+Frontend React + Vite + TypeScript, Ant Design làm nền hành vi, TanStack Query. API nằm ở repo kế bên `../socialops-api` (NestJS, cổng 3000). Khu superadmin là repo riêng `../socialops-admin` (cổng 5074). App chạy cổng 5073. Hai dev server do người dùng tự chạy: không khởi động lại.
 
 ## Đọc gì, khi nào
 

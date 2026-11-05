@@ -25,6 +25,10 @@ export const errorsEnUS = {
     UNSUPPORTED_MEDIA_TYPE: 'This file type is not supported.',
     HTTP_ERROR: 'The request could not be completed.',
     INTERNAL_ERROR: 'Something went wrong on our side. Please try again.',
+    AI_AGENT_NOT_CONFIGURED: 'AI post creation is not available right now.',
+    AI_PROVIDER_UNAVAILABLE: 'The AI service is busy. Try again in a few minutes.',
+    AI_PROVIDER_FAILED: 'The AI service could not complete this request.',
+    AI_QUOTA_EXCEEDED: 'Your plan has reached its AI limit for this month.',
     INVALID_DATE_RANGE: 'Choose a date range of 1 to 366 days.',
     IDEMPOTENCY_KEY_REUSED:
       'This request was already sent with different details. Reload and try again.',
