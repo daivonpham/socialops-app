@@ -56,7 +56,11 @@ export { IoSettingsOutline as IconSettingsOutline } from 'react-icons/io5'
 export { MdFacebook as IconFacebook } from 'react-icons/md'
 export { MdOutlineWorkspaces as IconWorkspaces } from 'react-icons/md'
 export { FaTiktok as IconTikTok } from 'react-icons/fa6'
-export { HiOutlineMail as IconMail, HiOutlineBell as IconBell } from 'react-icons/hi'
+export {
+  HiOutlineMail as IconMail,
+  HiOutlineBell as IconBell,
+  HiOutlineSparkles as IconSparkles,
+} from 'react-icons/hi'
 export { FaPlay as IconPlaySolid } from 'react-icons/fa'
 export { FaEarthAsia as IconPublic } from 'react-icons/fa6'
 export { BsDot as IconDot } from 'react-icons/bs'
@@ -80,6 +84,12 @@ export {
   FiTable as IconTable,
   FiTrash2 as IconTrash,
   FiTrendingUp as IconTrendingUp,
+  FiThumbsUp as IconThumbsUp,
+  FiSlash as IconBlocked,
+  FiCheckCircle as IconCheckCircle,
+  FiPaperclip as IconAttach,
+  FiImage as IconImageLine,
+  FiSend as IconSendLine,
 } from 'react-icons/fi'
 export { FiUploadCloud as IconUploadCloud } from 'react-icons/fi'
 export { FcGoogle as IconGoogle } from 'react-icons/fc'

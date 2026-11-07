@@ -50,6 +50,22 @@ export const color = {
   info: { 50: '#EFF6FF', 100: '#DBEAFE', 500: '#3B82F6', 700: '#1D4ED8', 900: '#1E3A8A' },
   approval: { 50: '#FAF5FF', 100: '#F3E8FF', 500: '#A855F7', 700: '#7E22CE', 900: '#581C87' },
   /**
+   * AI surfaces only (the "Create with AI" button and assistant). Kept apart from `approval`,
+   * whose purple means a workflow state.
+   */
+  ai: {
+    50: '#F5F3FF',
+    100: '#EDE9FE',
+    200: '#DDD6FE',
+    300: '#C4B5FD',
+    400: '#8B7CF6',
+    500: '#7C5CF5',
+    600: '#6D45E8',
+    700: '#5B32CC',
+    800: '#3A2A8C',
+    900: '#221B57',
+  },
+  /**
    * Secondary data-visualization hue (orange) for series that contrast with the brand green,
    * e.g. unfollows or comparison categories. Charts only, never UI chrome.
    */

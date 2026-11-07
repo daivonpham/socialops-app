@@ -13,6 +13,8 @@ export type ModalProps = {
   footer?: ReactNode
   width?: number | string
   floatingClose?: boolean
+  /** `none` removes the body padding, for dialogs that lay out their own panels edge to edge. */
+  padding?: 'default' | 'none'
   blurBackdrop?: boolean
   onClose: () => void
 }

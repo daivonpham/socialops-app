@@ -44,7 +44,7 @@ Chỉ đọc phần cần cho việc đang làm, không đọc toàn bộ source
 
 - `src/app/`: shell, router (`router/paths.ts`, `routes.tsx`), providers, i18n gốc (`i18n/resources.ts` đăng ký namespace).
 - `src/features/<tên>/`: `api/` (`service.ts`, `hooks.ts`, `types.ts`), `components/`, `pages/`, `i18n/{vi-VN,en-US}.ts`, `index.ts`.
-  - Features: `auth`, `brands`, `workspaces`, `overview`, `facebook`, `tiktok`, `social-accounts`, `planning`, `reports`, `google`, `profile`, `privacy`.
+  - Features: `auth`, `brands`, `workspaces`, `overview`, `facebook`, `tiktok`, `social-accounts`, `planning`, `reports`, `google`, `profile`, `privacy`, `ai-content` (nút "Tạo bằng AI" cạnh nút tạo bài ở Planning, hồ sơ AI của Brand).
 - `src/shared/ui/`: primitives (`primitives/`), `DataTable`, `charts`, `AsyncState`… Mọi UI và icon import từ `@/shared/ui`.
 - `src/shared/`: `api` (http client, `errors.ts` đọc lỗi API), `auth`, `permissions`, `scope` (workspace/brand), `hooks`, `lib`, `styles/tokens.ts`.
 

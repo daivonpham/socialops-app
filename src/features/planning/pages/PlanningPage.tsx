@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
+import { AiCreateButton } from '@/features/ai-content'
 import { useReconnectFacebookPages } from '@/features/facebook'
 import { useSocialAccountCounts } from '@/features/social-accounts'
 import { isApiErrorCode } from '@/shared/api/errors'
@@ -18,6 +20,7 @@ import {
   useToast,
 } from '@/shared/ui'
 import {
+  PLANNING_QUERY_KEYS,
   usePlanningCalendarContents,
   usePlanningContentPage,
   usePlanningContent,
@@ -79,6 +82,7 @@ export default function PlanningPage() {
   const errorMessage = useApiErrorMessage('planning')
   const toast = useToast()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { brandId } = useActiveBrand()
   const { granted } = usePermissions()
   const reconnectFacebook = useReconnectFacebookPages(brandId)
@@ -302,6 +306,16 @@ export default function PlanningPage() {
             approvalStatus={approvalStatus}
             onChange={(filters) => setUrlFilters(filters)}
           />
+          {platform !== 'tiktok' ? (
+            <AiCreateButton
+              brandId={brandId}
+              defaultPageId={query.accountId !== 'all' ? query.accountId : undefined}
+              onCreated={() =>
+                void queryClient.invalidateQueries({ queryKey: PLANNING_QUERY_KEYS.root(brandId) })
+              }
+              onOpenContent={(contentId) => navigate(getPlanningEditPath('facebook', contentId))}
+            />
+          ) : null}
           <CreatePostButton accounts={accounts} platform={platform} />
         </div>
       </div>

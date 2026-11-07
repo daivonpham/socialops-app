@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="530" viewBox="100 58 410 265" role="img" aria-labelledby="title desc">
+  <title id="title">Robot cầm thẻ tím</title>
+  <desc id="desc">Robot trắng tím mỉm cười, giơ thẻ tím, bên cạnh có hai ngôi sao lấp lánh.</desc>
+  <defs>
+    <linearGradient id="shell" x1="0" y1="0" x2=".9" y2="1">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".48" stop-color="#f9f9ff"/>
+      <stop offset=".78" stop-color="#e5e5ff"/>
+      <stop offset="1" stop-color="#b7aefc"/>
+    </linearGradient>
+    <linearGradient id="shellSide" x1="0" x2="1" y1="0" y2="1">
+      <stop stop-color="#d8d3ff"/>
+      <stop offset=".55" stop-color="#9180f5"/>
+      <stop offset="1" stop-color="#c8c1ff"/>
+    </linearGradient>
+    <linearGradient id="purple" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#9f8aff"/>
+      <stop offset=".48" stop-color="#7554f4"/>
+      <stop offset="1" stop-color="#6739e7"/>
+    </linearGradient>
+    <linearGradient id="visor" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#20266f"/>
+      <stop offset=".65" stop-color="#25216c"/>
+      <stop offset="1" stop-color="#171856"/>
+    </linearGradient>
+    <radialGradient id="faceLight" cx=".52" cy=".16" r=".88">
+      <stop stop-color="#fff" stop-opacity=".44"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-.3" y="-.3" width="1.6" height="1.6">
+      <feGaussianBlur stdDeviation="1.6"/>
+    </filter>
+  </defs>
+
+  <!-- Small floating accents. -->
+  <path d="M139 191 Q143 207 155 211 Q143 215 139 230 Q135 215 122 211 Q135 207 139 191Z" fill="#9478f6" opacity=".75"/>
+  <path d="M139 200 Q141 209 148 211 Q141 213 139 222 Q137 213 129 211 Q137 209 139 200Z" fill="#b6a6ff"/>
+  <ellipse cx="166" cy="248" rx="5" ry="9" transform="rotate(28 166 248)" fill="#d5cdff" opacity=".65"/>
+  <path d="M450 96 Q456 116 473 122 Q456 127 450 149 Q444 127 426 122 Q444 117 450 96Z" fill="#9170f5"/>
+  <path d="M450 107 Q454 119 464 122 Q454 125 450 138 Q446 125 436 122 Q446 119 450 107Z" fill="#ae94ff"/>
+
+  <!-- Body, arms, and head fittings. -->
+  <path d="M224 252 Q212 263 225 289 Q235 309 260 309 L352 309 Q369 306 372 287 Q373 263 349 252Z" fill="url(#shell)"/>
+  <path d="M271 265 Q295 280 323 264 L314 307 L277 307Z" fill="#fff" opacity=".88"/>
+  <path d="M185 247 Q189 276 215 285 Q229 291 234 270 L248 274 Q250 301 232 309 Q208 315 188 294 Q176 282 174 267Z" fill="url(#shell)"/>
+  <path d="M184 253 Q185 280 208 291" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="7" stroke-linecap="round"/>
+  <path d="M356 266 Q365 280 362 306 Q377 316 392 305 Q410 294 415 270 L395 257 Q387 278 373 281 L371 261Z" fill="url(#shellSide)"/>
+  <path d="M370 285 Q373 301 366 306" fill="none" stroke="#fff" stroke-opacity=".65" stroke-width="8" stroke-linecap="round"/>
+  <rect x="264" y="71" width="22" height="43" rx="11" transform="rotate(-12 275 92)" fill="url(#shellSide)"/>
+  <path d="M268 77 Q273 75 276 88" fill="none" stroke="#f8f7ff" stroke-opacity=".8" stroke-width="5" stroke-linecap="round"/>
+  <path d="M383 130 Q404 127 413 153 L415 202 Q409 215 394 214Z" fill="url(#shellSide)"/>
+  <path d="M185 168 Q169 170 168 189 Q165 209 175 228 Q183 236 199 232 L204 171Z" fill="url(#shellSide)"/>
+  <path d="M176 177 Q171 201 181 224" fill="none" stroke="#b7a9ff" stroke-opacity=".6" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- Helmet and dark display, both slightly tilted. -->
+  <path d="M253 98 Q312 88 353 98 Q386 104 396 139 Q409 178 395 219 Q387 250 355 257 L257 267 Q216 268 195 243 Q183 227 183 192 Q181 158 199 129 Q218 104 253 98Z" fill="url(#shell)"/>
+  <path d="M200 145 Q221 105 263 104 L345 101" fill="none" stroke="#fff" stroke-opacity=".72" stroke-width="9" stroke-linecap="round"/>
+  <path d="M210 226 Q231 259 267 255 L352 248" fill="none" stroke="#bdb6ff" stroke-opacity=".35" stroke-width="8" stroke-linecap="round"/>
+  <path d="M253 145 L325 134 Q352 130 367 150 Q378 165 376 187 Q373 210 351 217 L254 234 Q226 239 216 217 Q208 200 211 181 Q215 153 253 145Z" fill="#d1caff" opacity=".5" filter="url(#soft)"/>
+  <path d="M251 146 L324 134 Q351 130 366 151 Q378 168 372 192 Q368 212 349 217 L256 233 Q229 238 217 219 Q208 205 212 181 Q215 154 251 146Z" fill="url(#visor)"/>
+  <path d="M252 147 L325 137 Q351 133 365 153 Q373 164 372 180" fill="none" stroke="url(#faceLight)" stroke-width="5" opacity=".5"/>
+
+  <!-- Friendly face. -->
+  <path d="M247 191 Q246 176 257 175 Q269 174 269 189" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+  <path d="M315 176 Q315 162 326 162 Q337 162 337 176" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+  <path d="M278 195 Q291 207 308 193" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Raised hand behind the card and the purple card. -->
+  <path d="M379 251 Q386 238 399 234 Q410 234 416 247 Q412 261 400 274 Q388 282 380 270Z" fill="url(#shellSide)"/>
+  <g transform="rotate(10 432 219)">
+    <rect x="370" y="175" width="124" height="92" rx="20" fill="#aa95ff" opacity=".25" filter="url(#soft)"/>
+    <rect x="370" y="174" width="124" height="92" rx="19" fill="url(#purple)"/>
+    <path d="M394 205 H455" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+    <path d="M394 230 H433" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+    <path d="M443 230 H459" stroke="#c8b8ff" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <path d="M393 245 Q385 248 380 258 Q377 264 383 270 Q390 276 397 271 Q407 263 409 253 Q407 246 401 244Z" fill="url(#shellSide)"/>
+</svg>

@@ -14,6 +14,8 @@ export type TextareaProps = {
   disabled?: boolean
   maxLength?: number
   rows?: number
+  /** Grows with the text between these row counts, then scrolls. */
+  autoSize?: { minRows: number; maxRows: number }
   'aria-label'?: string
 }
 

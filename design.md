@@ -1693,6 +1693,9 @@ Rejected          red
 
 Use soft semantic backgrounds and text labels.
 
+AI surfaces (the "Create with AI" button, the AI assistant dialog) use the `ai` violet scale, never
+`approval`: purple in a status means pending approval. Keep `ai` off non-AI UI.
+
 ---
 
 # 65. Page anatomy

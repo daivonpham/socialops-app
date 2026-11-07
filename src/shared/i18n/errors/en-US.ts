@@ -29,6 +29,9 @@ export const errorsEnUS = {
     AI_PROVIDER_UNAVAILABLE: 'The AI service is busy. Try again in a few minutes.',
     AI_PROVIDER_FAILED: 'The AI service could not complete this request.',
     AI_QUOTA_EXCEEDED: 'Your plan has reached its AI limit for this month.',
+    AI_DISABLED: 'AI generation is turned off right now.',
+    AI_INVALID_OUTPUT: 'The AI could not produce a usable result. Try again.',
+    AI_GENERATION_ABANDONED: 'This generation could not finish. Try again.',
     INVALID_DATE_RANGE: 'Choose a date range of 1 to 366 days.',
     IDEMPOTENCY_KEY_REUSED:
       'This request was already sent with different details. Reload and try again.',

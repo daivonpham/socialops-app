@@ -58,6 +58,7 @@ export default {
       error: color.error,
       info: color.info,
       approval: color.approval,
+      ai: color.ai,
       accent: color.accent,
       platform: color.platform,
       // semantic groups → bg-bg-page, text-text-primary, border-border, ...

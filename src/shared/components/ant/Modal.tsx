@@ -12,6 +12,7 @@ export function Modal({
   footer,
   width,
   floatingClose = false,
+  padding = 'default',
   blurBackdrop = false,
   onClose,
 }: ModalProps) {
@@ -22,9 +23,7 @@ export function Modal({
         headerIcon || headerDescription ? (
           <div
             className={
-              headerIcon && headerLayout === 'horizontal'
-                ? 'flex items-start gap-4 pt-1'
-                : 'pt-1'
+              headerIcon && headerLayout === 'horizontal' ? 'flex items-start gap-4 pt-1' : 'pt-1'
             }
           >
             {headerIcon ? (
@@ -54,6 +53,7 @@ export function Modal({
       footer={footer}
       width={width}
       className={floatingClose ? 'app-modal-floating-close' : undefined}
+      styles={padding === 'none' ? { content: { padding: 0, overflow: 'hidden' } } : undefined}
       rootClassName={blurBackdrop ? 'app-modal-blur-backdrop' : undefined}
       closeIcon={
         floatingClose ? (
