@@ -104,6 +104,7 @@ export {
   LuPencil as IconPencil,
   LuFileText as IconNote,
   LuLayers as IconLayersLine,
+  LuShieldCheck as IconShieldCheck,
 } from 'react-icons/lu'
 export {
   RxPlusCircled as IconPlusCircle,

@@ -25,8 +25,6 @@ export type AiTurnActions = {
   onPost: (turn: AiGeneration, intent: AiPostIntent) => void
   onAnotherIdea: (turn: AiGeneration) => void
   onEdit: (turn: AiGeneration) => void
-  /** Sends a failed request again. */
-  onResend: (turn: AiGeneration) => void
   onOpenContent: (contentId: string) => void
 }
 
@@ -174,13 +172,19 @@ function SuggestionCard({
           <ImagePreviewGroup>
             <ul className="flex flex-wrap gap-2" aria-label={t('chat.images')}>
               {suggestion.images.map((image) => (
-                <li key={image.id}>
+                <li key={image.id} className="relative">
                   <Image
                     src={image.url}
                     alt={image.name}
                     wrapperClassName="!block size-[120px] overflow-hidden rounded-lg border border-border-subtle"
                     className="!size-full cursor-pointer object-cover"
                   />
+                  {/* The AI may post images the customer sent; marked, they are not taken for its own. */}
+                  {image.fromCustomer ? (
+                    <span className="pointer-events-none absolute start-2 bottom-2 rounded-full bg-bg-surface/90 px-2 py-0.5 text-label-sm text-text-secondary shadow-xs">
+                      {t('chat.yourImage')}
+                    </span>
+                  ) : null}
                 </li>
               ))}
             </ul>
@@ -188,6 +192,11 @@ function SuggestionCard({
         ) : null}
         {turn.imageErrorCode ? (
           <p className="text-body-sm text-warning-700">{t('chat.imageMissing')}</p>
+        ) : null}
+        {turn.unreadableFiles.length ? (
+          <p className="text-body-sm text-warning-700">
+            {t('chat.unreadable', { names: turn.unreadableFiles.join(', ') })}
+          </p>
         ) : null}
       </div>
       {used ? (
@@ -257,27 +266,12 @@ function AssistantMessage({
     body = <AiGenerationProgress turn={turn} />
   else if (turn.status === 'failed')
     body = (
-      <div className="grid gap-3">
+      <div>
         <Alert
-          variant="soft"
+          variant="pill"
           tone="error"
-          title={t('progress.failedTitle')}
-          description={errorMessage(
-            new CodedError(turn.errorCode ?? 'UNKNOWN'),
-            t('progress.failed'),
-          )}
+          title={errorMessage(new CodedError(turn.errorCode ?? 'UNKNOWN'), t('progress.failed'))}
         />
-        {turn.kind === 'new' ? (
-          <div>
-            <ActionButton
-              icon={<IconRefresh />}
-              disabled={busy}
-              onClick={() => actions.onResend(turn)}
-            >
-              {t('progress.tryAgain')}
-            </ActionButton>
-          </div>
-        ) : null}
       </div>
     )
   else if (turn.autoSubmit && turn.contentId) {

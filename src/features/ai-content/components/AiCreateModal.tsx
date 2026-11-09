@@ -46,7 +46,6 @@ const TOPIC_KEY = 'topic'
 type Values = {
   pageIds: string[]
   brief: Record<string, string>
-  wantsImage: boolean
   autoSubmit: boolean
 }
 
@@ -181,7 +180,6 @@ export function AiCreateModal({
               values.brief?.[key]?.trim() ?? '',
             ]),
           ),
-          wantsImage: values.wantsImage,
           autoSubmit: values.autoSubmit,
           ...(conversationId ? { conversationId } : {}),
           ...(attachments.readyIds.length ? { attachmentIds: attachments.readyIds } : {}),
@@ -224,25 +222,6 @@ export function AiCreateModal({
       setRequestKey(newKey())
       form.setFieldValue(['brief', TOPIC_KEY], '')
     },
-    onResend: (turn) => {
-      resetErrors()
-      void start
-        .mutateAsync({
-          brandId,
-          idempotencyKey: newKey(),
-          socialAccountIds: turn.socialAccountIds,
-          ...(turn.templateKey ? { templateKey: turn.templateKey } : {}),
-          brief: turn.brief,
-          wantsImage: turn.wantsImage,
-          autoSubmit: turn.autoSubmit,
-          ...(turn.conversationId ? { conversationId: turn.conversationId } : {}),
-          ...(turn.attachments.length
-            ? { attachmentIds: turn.attachments.map((file) => file.id) }
-            : {}),
-        })
-        .then((started) => setConversationId(started.conversationId))
-        .catch(() => undefined)
-    },
     onOpenContent,
   }
 
@@ -250,7 +229,9 @@ export function AiCreateModal({
     try {
       await post.mutateAsync({ brandId, generationId: turn.id, intent })
     } catch (error) {
-      toast.error({ title: errorMessage(error, t('chat.postError')) })
+      toast.error({
+        title: errorMessage(error, t('chat.postError')),
+      })
       return
     } finally {
       setPublishing(null)
@@ -344,7 +325,6 @@ export function AiCreateModal({
             initialValues={{
               pageIds: initialPage ? [initialPage.id] : [],
               brief: {},
-              wantsImage: false,
               autoSubmit: false,
             }}
             onValuesChange={resetErrors}

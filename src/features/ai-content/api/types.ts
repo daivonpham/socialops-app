@@ -50,7 +50,6 @@ export type StartAiGenerationInput = {
   socialAccountIds: string[]
   templateKey?: string
   brief: Record<string, string>
-  wantsImage: boolean
   /** Send for approval instead of showing a suggestion in the chat. */
   autoSubmit: boolean
   /** The chat to continue; a new one starts without it. */
@@ -59,7 +58,9 @@ export type StartAiGenerationInput = {
 }
 export type AiGenerationStarted = { id: string; conversationId: string }
 
-export type AiGenerationPhase = 'queued' | 'writing' | 'image' | 'checking' | 'saving'
+export type AiGenerationPhase = 'queued' | 'writing' | 'image' | 'checking' | 'finishing'
+/** The AI's picture choice: post the customer's images, make a new one, or none. */
+export type AiImageAction = 'none' | 'use_attachment' | 'generate'
 export type AiAttachment = {
   id: string
   type: 'image' | 'document'
@@ -67,11 +68,16 @@ export type AiAttachment = {
   /** Signed read address, valid for an hour. */
   url: string
 }
+/** A file of a turn: what was sent, or what the suggestion would post. */
+export type AiTurnFile = AiAttachment & {
+  /** Sent by the customer with a request, not made by the AI. */
+  fromCustomer: boolean
+}
 
 export type AiSuggestion = {
   /** Caption by Page id. */
   captions: Record<string, string>
-  images: AiAttachment[]
+  images: AiTurnFile[]
 }
 
 /** One turn of a chat: what was asked, and what came back. */
@@ -86,15 +92,18 @@ export type AiGeneration = {
   templateKey: string | null
   socialAccountIds: string[]
   autoSubmit: boolean
-  attachments: AiAttachment[]
+  attachments: AiTurnFile[]
   suggestion: AiSuggestion | null
   status: 'queued' | 'running' | 'succeeded' | 'failed'
   phase: AiGenerationPhase | null
-  wantsImage: boolean
+  /** Null until the AI has written the captions and chosen. */
+  imageAction: AiImageAction | null
+  /** Documents sent with the request whose text could not be read. */
+  unreadableFiles: string[]
   /** The post made from this turn; set means the suggestion is used. */
   contentId: string | null
   errorCode: string | null
-  /** An image was asked for and could not be made. */
+  /** The AI chose to make an image and none could be made. */
   imageErrorCode: string | null
 }
 

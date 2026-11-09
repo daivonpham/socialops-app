@@ -8,7 +8,6 @@ import {
   IconCheck,
   IconChevronDown,
   IconChevronRight,
-  IconImageLine,
   IconInfo,
   IconLayers,
   IconPanelLeftClose,
@@ -272,7 +271,7 @@ function OptionSwitch({
   icon,
   label,
 }: {
-  name: 'wantsImage' | 'autoSubmit'
+  name: 'autoSubmit'
   icon: ReactNode
   label: string
 }) {
@@ -326,7 +325,6 @@ function OptionsMenu({
         </>
       }
     >
-      <OptionSwitch name="wantsImage" icon={<IconImageLine />} label={t('form.image')} />
       <OptionSwitch name="autoSubmit" icon={<IconSendLine />} label={t('form.autoSubmit')} />
     </MenuSection>
   )

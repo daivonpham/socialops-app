@@ -24,14 +24,17 @@ const MIME_BY_EXTENSION: Record<string, string> = {
   png: 'image/png',
   webp: 'image/webp',
   pdf: 'application/pdf',
-  doc: 'application/msword',
   docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  xls: 'application/vnd.ms-excel',
   xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   csv: 'text/csv',
   txt: 'text/plain',
 }
-const ACCEPT = Object.keys(MIME_BY_EXTENSION)
+/**
+ * Old binary Office files: their text cannot be read, so they are turned away with a way out. The
+ * picker still offers them, or they would just look greyed out with no reason given.
+ */
+const OLD_OFFICE = new Set(['doc', 'xls'])
+const ACCEPT = [...Object.keys(MIME_BY_EXTENSION), ...OLD_OFFICE]
   .map((extension) => `.${extension}`)
   .join(',')
 
@@ -102,7 +105,9 @@ export function useAttachments(brandId: string) {
     const fitting = known.filter((file) => file.size <= FILE_MAX_BYTES)
     const room = Math.max(ATTACHMENTS_MAX - current.length, 0)
     const taken = fitting.slice(0, room)
-    if (known.length < fresh.length) toast.warning({ title: t('attach.unsupported') })
+    const old = fresh.filter((file) => OLD_OFFICE.has(fileExtensionOf(file.name)))
+    if (old.length) toast.warning({ title: t('attach.oldOffice') })
+    if (known.length + old.length < fresh.length) toast.warning({ title: t('attach.unsupported') })
     if (fitting.length < known.length) toast.warning({ title: t('attach.tooLarge') })
     if (taken.length < fitting.length)
       toast.warning({ title: t('attach.tooMany', { count: ATTACHMENTS_MAX }) })

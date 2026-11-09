@@ -409,3 +409,28 @@
     background: transparent;
   }
 }
+
+/* AI generation: a highlight sweeps along the track while a turn is being made. When motion is
+   reduced it rests in the middle, so the bar still reads as "in progress". */
+@layer components {
+  .ai-progress-sweep {
+    @apply absolute inset-y-0 start-0 w-2/5 rounded-full bg-linear-to-r from-transparent via-ai-400 to-transparent;
+    animation: ai-progress-sweep 1.6s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ai-progress-sweep {
+      animation: none !important;
+      transform: translateX(75%);
+    }
+  }
+}
+
+@keyframes ai-progress-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}

@@ -23,7 +23,7 @@ export const errorsViVN = {
     UNSUPPORTED_MEDIA_TYPE: 'Định dạng tệp không được hỗ trợ.',
     HTTP_ERROR: 'Không thể hoàn tất yêu cầu.',
     INTERNAL_ERROR: 'Hệ thống gặp sự cố. Vui lòng thử lại.',
-    AI_AGENT_NOT_CONFIGURED: 'Hiện chưa thể tạo bài bằng AI.',
+    AI_AGENT_NOT_CONFIGURED: 'AI chưa được cấu hình.',
     AI_PROVIDER_UNAVAILABLE: 'Dịch vụ AI đang bận. Vui lòng thử lại sau ít phút.',
     AI_PROVIDER_FAILED: 'Dịch vụ AI không xử lý được yêu cầu này.',
     AI_QUOTA_EXCEEDED: 'Gói của bạn đã dùng hết hạn mức AI trong tháng này.',

@@ -40,11 +40,20 @@ const turn = (overrides: Partial<AiGeneration> = {}): AiGeneration => ({
   attachments: [],
   suggestion: {
     captions: { 'page-a': 'Cold brew is here', 'page-b': 'Cold brew for B' },
-    images: [{ id: 'img-1', type: 'image', name: 'ai-1', url: 'https://files.test/ai-1' }],
+    images: [
+      {
+        id: 'img-1',
+        type: 'image',
+        name: 'ai-1',
+        url: 'https://files.test/ai-1',
+        fromCustomer: false,
+      },
+    ],
   },
   status: 'succeeded',
   phase: null,
-  wantsImage: true,
+  imageAction: 'generate',
+  unreadableFiles: [],
   contentId: null,
   errorCode: null,
   imageErrorCode: null,
@@ -153,11 +162,10 @@ describe('AiCreateButton', () => {
     await user.click(await screen.findByRole('checkbox', { name: 'Page A' }))
     await user.click(within(dialog).getByRole('button', { name: /Create post/ }))
 
-    expect(await within(dialog).findByText('Writing the caption')).toBeInTheDocument()
+    expect(await within(dialog).findByText('Writing the content')).toBeInTheDocument()
     expect(body).toEqual({
       socialAccountIds: ['page-a'],
       brief: { topic: 'New cold brew' },
-      wantsImage: false,
       autoSubmit: false,
     })
     expect(keys[0]).toMatch(/^[0-9a-f-]{36}$/)
@@ -289,6 +297,63 @@ describe('AiCreateButton', () => {
     expect(onOpenContent).toHaveBeenCalledWith('content-1')
   })
 
+  it('marks the images the customer sent and names the files the AI could not read', async () => {
+    window.localStorage.setItem(CHAT_KEY, 'conv-1')
+    const photo = {
+      id: 'att-1',
+      type: 'image' as const,
+      name: 'mon-moi.png',
+      url: 'https://files.test/mon-moi.png',
+      fromCustomer: true,
+    }
+    mockApi({}, () =>
+      chat([
+        turn({
+          attachments: [photo],
+          imageAction: 'use_attachment',
+          suggestion: { captions: { 'page-a': 'Cold brew is here' }, images: [photo] },
+          unreadableFiles: ['scan.pdf', 'locked.pdf'],
+        }),
+      ]),
+    )
+    const { user } = renderButton()
+    const dialog = await openDialog(user)
+    const images = await within(dialog).findByRole('list', { name: 'Suggestion images' })
+    expect(within(images).getByText('Your image')).toBeInTheDocument()
+    expect(
+      within(dialog).getByText(
+        'Could not read scan.pdf, locked.pdf, so the AI did not use what it says.',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('shows the image step only once the AI chooses to make one', async () => {
+    window.localStorage.setItem(CHAT_KEY, 'conv-1')
+    let current = turn({ status: 'running', phase: 'writing', imageAction: null, suggestion: null })
+    mockApi({}, () => chat([current]))
+    const { user } = renderButton()
+    const dialog = await openDialog(user)
+    expect(await within(dialog).findByText('Writing the content')).toBeInTheDocument()
+    expect(within(dialog).queryByText('Create the image')).not.toBeInTheDocument()
+    current = { ...current, phase: 'image', imageAction: 'generate' }
+    expect(
+      await within(dialog).findByText('Creating the image', {}, { timeout: 5000 }),
+    ).toBeInTheDocument()
+  })
+
+  it('turns away old Word and Excel files with how to fix them', async () => {
+    mockApi()
+    const { user } = renderButton()
+    const dialog = await openDialog(user)
+    const picker = dialog.querySelector<HTMLInputElement>('input[type="file"]')!
+    await user.upload(picker, [new File(['x'], 'menu.doc', { type: 'application/msword' })])
+    expect(
+      await screen.findByText(
+        'Old .doc and .xls files cannot be read. Save them as .docx or .xlsx, then attach them again.',
+      ),
+    ).toBeInTheDocument()
+  })
+
   it('opens a remembered chat that has expired as a new one', async () => {
     window.localStorage.setItem(CHAT_KEY, 'conv-1')
     mockApi()
@@ -332,16 +397,14 @@ describe('AiCreateButton', () => {
     expect(started).toBe(false)
   })
 
-  it('explains a failed turn in the customer’s words and sends it again with a new key', async () => {
-    const keys: string[] = []
+  it('explains a failed turn in the customer’s words, with no code and no button to send it again', async () => {
     mockApi({}, () =>
       chat([turn({ status: 'failed', errorCode: 'AI_DISABLED', suggestion: null })]),
     )
     server.use(
-      http.post('*/brands/brand-1/ai/generations', ({ request }) => {
-        keys.push(request.headers.get('Idempotency-Key') ?? '')
-        return HttpResponse.json({ data: { id: 'gen-1', conversationId: 'conv-1' } })
-      }),
+      http.post('*/brands/brand-1/ai/generations', () =>
+        HttpResponse.json({ data: { id: 'gen-1', conversationId: 'conv-1' } }),
+      ),
     )
     const { user } = renderButton()
     const dialog = await openDialog(user)
@@ -351,10 +414,27 @@ describe('AiCreateButton', () => {
     expect(
       await within(dialog).findByText('AI generation is turned off right now.'),
     ).toBeInTheDocument()
+    expect(within(dialog).queryByText(/AI_DISABLED/)).not.toBeInTheDocument()
+    expect(within(dialog).queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument()
+  })
 
-    await user.click(within(dialog).getByRole('button', { name: 'Try again' }))
-    await waitFor(() => expect(keys).toHaveLength(2))
-    expect(keys[1]).not.toBe(keys[0])
+  it('explains when the API turns a request away, as with no AI agent set up', async () => {
+    mockApi()
+    server.use(
+      http.post('*/brands/brand-1/ai/generations', () =>
+        HttpResponse.json(
+          { error: { code: 'AI_AGENT_NOT_CONFIGURED', message: 'not set up', fields: [] } },
+          { status: 409 },
+        ),
+      ),
+    )
+    const { user } = renderButton()
+    const dialog = await openDialog(user)
+    await user.type(within(dialog).getByLabelText('What do you want to post about?'), 'Sale')
+    await user.click(await screen.findByRole('checkbox', { name: 'Page A' }))
+    await user.click(within(dialog).getByRole('button', { name: /Create post/ }))
+    expect(await within(dialog).findByText('AI is not set up yet.')).toBeInTheDocument()
+    expect(within(dialog).queryByText(/AI_AGENT_NOT_CONFIGURED/)).not.toBeInTheDocument()
   })
 
   it('uses the only Page without asking, and folds the left column to icons', async () => {
