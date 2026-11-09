@@ -3,7 +3,10 @@ import type { CommonApiResponse } from '@/shared/api/types'
 import type {
   AiAttachment,
   AiAvailability,
-  AiGeneration,
+  AiConversation,
+  AiConversationSummary,
+  AiGenerationStarted,
+  AiPostIntent,
   AiTemplateOption,
   BrandAiProfile,
   StartAiGenerationInput,
@@ -42,16 +45,66 @@ export async function startAiGeneration({
   ...input
 }: StartAiGenerationInput & { brandId: string; idempotencyKey: string }) {
   return (
-    await apiClient.post<CommonApiResponse<{ id: string }>>(`${base(brandId)}/generations`, input, {
-      headers: { 'Idempotency-Key': idempotencyKey },
-    })
+    await apiClient.post<CommonApiResponse<AiGenerationStarted>>(
+      `${base(brandId)}/generations`,
+      input,
+      { headers: { 'Idempotency-Key': idempotencyKey } },
+    )
   ).data.data
 }
 
-export async function getAiGeneration(brandId: string, generationId: string) {
+/** "Try another idea" (no instruction) or "Edit again" (with one), as a new turn of the chat. */
+export async function followUpAiGeneration({
+  brandId,
+  generationId,
+  idempotencyKey,
+  instruction,
+}: {
+  brandId: string
+  generationId: string
+  idempotencyKey: string
+  instruction?: string
+}) {
+  const action = instruction === undefined ? 'retry' : 'edit'
   return (
-    await apiClient.get<CommonApiResponse<AiGeneration>>(
-      `${base(brandId)}/generations/${generationId}`,
+    await apiClient.post<CommonApiResponse<AiGenerationStarted>>(
+      `${base(brandId)}/generations/${generationId}/${action}`,
+      instruction === undefined ? {} : { instruction },
+      { headers: { 'Idempotency-Key': idempotencyKey } },
+    )
+  ).data.data
+}
+
+/** "Publish now" or "Send for approval" from a suggestion. */
+export async function postAiSuggestion({
+  brandId,
+  generationId,
+  intent,
+}: {
+  brandId: string
+  generationId: string
+  intent: AiPostIntent
+}) {
+  return (
+    await apiClient.post<CommonApiResponse<{ contentId: string }>>(
+      `${base(brandId)}/generations/${generationId}/post`,
+      { intent },
+    )
+  ).data.data
+}
+
+export async function getAiConversations(brandId: string) {
+  return (
+    await apiClient.get<CommonApiResponse<AiConversationSummary[]>>(
+      `${base(brandId)}/conversations`,
+    )
+  ).data.data
+}
+
+export async function getAiConversation(brandId: string, conversationId: string) {
+  return (
+    await apiClient.get<CommonApiResponse<AiConversation>>(
+      `${base(brandId)}/conversations/${conversationId}`,
     )
   ).data.data
 }

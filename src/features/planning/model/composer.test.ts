@@ -3,6 +3,7 @@ import type { PlanningContent } from '../api'
 import {
   canSubmitComposer,
   createComposerDraft,
+  createComposerDraftFromAiSuggestion,
   createComposerDraftFromContent,
   setComposerCaptionMode,
   toCreatePlanningContentInput,
@@ -123,5 +124,38 @@ describe('per-account captions', () => {
         publications: [page('page-a', 'cancelled'), page('page-b', 'cancelled')],
       }).targetIds,
     ).toEqual(['page-a', 'page-b'])
+  })
+
+  it('fills a post from an AI suggestion, per Page only when the captions differ', () => {
+    const images = [{ id: 'img-1', url: 'https://files.test/1', name: 'ai-1' }]
+    const shared = createComposerDraftFromAiSuggestion(
+      {
+        socialAccountIds: ['page-a', 'page-b'],
+        captions: { 'page-a': 'Hi', 'page-b': 'Hi' },
+        images,
+      },
+      ['page-a', 'page-b'],
+    )
+    expect(shared).toMatchObject({
+      platform: 'facebook',
+      postType: 'facebook_feed',
+      targetIds: ['page-a', 'page-b'],
+      caption: 'Hi',
+      captionMode: 'shared',
+      media: [{ id: 'img-1', type: 'image', url: 'https://files.test/1', name: 'ai-1' }],
+    })
+    const perPage = createComposerDraftFromAiSuggestion(
+      {
+        socialAccountIds: ['page-a', 'page-b', 'page-gone'],
+        captions: { 'page-a': 'A', 'page-b': 'B', 'page-gone': 'C' },
+        images: [],
+      },
+      ['page-a', 'page-b'],
+    )
+    expect(perPage).toMatchObject({
+      targetIds: ['page-a', 'page-b'],
+      captionMode: 'per_target',
+      captionOverrides: { 'page-a': 'A', 'page-b': 'B' },
+    })
   })
 })

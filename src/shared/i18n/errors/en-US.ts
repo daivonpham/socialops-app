@@ -29,6 +29,7 @@ export const errorsEnUS = {
     AI_PROVIDER_UNAVAILABLE: 'The AI service is busy. Try again in a few minutes.',
     AI_PROVIDER_FAILED: 'The AI service could not complete this request.',
     AI_QUOTA_EXCEEDED: 'Your plan has reached its AI limit for this month.',
+    AI_SUGGESTION_USED: 'This suggestion has already been used.',
     AI_DISABLED: 'AI generation is turned off right now.',
     AI_INVALID_OUTPUT: 'The AI could not produce a usable result. Try again.',
     AI_GENERATION_ABANDONED: 'This generation could not finish. Try again.',

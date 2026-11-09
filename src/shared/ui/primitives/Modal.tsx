@@ -9,6 +9,10 @@ export type ModalProps = {
   headerDescription?: ReactNode
   /** Places the icon beside or above the title block. */
   headerLayout?: 'horizontal' | 'vertical'
+  /** `false` shows the icon as is, without the bordered tile around it. */
+  headerIconFramed?: boolean
+  /** Decorative image URL painted edge to edge behind the header. */
+  headerBackground?: string
   children: ReactNode
   footer?: ReactNode
   width?: number | string

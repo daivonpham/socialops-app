@@ -50,8 +50,8 @@ const sameFile = (a: File, b: File): boolean =>
 
 /**
  * Files picked in the composer, each uploaded as soon as it is picked. Removing one stops its
- * upload and lets the API delete it; closing the composer does the same for all of them, unless
- * `keep` was called because a generation started.
+ * upload and lets the API delete it; closing the composer does the same for those not sent. Sent
+ * files belong to the chat from then on, and go when it does.
  */
 export function useAttachments(brandId: string) {
   const { t } = useTranslation('aiContent')
@@ -61,7 +61,6 @@ export function useAttachments(brandId: string) {
   const itemsRef = useRef(items)
   itemsRef.current = items
   const uploads = useRef(new Map<string, AbortController>())
-  const kept = useRef(false)
 
   const patch = (id: string, change: Partial<Attachment>) =>
     setItems((current) => current.map((item) => (item.id === id ? { ...item, ...change } : item)))
@@ -91,12 +90,7 @@ export function useAttachments(brandId: string) {
   }
 
   useEffect(
-    () => () => {
-      itemsRef.current.forEach((item) => {
-        if (kept.current) URL.revokeObjectURL(item.previewUrl)
-        else discard(item)
-      })
-    },
+    () => () => itemsRef.current.forEach(discard),
     // Runs once, on close; `discard` only reads refs and the Brand of this composer.
     [],
   )
@@ -140,10 +134,19 @@ export function useAttachments(brandId: string) {
     add,
     remove,
     retry,
-    /** Keeps the uploaded files after the composer closes, for a generation that started. */
-    keep: () => {
-      kept.current = true
+    /** The uploaded files, handed to a request that was sent; the composer starts empty again. */
+    consume: (): string[] => {
+      const sent = itemsRef.current.flatMap((item) => (item.uploaded ? [item.uploaded.id] : []))
+      itemsRef.current.forEach((item) => {
+        uploads.current.get(item.id)?.abort()
+        URL.revokeObjectURL(item.previewUrl)
+      })
+      itemsRef.current = []
+      setItems([])
+      return sent
     },
+    /** The uploaded files, for the request about to be sent. */
+    readyIds: items.flatMap((item) => (item.uploaded ? [item.uploaded.id] : [])),
     full: items.length >= ATTACHMENTS_MAX,
     uploading: items.some((item) => item.status === 'uploading'),
   }

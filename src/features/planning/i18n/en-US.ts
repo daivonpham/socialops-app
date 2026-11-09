@@ -298,6 +298,7 @@ export const planningEnUS = {
     platformUnavailable: 'TikTok publishing is not available yet.',
   },
   composer: {
+    fromAi: 'This post was filled in from an AI suggestion. Check it before saving.',
     title: 'Create {{platform}} post',
     editTitle: 'Edit {{platform}} post',
     description: 'Create one content item and publish it to one or more accounts.',

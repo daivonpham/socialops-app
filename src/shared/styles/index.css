@@ -341,7 +341,35 @@
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
   }
+
+  /* The AI entry point: an ai gradient fill inside a border with a soft light running round it.
+     Two background layers: the fill clipped to the padding box, and a conic gradient that shows
+     only through the transparent border. The angle is turned by AiCreateButton, paced to the
+     button's shape so the light moves at one speed along long and short sides alike. */
+  .app-ai-running-border {
+    border: 2px solid transparent;
+    background:
+      linear-gradient(to right, theme(colors.ai.400), theme(colors.ai.600)) padding-box,
+      conic-gradient(
+          from var(--app-ai-border-angle),
+          theme(colors.ai.500) 0%,
+          theme(colors.ai.500) 62%,
+          theme(colors.ai.300) 80%,
+          theme(colors.ai.50) 90%,
+          theme(colors.ai.300) 95%,
+          theme(colors.ai.500) 100%
+        )
+        border-box;
+  }
 }
+
+/* Registered so the angle interpolates; an unregistered custom property would jump. */
+@property --app-ai-border-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
 
 /* Shared scrollbar treatment for every intentionally scrollable product surface. */
 @layer utilities {

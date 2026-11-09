@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="736" viewBox="0 0 900 736" preserveAspectRatio="none" fill="none" role="img" aria-label="Nền tím nhạt trang trí góc trên bên phải cho phần Giọng viết">
+  <defs>
+    <linearGradient id="panel" x1="0" y1="0" x2="900" y2="736" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7F5FF"/>
+      <stop offset="1" stop-color="#F4F1FF"/>
+    </linearGradient>
+    <linearGradient id="waveBack" x1="540" y1="10" x2="892" y2="200" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#DAD0FF" stop-opacity="0"/>
+      <stop offset=".44" stop-color="#D7C8FF" stop-opacity=".32"/>
+      <stop offset="1" stop-color="#E6DEFF" stop-opacity=".16"/>
+    </linearGradient>
+    <linearGradient id="waveFront" x1="590" y1="80" x2="891" y2="5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#CCB9FF" stop-opacity="0"/>
+      <stop offset=".48" stop-color="#B99CFB" stop-opacity=".42"/>
+      <stop offset="1" stop-color="#CBB5FF" stop-opacity=".12"/>
+    </linearGradient>
+    <clipPath id="rounded">
+      <rect x="1" y="1" width="898" height="734" rx="17"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#rounded)">
+    <rect width="900" height="736" fill="url(#panel)"/>
+    <path d="M565 0H900V179C851 151 812 146 770 152C710 160 667 184 612 167C675 146 678 112 719 99C771 83 817 115 866 75C884 60 890 31 900 7C850 51 811 56 766 34C701 3 648 20 565 0Z" fill="url(#waveBack)"/>
+    <path d="M568 105C641 81 671 107 723 93C791 75 805 28 900 13V40C833 55 806 98 735 113C677 126 641 102 568 105Z" fill="url(#waveFront)"/>
+    <path d="M594 127C676 111 689 135 755 111C818 88 841 50 901 41" stroke="#A986F7" stroke-opacity=".29" stroke-width="1.5"/>
+
+    <path d="M760 27C761.5 34 765 37.5 772 39C765 40.5 761.5 44 760 51C758.5 44 755 40.5 748 39C755 37.5 758.5 34 760 27Z" fill="#A283F6" opacity=".78"/>
+    <path d="M850 83C851.25 88.25 853.75 90.75 859 92C853.75 93.25 851.25 95.75 850 101C848.75 95.75 846.25 93.25 841 92C846.25 90.75 848.75 88.25 850 83Z" fill="#9470EF" opacity=".60"/>
+    <path d="M690 35C690.8 38.2 692.8 40.2 696 41C692.8 41.8 690.8 43.8 690 47C689.2 43.8 687.2 41.8 684 41C687.2 40.2 689.2 38.2 690 35Z" fill="#C3ADFB" opacity=".70"/>
+    <circle cx="813" cy="55" r="2" fill="#AB8CF7" opacity=".56"/>
+  </g>
+  <rect x="1" y="1" width="898" height="734" rx="17" stroke="#E8E0FF" stroke-width="2"/>
+</svg>

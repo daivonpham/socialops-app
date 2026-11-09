@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState, type Dispatch, type SetStateAction } from 'react'
-import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { SocialAccountLabel } from '@/features/social-accounts'
 import { useActiveBrand } from '@/shared/scope'
@@ -40,16 +40,34 @@ import {
   canWithdrawApproval,
   composerCaptionFor,
   createComposerDraft,
+  createComposerDraftFromAiSuggestion,
   createComposerDraftFromContent,
   getPlanningContentIntent,
   isScheduleIntent,
   toCreatePlanningContentInput,
   toUpdatePlanningContentInput,
   usesCaptionPerAccount,
+  type ComposerAiSuggestion,
   type PlanningAccount,
   type PlanningComposerDraft,
   type PreviewViewport,
 } from '../model'
+
+/** "Use" on an AI suggestion: what the AI chat put in the navigation state. */
+type AiSuggestionState = ComposerAiSuggestion & { generationId: string }
+
+function readAiSuggestion(state: unknown): AiSuggestionState | null {
+  const value = (state as { aiSuggestion?: unknown } | null)?.aiSuggestion
+  if (typeof value !== 'object' || value === null) return null
+  const item = value as Partial<AiSuggestionState>
+  return typeof item.generationId === 'string' &&
+    Array.isArray(item.socialAccountIds) &&
+    typeof item.captions === 'object' &&
+    item.captions !== null &&
+    Array.isArray(item.images)
+    ? (item as AiSuggestionState)
+    : null
+}
 import { useApiErrorMessage } from '@/shared/hooks'
 import { useAuth } from '@/shared/auth'
 import { hasPermission, usePermissions } from '@/shared/permissions'
@@ -59,6 +77,7 @@ export default function CreatePlanningPostPage() {
   const { t } = useTranslation('planning')
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const location = useLocation()
   const { brandId } = useActiveBrand()
   const { platform: platformParam, contentId } = useParams<{
     platform: string
@@ -71,6 +90,8 @@ export default function CreatePlanningPostPage() {
   const requestedPostType = isEditing
     ? null
     : getRequestedPostType(searchParams.get('postType'), platform)
+  const aiSuggestion =
+    isEditing || platform !== 'facebook' ? null : readAiSuggestion(location.state)
   const accountsQuery = usePlanningAccounts(brandId)
   const contentQuery = usePlanningContent(brandId, contentId ?? null)
   const planningPath = getPlanningPath(platform)
@@ -140,6 +161,7 @@ export default function CreatePlanningPostPage() {
     <PlanningComposerWorkspace
       key={
         content?.id ??
+        aiSuggestion?.generationId ??
         `create-${platform}-${requestedPostType ?? 'default'}-${requestedDate ?? 'now'}`
       }
       brandId={brandId}
@@ -149,6 +171,7 @@ export default function CreatePlanningPostPage() {
       planningPath={planningPath}
       requestedDate={requestedDate}
       requestedPostType={requestedPostType}
+      aiSuggestion={aiSuggestion}
     />
   )
 }
@@ -307,6 +330,7 @@ function PlanningComposerWorkspace({
   planningPath,
   requestedDate,
   requestedPostType,
+  aiSuggestion,
 }: {
   brandId: string
   platform: PlanningPlatform
@@ -315,6 +339,8 @@ function PlanningComposerWorkspace({
   planningPath: string
   requestedDate: string | null
   requestedPostType: PlanningPostType | null
+  /** Filled from an AI suggestion; saving the post marks the suggestion used. */
+  aiSuggestion: AiSuggestionState | null
 }) {
   const { t } = useTranslation('planning')
   const errorMessage = useApiErrorMessage('planning')
@@ -324,10 +350,15 @@ function PlanningComposerWorkspace({
   const [draft, setDraft] = useState(() => {
     const initialDraft = content
       ? createComposerDraftFromContent(content)
-      : {
-          ...createComposerDraft(platform),
-          ...(requestedPostType ? { postType: requestedPostType } : {}),
-        }
+      : aiSuggestion
+        ? createComposerDraftFromAiSuggestion(
+            aiSuggestion,
+            accounts.map((account) => account.id),
+          )
+        : {
+            ...createComposerDraft(platform),
+            ...(requestedPostType ? { postType: requestedPostType } : {}),
+          }
     if (!shouldSchedule || !requestedDate) return initialDraft
     return {
       ...initialDraft,
@@ -408,6 +439,7 @@ function PlanningComposerWorkspace({
       } else {
         await createContent.mutateAsync({
           ...toCreatePlanningContentInput(brandId, submittedDraft, intent),
+          ...(aiSuggestion ? { aiGenerationId: aiSuggestion.generationId } : {}),
           idempotencyKey: createKey.current,
         })
       }
@@ -447,6 +479,8 @@ function PlanningComposerWorkspace({
           </h1>
         </div>
       </header>
+
+      {aiSuggestion ? <Alert variant="soft" tone="info" title={t('composer.fromAi')} /> : null}
 
       {saveContent.isError || submitError ? (
         <Alert

@@ -32,12 +32,35 @@
     </filter>
   </defs>
 
+  <!-- The two stars bob gently, out of step; still when the user asks for less motion. -->
+  <style>
+    .star { animation: bob 3.2s ease-in-out infinite; }
+    .star-right { animation-delay: -1.6s; }
+    @keyframes bob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+    /* Eyes squash flat toward their base for a quick blink every few seconds. */
+    .eye { transform-box: fill-box; transform-origin: center bottom; animation: blink 4s ease-in-out infinite; }
+    @keyframes blink {
+      0%, 90%, 100% { transform: scaleY(1); }
+      94% { transform: scaleY(.1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .star, .eye { animation: none; }
+    }
+  </style>
+
   <!-- Small floating accents. -->
-  <path d="M139 191 Q143 207 155 211 Q143 215 139 230 Q135 215 122 211 Q135 207 139 191Z" fill="#9478f6" opacity=".75"/>
-  <path d="M139 200 Q141 209 148 211 Q141 213 139 222 Q137 213 129 211 Q137 209 139 200Z" fill="#b6a6ff"/>
+  <g class="star star-left">
+    <path d="M139 191 Q143 207 155 211 Q143 215 139 230 Q135 215 122 211 Q135 207 139 191Z" fill="#9478f6" opacity=".75"/>
+    <path d="M139 200 Q141 209 148 211 Q141 213 139 222 Q137 213 129 211 Q137 209 139 200Z" fill="#b6a6ff"/>
+  </g>
   <ellipse cx="166" cy="248" rx="5" ry="9" transform="rotate(28 166 248)" fill="#d5cdff" opacity=".65"/>
-  <path d="M450 96 Q456 116 473 122 Q456 127 450 149 Q444 127 426 122 Q444 117 450 96Z" fill="#9170f5"/>
-  <path d="M450 107 Q454 119 464 122 Q454 125 450 138 Q446 125 436 122 Q446 119 450 107Z" fill="#ae94ff"/>
+  <g class="star star-right">
+    <path d="M450 96 Q456 116 473 122 Q456 127 450 149 Q444 127 426 122 Q444 117 450 96Z" fill="#9170f5"/>
+    <path d="M450 107 Q454 119 464 122 Q454 125 450 138 Q446 125 436 122 Q446 119 450 107Z" fill="#ae94ff"/>
+  </g>
 
   <!-- Body, arms, and head fittings. -->
   <path d="M224 252 Q212 263 225 289 Q235 309 260 309 L352 309 Q369 306 372 287 Q373 263 349 252Z" fill="url(#shell)"/>
@@ -61,8 +84,8 @@
   <path d="M252 147 L325 137 Q351 133 365 153 Q373 164 372 180" fill="none" stroke="url(#faceLight)" stroke-width="5" opacity=".5"/>
 
   <!-- Friendly face. -->
-  <path d="M247 191 Q246 176 257 175 Q269 174 269 189" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
-  <path d="M315 176 Q315 162 326 162 Q337 162 337 176" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+  <path class="eye" d="M247 191 Q246 176 257 175 Q269 174 269 189" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+  <path class="eye" d="M315 176 Q315 162 326 162 Q337 162 337 176" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
   <path d="M278 195 Q291 207 308 193" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
 
   <!-- Raised hand behind the card and the purple card. -->

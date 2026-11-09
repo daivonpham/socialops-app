@@ -162,6 +162,8 @@ export type CreatePlanningContentInput = {
   }>
   intent: PlanningPublishIntent
   platformSettings: Record<string, boolean | string>
+  /** The AI suggestion this post was filled from; it shows as used once saved. */
+  aiGenerationId?: string
 }
 
 export type ReschedulePlanningContentInput = {

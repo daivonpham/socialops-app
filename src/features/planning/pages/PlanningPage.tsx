@@ -314,6 +314,9 @@ export default function PlanningPage() {
                 void queryClient.invalidateQueries({ queryKey: PLANNING_QUERY_KEYS.root(brandId) })
               }
               onOpenContent={(contentId) => navigate(getPlanningEditPath('facebook', contentId))}
+              onUseSuggestion={(aiSuggestion) =>
+                navigate(getPlanningCreatePath('facebook'), { state: { aiSuggestion } })
+              }
             />
           ) : null}
           <CreatePostButton accounts={accounts} platform={platform} />

@@ -94,8 +94,16 @@ export {
 export { FiUploadCloud as IconUploadCloud } from 'react-icons/fi'
 export { FcGoogle as IconGoogle } from 'react-icons/fc'
 export {
+  LuMessageSquare as IconChat,
+  LuPanelLeftClose as IconPanelLeftClose,
+  LuSlidersHorizontal as IconSliders,
   LuPanelLeftOpen as IconPanelLeftOpen,
   LuPanelRightOpen as IconPanelRightOpen,
+  LuStore as IconStore,
+  LuPenLine as IconPenLine,
+  LuPencil as IconPencil,
+  LuFileText as IconNote,
+  LuLayers as IconLayersLine,
 } from 'react-icons/lu'
 export {
   RxPlusCircled as IconPlusCircle,

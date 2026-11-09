@@ -30,6 +30,42 @@ export type PlanningComposerDraft = {
   platformSettings: Record<string, boolean | string>
 }
 
+/** What "Use" on an AI suggestion fills the composer with. */
+export type ComposerAiSuggestion = {
+  socialAccountIds: string[]
+  captions: Record<string, string>
+  images: Array<{ id: string; url: string; name: string }>
+}
+
+/**
+ * A Facebook post filled from an AI suggestion, for Pages still in `accountIds`. Pages with
+ * different captions get them each; the same caption everywhere stays shared.
+ */
+export function createComposerDraftFromAiSuggestion(
+  suggestion: ComposerAiSuggestion,
+  accountIds: string[],
+): PlanningComposerDraft {
+  const targetIds = suggestion.socialAccountIds.filter((id) => accountIds.includes(id))
+  const captions = targetIds.map((id) => suggestion.captions[id] ?? '')
+  const caption = captions[0] ?? ''
+  const perAccount = targetIds.length > 1 && captions.some((text) => text !== caption)
+  return {
+    ...createComposerDraft('facebook'),
+    targetIds,
+    caption,
+    captionMode: perAccount ? 'per_target' : 'shared',
+    captionOverrides: perAccount
+      ? Object.fromEntries(targetIds.map((id, index) => [id, captions[index] ?? '']))
+      : {},
+    media: suggestion.images.map(({ id, url, name }) => ({
+      id,
+      type: 'image' as const,
+      url,
+      name,
+    })),
+  }
+}
+
 export function createComposerDraft(platform: PlanningPlatform): PlanningComposerDraft {
   return {
     platform,

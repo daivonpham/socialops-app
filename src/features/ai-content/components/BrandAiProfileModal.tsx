@@ -8,7 +8,12 @@ import {
   IconCheck,
   IconCheckCircle,
   IconClose,
+  IconLayersLine,
+  IconNote,
+  IconPencil,
+  IconPenLine,
   IconPlus,
+  IconStore,
   IconThumbsUp,
   Input,
   Modal,
@@ -24,6 +29,7 @@ import {
   type AiTonePreset,
   type BrandAiProfile,
 } from '../api'
+import voiceBackground from '@/assets/ai/brand-voice-background.svg'
 import { AiBadgeIcon } from './AiBadgeIcon'
 
 /** Same limits as the API, so a word list never fails on save. */
@@ -42,15 +48,15 @@ type Values = {
 
 const orNull = (text: string | undefined): string | null => text?.trim() || null
 
-/** A numbered area of the form; `tinted` gives the AI purple ground. */
+/** An area of the form led by its icon; `tinted` lays the AI voice artwork underneath. */
 function Section({
-  step,
+  icon,
   title,
   tinted = false,
   className = '',
   children,
 }: {
-  step: string
+  icon: ReactNode
   title: string
   tinted?: boolean
   className?: string
@@ -59,19 +65,36 @@ function Section({
   return (
     <section
       className={
-        'rounded-xl border p-5 ' +
-        (tinted ? 'border-ai-100 bg-ai-50 ' : 'border-border-subtle bg-bg-surface ') +
+        'rounded-xl p-4 ' +
+        (tinted
+          ? 'bg-[length:100%_100%] bg-no-repeat '
+          : 'border border-border-subtle bg-bg-surface ') +
         className
       }
+      style={tinted ? { backgroundImage: `url("${voiceBackground}")` } : undefined}
     >
-      <h3 className="mb-4 flex items-center gap-3 text-heading-4 text-text-primary">
-        <span className="rounded-md bg-ai-100 px-2 py-1 text-label-sm text-ai-700 tabular-nums">
-          {step}
+      <h3 className="mb-3 flex items-center gap-2 text-heading-3 text-text-primary">
+        <span aria-hidden className="text-icon-md text-ai-500">
+          {icon}
         </span>
         {title}
       </h3>
       {children}
     </section>
+  )
+}
+
+/** Bold field label with an optional purple icon in front. */
+function FieldLabel({ icon, children }: { icon?: ReactNode; children: ReactNode }) {
+  return (
+    <span className="flex items-center gap-2 text-label-md font-semibold text-text-primary">
+      {icon ? (
+        <span aria-hidden className="text-icon-md text-ai-500">
+          {icon}
+        </span>
+      ) : null}
+      {children}
+    </span>
   )
 }
 
@@ -98,18 +121,11 @@ function TonePicker({
               'inline-flex h-[36px] items-center gap-2 rounded-full border px-4 text-label-md transition-colors focus-visible:focus-ring ' +
               (selected
                 ? 'border-ai-400 bg-ai-100 text-ai-700'
-                : 'border-border-subtle bg-bg-surface text-text-secondary hover:border-ai-300 hover:text-text-primary')
+                : 'border-border-subtle bg-bg-surface text-text-primary hover:border-ai-300')
             }
           >
-            {selected ? (
-              <span
-                aria-hidden
-                className="flex size-4 items-center justify-center rounded-full bg-ai-500 text-caption text-text-inverse"
-              >
-                <IconCheck />
-              </span>
-            ) : null}
             {t(`profileForm.tones.${tone}`)}
+            {selected ? <IconCheck aria-hidden className="text-ai-600" /> : null}
           </button>
         )
       })}
@@ -121,12 +137,10 @@ function TonePicker({
 function WordTags({
   value = [],
   onChange,
-  tone,
   label,
 }: {
   value?: string[]
   onChange?: (value: string[]) => void
-  tone: 'ai' | 'neutral'
   label: string
 }) {
   const { t } = useTranslation('aiContent')
@@ -141,14 +155,12 @@ function WordTags({
     setDraft('')
   }
 
-  const chip = tone === 'ai' ? 'bg-ai-100 text-ai-700' : 'bg-bg-surface-subtle text-text-secondary'
-
   return (
     <div className="flex flex-wrap items-center gap-2">
       {value.map((word) => (
         <span
           key={word}
-          className={`inline-flex h-[28px] items-center gap-1 rounded-full ps-3 pe-1 text-body-sm ${chip}`}
+          className="inline-flex h-[28px] items-center gap-1 rounded-full bg-ai-100 ps-3 pe-1 text-body-sm text-ai-700"
         >
           {word}
           <button
@@ -192,12 +204,7 @@ function WordTags({
           type="button"
           aria-label={t('profileForm.addWord', { list: label })}
           onClick={() => setAdding(true)}
-          className={
-            'flex size-[28px] items-center justify-center rounded-full border text-icon-sm transition-colors focus-visible:focus-ring ' +
-            (tone === 'ai'
-              ? 'border-ai-300 text-ai-600 hover:bg-ai-50'
-              : 'border-border-subtle text-text-secondary hover:bg-bg-surface-subtle')
-          }
+          className="flex size-[28px] items-center justify-center rounded-full border border-ai-300 text-icon-sm text-ai-600 transition-colors hover:bg-ai-50 focus-visible:focus-ring"
         >
           <IconPlus aria-hidden />
         </button>
@@ -217,8 +224,8 @@ function WordBox({
 }) {
   const { t } = useTranslation('aiContent')
   return (
-    <div className="rounded-lg border border-border-subtle bg-bg-surface p-4">
-      <div className="mb-3 flex items-center gap-2">
+    <div className="rounded-lg border border-border-subtle bg-bg-surface p-3">
+      <div className="mb-2 flex items-center gap-2">
         <span aria-hidden className="text-icon-md">
           {icon}
         </span>
@@ -231,18 +238,122 @@ function WordBox({
 }
 
 function ProfileForm({
-  brandId,
+  form,
   profile,
+  onFinish,
+}: {
+  form: ReturnType<typeof Form.useForm<Values>>[0]
+  profile: BrandAiProfile
+  onFinish: (values: Values) => void
+}) {
+  const { t } = useTranslation('aiContent')
+
+  return (
+    <Form<Values>
+      form={form}
+      layout="vertical"
+      // Label to field 6px, per the spacing scale in design.md §10.
+      className="[&_.ant-form-item-label]:!pb-1.5"
+      requiredMark={false}
+      initialValues={{
+        industry: profile.industry ?? '',
+        products: profile.products ?? '',
+        targetAudience: profile.targetAudience ?? '',
+        tonePreset: profile.tonePreset ?? null,
+        toneNotes: profile.toneNotes ?? '',
+        preferredWords: profile.preferredWords,
+        bannedWords: profile.bannedWords,
+      }}
+      onFinish={onFinish}
+    >
+      <div className="grid gap-3 md:grid-cols-2">
+        <Section icon={<IconStore />} title={t('profileForm.sections.brand')}>
+          <Form.Item
+            name="industry"
+            label={<FieldLabel>{t('profileForm.industry')}</FieldLabel>}
+            className="!mb-4"
+          >
+            <Input
+              maxLength={200}
+              prefix={<IconPencil aria-hidden className="me-1 text-ai-400" />}
+              placeholder={t('profileForm.industryPlaceholder')}
+            />
+          </Form.Item>
+          <Form.Item
+            name="products"
+            label={<FieldLabel>{t('profileForm.products')}</FieldLabel>}
+            className="!mb-4"
+          >
+            <Textarea rows={2} maxLength={5000} />
+          </Form.Item>
+          <Form.Item
+            name="targetAudience"
+            label={<FieldLabel>{t('profileForm.audience')}</FieldLabel>}
+            className="!mb-0"
+          >
+            <Textarea rows={2} maxLength={2000} />
+          </Form.Item>
+        </Section>
+
+        <Section icon={<IconPenLine />} title={t('profileForm.sections.voice')} tinted>
+          <Form.Item
+            name="tonePreset"
+            label={<FieldLabel>{t('profileForm.tone')}</FieldLabel>}
+            className="!mb-4"
+          >
+            <TonePicker />
+          </Form.Item>
+          <Form.Item
+            name="toneNotes"
+            label={<FieldLabel icon={<IconNote />}>{t('profileForm.toneNotes')}</FieldLabel>}
+            className="!mb-0"
+          >
+            <Textarea rows={5} maxLength={2000} />
+          </Form.Item>
+        </Section>
+
+        <Section
+          icon={<IconLayersLine />}
+          title={t('profileForm.sections.words')}
+          className="md:col-span-2"
+        >
+          <div className="grid gap-3 md:grid-cols-2">
+            <WordBox
+              icon={<IconThumbsUp className="text-ai-500" />}
+              title={t('profileForm.preferredWords')}
+            >
+              <Form.Item name="preferredWords" noStyle>
+                <WordTags label={t('profileForm.preferredWords')} />
+              </Form.Item>
+            </WordBox>
+            <WordBox
+              icon={<IconBlocked className="text-text-primary" />}
+              title={t('profileForm.bannedWords')}
+            >
+              <Form.Item name="bannedWords" noStyle>
+                <WordTags label={t('profileForm.bannedWords')} />
+              </Form.Item>
+            </WordBox>
+          </div>
+        </Section>
+      </div>
+    </Form>
+  )
+}
+
+export function BrandAiProfileModal({
+  brandId,
   onClose,
 }: {
   brandId: string
-  profile: BrandAiProfile
   onClose: () => void
 }) {
   const { t } = useTranslation('aiContent')
   const errorMessage = useApiErrorMessage('aiContent')
   const toast = useToast()
+  const profile = useBrandAiProfile(brandId)
   const update = useUpdateBrandAiProfile()
+  const [form] = Form.useForm<Values>()
 
   const submit = async (values: Values) => {
     try {
@@ -265,101 +376,36 @@ function ProfileForm({
   }
 
   return (
-    <Form<Values>
-      layout="vertical"
-      className="mt-4"
-      requiredMark={false}
-      initialValues={{
-        industry: profile.industry ?? '',
-        products: profile.products ?? '',
-        targetAudience: profile.targetAudience ?? '',
-        tonePreset: profile.tonePreset ?? null,
-        toneNotes: profile.toneNotes ?? '',
-        preferredWords: profile.preferredWords,
-        bannedWords: profile.bannedWords,
-      }}
-      onFinish={(values) => void submit(values)}
-    >
-      <div className="grid gap-4 md:grid-cols-2">
-        <Section step="01" title={t('profileForm.sections.brand')}>
-          <Form.Item name="industry" label={t('profileForm.industry')}>
-            <Input maxLength={200} placeholder={t('profileForm.industryPlaceholder')} />
-          </Form.Item>
-          <Form.Item name="products" label={t('profileForm.products')}>
-            <Textarea rows={3} maxLength={5000} />
-          </Form.Item>
-          <Form.Item name="targetAudience" label={t('profileForm.audience')} className="!mb-0">
-            <Textarea rows={3} maxLength={2000} />
-          </Form.Item>
-        </Section>
-
-        <Section step="02" title={t('profileForm.sections.voice')} tinted>
-          <Form.Item name="tonePreset" label={t('profileForm.tone')}>
-            <TonePicker />
-          </Form.Item>
-          <Form.Item name="toneNotes" label={t('profileForm.toneNotes')} className="!mb-0">
-            <Textarea rows={4} maxLength={2000} />
-          </Form.Item>
-        </Section>
-
-        <Section step="03" title={t('profileForm.sections.words')} className="md:col-span-2">
-          <div className="grid gap-4 md:grid-cols-2">
-            <WordBox
-              icon={<IconThumbsUp className="text-ai-500" />}
-              title={t('profileForm.preferredWords')}
-            >
-              <Form.Item name="preferredWords" noStyle>
-                <WordTags tone="ai" label={t('profileForm.preferredWords')} />
-              </Form.Item>
-            </WordBox>
-            <WordBox
-              icon={<IconBlocked className="text-text-secondary" />}
-              title={t('profileForm.bannedWords')}
-            >
-              <Form.Item name="bannedWords" noStyle>
-                <WordTags tone="neutral" label={t('profileForm.bannedWords')} />
-              </Form.Item>
-            </WordBox>
-          </div>
-        </Section>
-      </div>
-
-      <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-border-subtle pt-4">
-        <p className="flex flex-1 items-center gap-2 text-body-sm text-text-secondary">
-          <IconCheckCircle aria-hidden className="shrink-0 text-icon-md text-success-500" />
-          {t('profileForm.appliesNext')}
-        </p>
-        <Button disabled={update.isPending} onClick={onClose}>
-          {t('profileForm.cancel')}
-        </Button>
-        <Button variant="primary" htmlType="submit" loading={update.isPending}>
-          {t('profileForm.save')}
-        </Button>
-      </div>
-    </Form>
-  )
-}
-
-export function BrandAiProfileModal({
-  brandId,
-  onClose,
-}: {
-  brandId: string
-  onClose: () => void
-}) {
-  const { t } = useTranslation('aiContent')
-  const profile = useBrandAiProfile(brandId)
-
-  return (
     <Modal
       open
       title={t('profileForm.title')}
-      headerIcon={<AiBadgeIcon />}
+      headerIcon={
+        <span className="flex items-center gap-4">
+          <AiBadgeIcon />
+          <span aria-hidden className="h-10 w-px bg-border-subtle" />
+        </span>
+      }
       headerDescription={t('profileForm.description')}
       headerLayout="horizontal"
+      headerIconFramed={false}
       width={960}
       onClose={onClose}
-      footer={null}
+      footer={
+        profile.data ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="flex flex-1 items-center gap-2 text-start text-body-sm text-text-secondary">
+              <IconCheckCircle aria-hidden className="shrink-0 text-icon-md text-success-500" />
+              {t('profileForm.appliesNext')}
+            </p>
+            <Button disabled={update.isPending} onClick={onClose}>
+              {t('profileForm.cancel')}
+            </Button>
+            <Button variant="primary" loading={update.isPending} onClick={() => form.submit()}>
+              {t('profileForm.save')}
+            </Button>
+          </div>
+        ) : null
+      }
     >
       {profile.isPending ? (
         <div className="flex justify-center py-10">
@@ -372,7 +418,11 @@ export function BrandAiProfileModal({
           onRetry={() => void profile.refetch()}
         />
       ) : (
-        <ProfileForm brandId={brandId} profile={profile.data} onClose={onClose} />
+        <ProfileForm
+          form={form}
+          profile={profile.data}
+          onFinish={(values) => void submit(values)}
+        />
       )}
     </Modal>
   )
