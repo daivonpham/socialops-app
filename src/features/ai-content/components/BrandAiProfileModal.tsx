@@ -31,22 +31,11 @@ import {
 } from '../api'
 import voiceBackground from '@/assets/ai/brand-voice-background.svg'
 import { AiBadgeIcon } from './AiBadgeIcon'
+import { toProfileInput, type ProfileValues as Values } from './profileValues'
 
 /** Same limits as the API, so a word list never fails on save. */
 const WORDS_MAX = 50
 const WORD_MAX_LENGTH = 100
-
-type Values = {
-  industry?: string
-  products?: string
-  targetAudience?: string
-  tonePreset?: AiTonePreset | null
-  toneNotes?: string
-  preferredWords?: string[]
-  bannedWords?: string[]
-}
-
-const orNull = (text: string | undefined): string | null => text?.trim() || null
 
 /** An area of the form led by its icon; `tinted` lays the AI voice artwork underneath. */
 function Section({
@@ -237,7 +226,7 @@ function WordBox({
   )
 }
 
-function ProfileForm({
+export function ProfileForm({
   form,
   profile,
   onFinish,
@@ -357,16 +346,7 @@ export function BrandAiProfileModal({
 
   const submit = async (values: Values) => {
     try {
-      await update.mutateAsync({
-        brandId,
-        industry: orNull(values.industry),
-        products: orNull(values.products),
-        targetAudience: orNull(values.targetAudience),
-        tonePreset: values.tonePreset ?? null,
-        toneNotes: orNull(values.toneNotes),
-        preferredWords: values.preferredWords ?? [],
-        bannedWords: values.bannedWords ?? [],
-      })
+      await update.mutateAsync({ brandId, ...toProfileInput(values) })
     } catch (error) {
       toast.error({ title: errorMessage(error, t('profileForm.saveError')) })
       return

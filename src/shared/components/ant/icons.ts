@@ -65,6 +65,7 @@ export { FaPlay as IconPlaySolid } from 'react-icons/fa'
 export { FaEarthAsia as IconPublic } from 'react-icons/fa6'
 export { BsDot as IconDot } from 'react-icons/bs'
 export { IoIosPause as IconPauseStory } from 'react-icons/io'
+export { IoIosSend as IconSendSolid } from 'react-icons/io'
 export {
   PiSpeakerHighFill as IconSpeakerHigh,
   PiSpeakerSlashFill as IconSpeakerMuted,
@@ -93,6 +94,7 @@ export {
 } from 'react-icons/fi'
 export { FiUploadCloud as IconUploadCloud } from 'react-icons/fi'
 export { FcGoogle as IconGoogle } from 'react-icons/fc'
+export { HiCheck as IconCheckSolid } from 'react-icons/hi'
 export {
   LuMessageSquare as IconChat,
   LuPanelLeftClose as IconPanelLeftClose,

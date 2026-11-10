@@ -8,6 +8,8 @@ export type AiAvailability = {
   canManageChannels: boolean
   pages: Array<{ id: string; name: string; avatarUrl?: string }>
   hasProfile: boolean
+  /** No Brand profile yet, and the first-run screen was neither skipped nor finished. */
+  needsOnboarding: boolean
   /** Days a chat is kept after its last turn. */
   historyDays: number
 }
@@ -46,6 +48,19 @@ export type BrandAiProfile = {
 }
 export type UpdateBrandAiProfileInput = Omit<BrandAiProfile, 'updatedAt'>
 
+/** The profile the AI proposes from the Page's posts, with three topics for the samples. */
+export type AiProfileSuggestion = Omit<BrandAiProfile, 'updatedAt' | 'bannedWords'> & {
+  ideas: string[]
+}
+export type AiOnboarding = {
+  state: 'done' | 'syncing' | 'few_posts' | 'ready'
+  suggestion: AiProfileSuggestion | null
+}
+export type ConfirmAiOnboardingInput = UpdateBrandAiProfileInput & {
+  socialAccountId: string
+  topics: string[]
+}
+
 export type StartAiGenerationInput = {
   socialAccountIds: string[]
   templateKey?: string
@@ -57,6 +72,9 @@ export type StartAiGenerationInput = {
   attachmentIds?: string[]
 }
 export type AiGenerationStarted = { id: string; conversationId: string }
+
+/** Where the caption of a request made without Pages is, in a suggestion's `captions`. */
+export const AI_GENERAL_CAPTION_KEY = 'general'
 
 export type AiGenerationPhase = 'queued' | 'writing' | 'image' | 'checking' | 'finishing'
 /** The AI's picture choice: post the customer's images, make a new one, or none. */
@@ -100,6 +118,8 @@ export type AiGeneration = {
   imageAction: AiImageAction | null
   /** Documents sent with the request whose text could not be read. */
   unreadableFiles: string[]
+  /** The writer learned the voice from the Page's best posts. */
+  usedBestPosts: boolean
   /** The post made from this turn; set means the suggestion is used. */
   contentId: string | null
   errorCode: string | null
@@ -120,5 +140,7 @@ export type AiSuggestionHandoff = {
   generationId: string
   socialAccountIds: string[]
   captions: Record<string, string>
+  /** One caption for whichever Pages are picked: the request was made without Pages. */
+  generalCaption?: string
   images: Array<{ id: string; url: string; name: string }>
 }

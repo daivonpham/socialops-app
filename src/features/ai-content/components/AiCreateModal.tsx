@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode, type KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { isApiErrorCode } from '@/shared/api/errors'
 import { useAuth } from '@/shared/auth'
@@ -10,7 +10,7 @@ import {
   IconClose,
   IconEdit,
   IconSendLine,
-  IconSend,
+  IconSendSolid,
   Input,
   Modal,
   SectionError,
@@ -19,6 +19,7 @@ import {
   useToast,
 } from '@/shared/ui'
 import {
+  AI_GENERAL_CAPTION_KEY,
   useAiConversation,
   useAiTemplates,
   useFollowUpAiGeneration,
@@ -36,6 +37,7 @@ import { AiChatTurn, type AiTurnActions } from './AiChatTurn'
 import { AiMark } from './AiMark'
 import assistantBackground from '@/assets/ai/assistant-background.svg'
 import assistantRobot from '@/assets/ai/assistant-robot.svg'
+import { AiOnboarding } from './AiOnboarding'
 import { BrandAiProfileModal } from './BrandAiProfileModal'
 import { AttachButton, AttachmentList, useAttachments } from './ComposerAttachments'
 
@@ -50,6 +52,11 @@ type Values = {
 }
 
 const newKey = (): string => crypto.randomUUID()
+/** A little longer than the animation of this class in index.css. */
+const FLASH_CLASS = 'ai-turn-flash'
+const FLASH_MS = 1800
+const soleOf = (pages: AiAvailability['pages']): string[] =>
+  pages.length === 1 ? [pages[0]!.id] : []
 const unfinished = (turn: AiGeneration): boolean =>
   turn.status === 'queued' || turn.status === 'running'
 
@@ -87,13 +94,18 @@ export function AiCreateModal({
   const [templateKey, setTemplateKey] = useState(FREEFORM)
   const [requestKey, setRequestKey] = useState(newKey)
   const [profileOpen, setProfileOpen] = useState(false)
+  // Answered in this sitting; availability catches up behind it.
+  const [onboarded, setOnboarded] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [conversationId, setConversationId] = useState(() => readOpenChat(user?.id, brandId))
   const [editing, setEditing] = useState<AiGeneration | null>(null)
-  const [publishing, setPublishing] = useState<AiGeneration | null>(null)
+  const [publishing, setPublishing] = useState<{ turn: AiGeneration; pageIds: string[] } | null>(
+    null,
+  )
   const chat = useAiConversation(brandId, conversationId)
   const attachments = useAttachments(brandId)
   const list = useRef<HTMLDivElement>(null)
+  const flashTimer = useRef<number | undefined>(undefined)
   const composer = useRef<HTMLDivElement>(null)
   const statuses = useRef(new Map<string, AiGeneration['status']>())
   const { pages } = availability
@@ -112,11 +124,16 @@ export function AiCreateModal({
   const filled = (key: string) => Boolean(watchedBrief?.[key]?.trim())
   const ready = editing
     ? filled(TOPIC_KEY)
-    : (watchedPages?.length ?? 0) > 0 &&
-      (!topicRequired || filled(TOPIC_KEY)) &&
+    : (!topicRequired || filled(TOPIC_KEY)) &&
       extraFields.every((field) => !field.required || filled(field.key))
   const sending = start.isPending || followUp.isPending
   const sendError = start.error ?? followUp.error
+
+  // Sending for approval needs Pages, so taking the last one away turns it off.
+  useEffect(() => {
+    if (watchedPages?.length === 0 && form.getFieldValue('autoSubmit'))
+      form.setFieldValue('autoSubmit', false)
+  }, [watchedPages, form])
 
   // Reopening lands where the dialog was closed (D14).
   useEffect(
@@ -147,6 +164,22 @@ export function AiCreateModal({
     const element = list.current
     if (element) element.scrollTop = element.scrollHeight
   }, [turns.length, lastTurn?.status, conversationId])
+
+  // The answer being edited may have scrolled away; its start is what the edit is about.
+  const showEditing = () => {
+    if (!editing) return
+    const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const answer = list.current?.querySelector(`[data-turn-answer="${editing.id}"]`)
+    answer?.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' })
+    const card = answer?.querySelector<HTMLElement>('[data-turn-card]')
+    if (!card) return
+    // Dropped and measured first, so a second click plays it again.
+    window.clearTimeout(flashTimer.current)
+    card.classList.remove(FLASH_CLASS)
+    void card.offsetWidth
+    card.classList.add(FLASH_CLASS)
+    flashTimer.current = window.setTimeout(() => card.classList.remove(FLASH_CLASS), FLASH_MS)
+  }
 
   const afterSend = (nextConversationId: string) => {
     setConversationId(nextConversationId)
@@ -193,22 +226,38 @@ export function AiCreateModal({
     afterSend(started.conversationId)
   }
 
+  // Enter sends and Shift+Enter starts a new line. An Enter that confirms what an input method
+  // is composing belongs to it (keyCode 229 is how Safari reports the last one).
+  const sendOnEnter = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key !== 'Enter' || event.shiftKey) return
+    if (event.nativeEvent.isComposing || event.keyCode === 229) return
+    event.preventDefault()
+    form.submit()
+  }
+
   const resetErrors = () => {
     if (start.isError) start.reset()
     if (followUp.isError) followUp.reset()
   }
 
   const actions: AiTurnActions = {
-    onUse: (turn) =>
+    onUse: (turn) => {
+      const captions = turn.suggestion?.captions ?? {}
+      const general = turn.socialAccountIds.length ? undefined : captions[AI_GENERAL_CAPTION_KEY]
+      // Made without Pages: one Page is simply used, and with several the post screen asks.
+      const ids = general === undefined ? turn.socialAccountIds : soleOf(pages)
       onUseSuggestion({
         generationId: turn.id,
-        socialAccountIds: turn.socialAccountIds,
-        captions: turn.suggestion?.captions ?? {},
+        socialAccountIds: ids,
+        captions:
+          general === undefined ? captions : Object.fromEntries(ids.map((id) => [id, general])),
+        ...(general === undefined ? {} : { generalCaption: general }),
         images: (turn.suggestion?.images ?? []).map(({ id, url, name }) => ({ id, url, name })),
-      }),
-    onPost: (turn, intent) => {
-      if (intent === 'publish_now') setPublishing(turn)
-      else void send(turn, intent)
+      })
+    },
+    onPost: (turn, intent, pageIds) => {
+      if (intent === 'publish_now') setPublishing({ turn, pageIds })
+      else void send(turn, intent, pageIds)
     },
     onAnotherIdea: (turn) => {
       resetErrors()
@@ -225,9 +274,14 @@ export function AiCreateModal({
     onOpenContent,
   }
 
-  const send = async (turn: AiGeneration, intent: AiPostIntent) => {
+  const send = async (turn: AiGeneration, intent: AiPostIntent, pageIds: string[]) => {
     try {
-      await post.mutateAsync({ brandId, generationId: turn.id, intent })
+      await post.mutateAsync({
+        brandId,
+        generationId: turn.id,
+        intent,
+        ...(turn.socialAccountIds.length ? {} : { socialAccountIds: pageIds }),
+      })
     } catch (error) {
       toast.error({
         title: errorMessage(error, t('chat.postError')),
@@ -305,7 +359,15 @@ export function AiCreateModal({
 
   return (
     <>
-      <Modal open title={null} width={1040} padding="none" onClose={onClose} footer={null}>
+      <Modal
+        open
+        title={null}
+        width={1040}
+        padding="none"
+        floatingClose
+        onClose={onClose}
+        footer={null}
+      >
         {pages.length === 0 ? (
           <div className="p-8">
             <Alert
@@ -317,6 +379,15 @@ export function AiCreateModal({
               )}
             />
           </div>
+        ) : availability.needsOnboarding && !onboarded ? (
+          <AiOnboarding
+            brandId={brandId}
+            pageId={(initialPage ?? pages[0]).id}
+            onFinished={(startedChat) => {
+              setOnboarded(true)
+              if (startedChat) setConversationId(startedChat)
+            }}
+          />
         ) : (
           <Form<Values>
             form={form}
@@ -333,7 +404,7 @@ export function AiCreateModal({
           >
             <div
               className={
-                'grid md:h-[min(720px,calc(100vh-120px))] ' +
+                'grid overflow-hidden rounded-2xl md:h-[min(720px,calc(100vh-120px))] ' +
                 (collapsed
                   ? 'md:grid-cols-[72px_minmax(0,1fr)]'
                   : 'md:grid-cols-[288px_minmax(0,1fr)]')
@@ -380,8 +451,15 @@ export function AiCreateModal({
                   <div className="rounded-xl border border-border-subtle bg-bg-surface px-4 pt-3 pb-2 shadow-xs transition-colors focus-within:border-ai-400">
                     {editing ? (
                       <div className="mb-2 flex items-center gap-2 rounded-lg bg-ai-50 px-3 py-1 text-label-sm text-ai-700">
-                        <IconEdit aria-hidden className="shrink-0" />
-                        <span className="min-w-0 flex-1 truncate">{t('chat.editing')}</span>
+                        <button
+                          type="button"
+                          title={t('chat.showEditing')}
+                          onClick={showEditing}
+                          className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-sm text-start hover:underline focus-visible:focus-ring"
+                        >
+                          <IconEdit aria-hidden className="shrink-0" />
+                          <span className="min-w-0 flex-1 truncate">{t('chat.editing')}</span>
+                        </button>
                         <button
                           type="button"
                           aria-label={t('chat.cancelEdit')}
@@ -406,6 +484,7 @@ export function AiCreateModal({
                         className="app-scrollbar"
                         autoSize={{ minRows: 2, maxRows: 6 }}
                         maxLength={2000}
+                        onKeyDown={sendOnEnter}
                         aria-label={t(editing ? 'chat.editLabel' : 'form.topic')}
                         placeholder={
                           editing
@@ -443,7 +522,7 @@ export function AiCreateModal({
         icon={<IconSendLine aria-hidden className="text-ai-600" />}
         title={t('chat.confirmPublishTitle')}
         description={t('chat.confirmPublishDescription', {
-          pages: (publishing?.socialAccountIds ?? [])
+          pages: (publishing?.pageIds ?? [])
             .map((id) => pages.find((page) => page.id === id)?.name ?? t('chat.unknownPage'))
             .join(', '),
         })}
@@ -451,7 +530,7 @@ export function AiCreateModal({
         cancelLabel={t('modal.cancel')}
         loading={post.isPending}
         onConfirm={() => {
-          if (publishing) void send(publishing, 'publish_now')
+          if (publishing) void send(publishing.turn, 'publish_now', publishing.pageIds)
         }}
         onClose={() => setPublishing(null)}
       />
@@ -474,9 +553,13 @@ function SendButton({
       aria-label={label}
       title={label}
       disabled={loading || disabled}
-      className="flex size-[36px] shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-ai-400 to-ai-600 text-icon-sm text-text-inverse shadow-[0_4px_14px_-4px] shadow-ai-500/60 transition-[filter] duration-fast hover:brightness-110 focus-visible:focus-ring disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100"
+      className="flex size-[36px] shrink-0 items-center justify-center rounded-lg bg-action-primary text-icon-md text-text-inverse transition-colors hover:bg-action-primary-hover focus-visible:focus-ring disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-action-primary"
     >
-      {loading ? <Spin size="sm" /> : <IconSend aria-hidden />}
+      {loading ? (
+        <Spin size="sm" indicator="ring" className="text-text-inverse" />
+      ) : (
+        <IconSendSolid aria-hidden />
+      )}
     </button>
   )
 }

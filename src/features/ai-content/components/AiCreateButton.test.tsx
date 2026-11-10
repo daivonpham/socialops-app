@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -24,6 +24,7 @@ const AVAILABLE: AiAvailability = {
     { id: 'page-b', name: 'Page B' },
   ],
   hasProfile: true,
+  needsOnboarding: false,
   historyDays: 30,
 }
 const CHAT_KEY = 'socialops.ai-chat.user-1.brand-1'
@@ -54,6 +55,7 @@ const turn = (overrides: Partial<AiGeneration> = {}): AiGeneration => ({
   phase: null,
   imageAction: 'generate',
   unreadableFiles: [],
+  usedBestPosts: false,
   contentId: null,
   errorCode: null,
   imageErrorCode: null,
@@ -173,9 +175,8 @@ describe('AiCreateButton', () => {
     expect(window.localStorage.getItem(CHAT_KEY)).toBe('conv-1')
 
     expect(
-      await within(dialog).findByText('Here is a post suggestion for you:', {}, { timeout: 5000 }),
+      await within(dialog).findByText('Cold brew is here', {}, { timeout: 5000 }),
     ).toBeInTheDocument()
-    expect(within(dialog).getByText('Cold brew is here')).toBeInTheDocument()
     for (const name of ['Publish now', 'Try another idea', 'Edit again'])
       expect(within(dialog).getByRole('button', { name })).toBeInTheDocument()
     await user.click(within(dialog).getByRole('button', { name: 'Use' }))
@@ -257,6 +258,60 @@ describe('AiCreateButton', () => {
     await user.click(await within(dialog).findByRole('button', { name: 'Send for approval' }))
     await waitFor(() => expect(intent).toBe('approval_publish_now'))
     expect(within(dialog).queryByRole('button', { name: 'Publish now' })).not.toBeInTheDocument()
+  })
+
+  it('shows the avatar of each Page the answer is for', async () => {
+    window.localStorage.setItem(CHAT_KEY, 'conv-1')
+    const url = 'https://files.test/page-b.png'
+    mockApi(
+      {
+        pages: [
+          { id: 'page-a', name: 'Page A' },
+          { id: 'page-b', name: 'Page B', avatarUrl: url },
+        ],
+      },
+      () => chat([turn({ socialAccountIds: ['page-a', 'page-b'] })]),
+    )
+    const { user } = renderButton()
+    const dialog = await openDialog(user)
+    expect(await within(dialog).findByRole('tab', { name: /Page B/ })).toBeInTheDocument()
+    const card = dialog.querySelector<HTMLElement>('[data-turn-card]')!
+    expect(card.querySelector(`img[src="${url}"]`)).not.toBeNull()
+  })
+
+  it('scrolls to the answer being edited and lights up its card', async () => {
+    window.localStorage.setItem(CHAT_KEY, 'conv-1')
+    mockApi({}, () => chat([turn()]))
+    const scrolled: Element[] = []
+    const original = Element.prototype.scrollIntoView
+    Element.prototype.scrollIntoView = function (this: Element) {
+      scrolled.push(this)
+    }
+    try {
+      const { user } = renderButton()
+      const dialog = await openDialog(user)
+      await user.click(await within(dialog).findByRole('button', { name: 'Edit again' }))
+      await user.click(within(dialog).getByRole('button', { name: 'Editing the suggestion' }))
+      expect(scrolled).toEqual([dialog.querySelector('[data-turn-answer="gen-1"]')])
+      expect(dialog.querySelector('[data-turn-card]')).toHaveClass('ai-turn-flash')
+    } finally {
+      Element.prototype.scrollIntoView = original
+    }
+  })
+
+  it('shows when the answer came, copies its caption and offers another idea as icons', async () => {
+    window.localStorage.setItem(CHAT_KEY, 'conv-1')
+    mockApi({}, () => chat([turn({ createdAt: new Date().toISOString() })]))
+    const { user } = renderButton()
+    const dialog = await openDialog(user)
+    expect(await within(dialog).findByText('Just now')).toBeInTheDocument()
+    await user.click(within(dialog).getByRole('button', { name: 'Copy caption' }))
+    expect(await navigator.clipboard.readText()).toBe('Cold brew is here')
+    // The icon answers for a moment; no toast.
+    const copied = await within(dialog).findByRole('button', { name: 'Copied' })
+    expect(screen.queryByText('Copied')).not.toBeInTheDocument()
+    await waitFor(() => expect(copied).toHaveAccessibleName('Copy caption'), { timeout: 3000 })
+    expect(within(dialog).getByRole('button', { name: 'Try another idea' })).toBeEnabled()
   })
 
   it('asks for another idea and edits a suggestion, each as a new turn', async () => {
@@ -371,13 +426,49 @@ describe('AiCreateButton', () => {
     await waitFor(() => expect(window.localStorage.getItem(CHAT_KEY)).toBeNull())
   })
 
-  it('keeps the send button off until a brief and a Page are given', async () => {
+  it('sends on Enter, but not on Shift+Enter or while an input method is composing', async () => {
     mockApi()
-    let started = false
+    const bodies: unknown[] = []
     server.use(
-      http.post('*/brands/brand-1/ai/generations', () => {
-        started = true
-        return HttpResponse.json({ data: { id: 'gen-1', conversationId: 'conv-1' } })
+      http.post('*/brands/brand-1/ai/generations', async ({ request }) => {
+        bodies.push(await request.json())
+        return HttpResponse.json(
+          { data: { id: 'gen-1', conversationId: 'conv-1' } },
+          { status: 201 },
+        )
+      }),
+    )
+    const { user } = renderButton()
+    const dialog = await openDialog(user)
+    const area = within(dialog).getByLabelText<HTMLTextAreaElement>(
+      'What do you want to post about?',
+    )
+    await user.type(area, 'Cold{Shift>}{Enter}{/Shift}brew')
+    expect(area.value).toBe('Cold\nbrew')
+    fireEvent.keyDown(area, { key: 'Enter', isComposing: true })
+    fireEvent.keyDown(area, { key: 'Enter', keyCode: 229 })
+    expect(bodies).toEqual([])
+    await waitFor(() =>
+      expect(within(dialog).getByRole('button', { name: /Create post/ })).toBeEnabled(),
+    )
+    await user.type(area, '{Enter}')
+    await waitFor(() =>
+      expect(bodies).toEqual([
+        { socialAccountIds: [], brief: { topic: 'Cold\nbrew' }, autoSubmit: false },
+      ]),
+    )
+  })
+
+  it('keeps the send button off until there is a brief, and needs no Page', async () => {
+    mockApi()
+    let body: unknown
+    server.use(
+      http.post('*/brands/brand-1/ai/generations', async ({ request }) => {
+        body = await request.json()
+        return HttpResponse.json(
+          { data: { id: 'gen-1', conversationId: 'conv-1' } },
+          { status: 201 },
+        )
       }),
     )
     const { user } = renderButton()
@@ -386,15 +477,92 @@ describe('AiCreateButton', () => {
     // No brief yet: the button stays off and no message is shown.
     expect(send).toBeDisabled()
     await user.type(within(dialog).getByLabelText('What do you want to post about?'), 'Cold brew')
-    // No Page picked yet: still off.
-    expect(send).toBeDisabled()
-    await user.click(await screen.findByRole('checkbox', { name: 'Page A' }))
-    expect(send).toBeEnabled()
-    // No Page left: off again.
-    await user.click(screen.getByRole('checkbox', { name: 'Page A' }))
-    await waitFor(() => expect(send).toBeDisabled())
+    await waitFor(() => expect(send).toBeEnabled())
     await user.click(send)
-    expect(started).toBe(false)
+    await waitFor(() =>
+      expect(body).toEqual({
+        socialAccountIds: [],
+        brief: { topic: 'Cold brew' },
+        autoSubmit: false,
+      }),
+    )
+  })
+
+  describe('a suggestion made without Pages', () => {
+    const general = (): AiGeneration =>
+      turn({
+        socialAccountIds: [],
+        suggestion: { captions: { general: 'Cold brew for all' }, images: [] },
+      })
+
+    it('asks which Pages before publishing, and sends those', async () => {
+      window.localStorage.setItem(CHAT_KEY, 'conv-1')
+      mockApi({}, () => chat([general()]))
+      let body: unknown
+      server.use(
+        http.post('*/brands/brand-1/ai/generations/gen-1/post', async ({ request }) => {
+          body = await request.json()
+          return HttpResponse.json({ data: { contentId: 'content-1' } }, { status: 201 })
+        }),
+      )
+      const { user } = renderButton()
+      const dialog = await openDialog(user)
+      expect(await within(dialog).findByText('Cold brew for all')).toBeInTheDocument()
+      // No Page yet, so the card names none.
+      const card = dialog.querySelector<HTMLElement>('[data-turn-card]')!
+      expect(card.querySelector('.text-label-sm')).toBeNull()
+      await user.click(within(dialog).getByRole('button', { name: 'Publish now' }))
+      const title = await screen.findByText('Pick Pages to post to')
+      const popup = title.parentElement!
+      const confirmPick = within(popup).getByRole('button', { name: 'Publish now' })
+      expect(confirmPick).toBeDisabled()
+      await user.click(within(popup).getByRole('checkbox', { name: 'Page B' }))
+      await user.click(confirmPick)
+      const confirm = (await screen.findByText('Publish this post now?')).closest<HTMLElement>(
+        '[role="dialog"]',
+      )!
+      expect(within(confirm).getByText('It will be published to: Page B.')).toBeInTheDocument()
+      await user.click(within(confirm).getByRole('button', { name: 'Publish now' }))
+      await waitFor(() =>
+        expect(body).toEqual({ intent: 'publish_now', socialAccountIds: ['page-b'] }),
+      )
+    })
+
+    it('goes to the only Page without asking', async () => {
+      window.localStorage.setItem(CHAT_KEY, 'conv-1')
+      mockApi({ pages: [{ id: 'page-a', name: 'Page A' }], canPublishDirect: false }, () =>
+        chat([general()]),
+      )
+      let body: unknown
+      server.use(
+        http.post('*/brands/brand-1/ai/generations/gen-1/post', async ({ request }) => {
+          body = await request.json()
+          return HttpResponse.json({ data: { contentId: 'content-1' } }, { status: 201 })
+        }),
+      )
+      const { user } = renderButton()
+      const dialog = await openDialog(user)
+      await user.click(await within(dialog).findByRole('button', { name: 'Send for approval' }))
+      await waitFor(() =>
+        expect(body).toEqual({ intent: 'approval_publish_now', socialAccountIds: ['page-a'] }),
+      )
+      expect(screen.queryByText('Pick Pages to post to')).not.toBeInTheDocument()
+    })
+
+    it('hands the post screen one caption and lets it ask for the Pages', async () => {
+      window.localStorage.setItem(CHAT_KEY, 'conv-1')
+      mockApi({}, () => chat([general()]))
+      const { user, onUseSuggestion } = renderButton()
+      const dialog = await openDialog(user)
+      await user.click(await within(dialog).findByRole('button', { name: 'Use' }))
+      expect(onUseSuggestion).toHaveBeenCalledWith({
+        generationId: 'gen-1',
+        socialAccountIds: [],
+        captions: {},
+        generalCaption: 'Cold brew for all',
+        images: [],
+      })
+    })
   })
 
   it('explains a failed turn in the customer’s words, with no code and no button to send it again', async () => {
@@ -435,6 +603,110 @@ describe('AiCreateButton', () => {
     await user.click(within(dialog).getByRole('button', { name: /Create post/ }))
     expect(await within(dialog).findByText('AI is not set up yet.')).toBeInTheDocument()
     expect(within(dialog).queryByText(/AI_AGENT_NOT_CONFIGURED/)).not.toBeInTheDocument()
+  })
+
+  describe('first-run screen', () => {
+    const onboardingApi = (state: string, suggestion: unknown = null) =>
+      http.get('*/brands/brand-1/ai/onboarding', () =>
+        HttpResponse.json({ data: { state, suggestion } }),
+      )
+    const SUGGESTION = {
+      industry: 'Coffee',
+      products: null,
+      targetAudience: null,
+      tonePreset: 'friendly',
+      toneNotes: null,
+      preferredWords: ['bold'],
+      ideas: ['Idea 1', 'Idea 2', 'Idea 3'],
+    }
+
+    it('proposes a profile, then starts the samples and opens their chat', async () => {
+      let confirmed: { topics?: string[]; socialAccountId?: string; industry?: string } = {}
+      let reads = 0
+      mockApi({ needsOnboarding: true }, () => chat([turn({ usedBestPosts: true })]))
+      server.use(
+        onboardingApi('ready'),
+        http.post('*/brands/brand-1/ai/onboarding/suggest', () => {
+          reads += 1
+          return HttpResponse.json({ data: SUGGESTION })
+        }),
+        http.post('*/brands/brand-1/ai/onboarding/confirm', async ({ request }) => {
+          confirmed = (await request.json()) as typeof confirmed
+          return HttpResponse.json({ data: { conversationId: 'conv-1' } })
+        }),
+      )
+      const { user } = renderButton()
+      const dialog = await openDialog(user)
+      expect(await within(dialog).findByText('Let AI get to know your Brand')).toBeInTheDocument()
+      // Reading the posts is paid and sends them to the AI, so it waits for the press.
+      expect(reads).toBe(0)
+      await user.click(within(dialog).getByRole('button', { name: 'Read my posts' }))
+      expect(await within(dialog).findByDisplayValue('Coffee')).toBeInTheDocument()
+      await user.click(
+        within(dialog).getByRole('button', { name: 'Confirm and create 3 suggestions' }),
+      )
+      expect(
+        await within(dialog).findByText('Written in the style of your best-performing posts.'),
+      ).toBeInTheDocument()
+      expect(confirmed).toMatchObject({
+        industry: 'Coffee',
+        socialAccountId: 'page-a',
+        topics: ['Idea 1', 'Idea 2', 'Idea 3'],
+      })
+    })
+
+    it('skips to the chat and tells the API, so it does not come back', async () => {
+      let skipped = false
+      mockApi({ needsOnboarding: true })
+      server.use(
+        onboardingApi('ready'),
+        http.post('*/brands/brand-1/ai/onboarding/skip', () => {
+          skipped = true
+          return new HttpResponse(null, { status: 204 })
+        }),
+      )
+      const { user } = renderButton()
+      const dialog = await openDialog(user)
+      await user.click(await within(dialog).findByRole('button', { name: 'Skip' }))
+      expect(
+        await within(dialog).findByLabelText('What do you want to post about?'),
+      ).toBeInTheDocument()
+      expect(skipped).toBe(true)
+    })
+
+    it('waits while the Page syncs, with a way to fill the profile in now', async () => {
+      mockApi({ needsOnboarding: true })
+      server.use(onboardingApi('syncing'))
+      const { user } = renderButton()
+      const dialog = await openDialog(user)
+      expect(await within(dialog).findByText("Getting your Page's older posts")).toBeInTheDocument()
+      await user.click(within(dialog).getByRole('button', { name: 'Fill in the profile myself' }))
+      expect(await within(dialog).findByText('Tell AI about your Brand')).toBeInTheDocument()
+    })
+
+    it('asks for the profile on a Page with too few posts, and uses general topics', async () => {
+      let topics: string[] = []
+      mockApi({ needsOnboarding: true }, () => chat([turn()]))
+      server.use(
+        onboardingApi('few_posts'),
+        http.post('*/brands/brand-1/ai/onboarding/confirm', async ({ request }) => {
+          topics = ((await request.json()) as { topics: string[] }).topics
+          return HttpResponse.json({ data: { conversationId: 'conv-1' } })
+        }),
+      )
+      const { user } = renderButton()
+      const dialog = await openDialog(user)
+      await user.click(
+        await within(dialog).findByRole('button', { name: 'Confirm and create 3 suggestions' }),
+      )
+      await waitFor(() =>
+        expect(topics).toEqual([
+          'Introduce our brand',
+          'Introduce a standout product or service',
+          'Share a useful tip for customers',
+        ]),
+      )
+    })
   })
 
   it('uses the only Page without asking, and folds the left column to icons', async () => {

@@ -23,6 +23,7 @@ import {
 } from '@/shared/ui'
 import { useAiConversations, type AiAvailability, type AiConversationSummary } from '../api'
 import { AiMark } from './AiMark'
+import { PageCheckList } from './PageCheckList'
 
 type Pages = AiAvailability['pages']
 /** Chats active this many days ago or later are "Recent"; older ones "Earlier". */
@@ -114,62 +115,16 @@ function MenuSection({
 }
 
 /** The Pages to post to, checked in a list under the Pages row. */
+/** The Page list of the sidebar, reading and changing the Form. */
 function PageList({ pages }: { pages: Pages }) {
-  const { t } = useTranslation('aiContent')
   const form = Form.useFormInstance()
   const value: string[] = Form.useWatch('pageIds', form) ?? []
-  const onChange = (next: string[]) => form.setFieldValue('pageIds', next)
   return (
-    <div
-      role="group"
-      aria-label={t('form.pages')}
-      className="app-scrollbar grid max-h-[200px] grid-cols-[minmax(0,1fr)] gap-1 overflow-y-auto"
-    >
-      {pages.map((page) => {
-        const checked = value.includes(page.id)
-        return (
-          <label
-            key={page.id}
-            className={
-              'flex h-[44px] cursor-pointer items-center gap-3 rounded-lg ps-4 pe-3 transition-colors has-[:focus-visible]:focus-ring ' +
-              (checked ? 'bg-ai-50' : 'hover:bg-bg-surface')
-            }
-          >
-            <input
-              type="checkbox"
-              className="sr-only"
-              aria-label={page.name}
-              checked={checked}
-              onChange={(event) =>
-                onChange(
-                  event.target.checked
-                    ? [...value, page.id]
-                    : value.filter((item) => item !== page.id),
-                )
-              }
-            />
-            <Avatar
-              name={page.name}
-              src={page.avatarUrl}
-              size="xs"
-              fallbackClassName="text-caption"
-            />
-            <span className="min-w-0 flex-1 truncate text-body-sm text-text-primary">
-              {page.name}
-            </span>
-            <span
-              aria-hidden
-              className={
-                'flex size-5 shrink-0 items-center justify-center rounded-full text-caption transition-colors ' +
-                (checked ? 'bg-ai-500 text-text-inverse' : 'border border-ai-200 bg-bg-surface')
-              }
-            >
-              {checked ? <IconCheck /> : null}
-            </span>
-          </label>
-        )
-      })}
-    </div>
+    <PageCheckList
+      pages={pages}
+      value={value}
+      onChange={(next) => form.setFieldValue('pageIds', next)}
+    />
   )
 }
 
@@ -270,19 +225,32 @@ function OptionSwitch({
   name,
   icon,
   label,
+  hint,
+  disabled = false,
 }: {
   name: 'autoSubmit'
   icon: ReactNode
   label: string
+  /** Why the switch is off. */
+  hint?: string | undefined
+  disabled?: boolean
 }) {
   return (
-    <label className="flex h-[44px] cursor-pointer items-center gap-3 rounded-lg ps-4 pe-3 hover:bg-bg-surface">
+    <label
+      className={
+        'flex h-[44px] items-center gap-3 rounded-lg ps-4 pe-3 ' +
+        (disabled ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-bg-surface')
+      }
+    >
       <span aria-hidden className="shrink-0 text-icon-sm text-ai-600">
         {icon}
       </span>
-      <span className="min-w-0 flex-1 text-body-sm text-text-primary">{label}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-body-sm text-text-primary">{label}</span>
+        {hint ? <span className="block text-caption text-text-tertiary">{hint}</span> : null}
+      </span>
       <Form.Item name={name} valuePropName="checked" noStyle>
-        <Switch tone="ai" size="small" />
+        <Switch tone="ai" size="small" disabled={disabled} />
       </Form.Item>
     </label>
   )
@@ -299,6 +267,10 @@ function OptionsMenu({
   onToggle: () => void
 }) {
   const { t } = useTranslation('aiContent')
+  const form = Form.useFormInstance()
+  const pageIds: string[] = Form.useWatch('pageIds', form) ?? []
+  // Sending for approval makes the post at once, and a post needs its Pages.
+  const noPages = pageIds.length === 0
   if (compact)
     return (
       <Tooltip title={t('sidebar.options')} placement="right">
@@ -325,7 +297,13 @@ function OptionsMenu({
         </>
       }
     >
-      <OptionSwitch name="autoSubmit" icon={<IconSendLine />} label={t('form.autoSubmit')} />
+      <OptionSwitch
+        name="autoSubmit"
+        icon={<IconSendLine />}
+        label={t('form.autoSubmit')}
+        hint={noPages ? t('form.autoSubmitNeedsPage') : undefined}
+        disabled={noPages}
+      />
     </MenuSection>
   )
 }

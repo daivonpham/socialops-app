@@ -34,6 +34,8 @@ export type PlanningComposerDraft = {
 export type ComposerAiSuggestion = {
   socialAccountIds: string[]
   captions: Record<string, string>
+  /** The caption of a suggestion made without Pages: the post screen picks them. */
+  generalCaption?: string
   images: Array<{ id: string; url: string; name: string }>
 }
 
@@ -47,7 +49,7 @@ export function createComposerDraftFromAiSuggestion(
 ): PlanningComposerDraft {
   const targetIds = suggestion.socialAccountIds.filter((id) => accountIds.includes(id))
   const captions = targetIds.map((id) => suggestion.captions[id] ?? '')
-  const caption = captions[0] ?? ''
+  const caption = captions[0] ?? suggestion.generalCaption ?? ''
   const perAccount = targetIds.length > 1 && captions.some((text) => text !== caption)
   return {
     ...createComposerDraft('facebook'),

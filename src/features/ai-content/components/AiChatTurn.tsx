@@ -1,28 +1,42 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CodedError } from '@/shared/api/errors'
 import { useApiErrorMessage } from '@/shared/hooks'
 import { openFile } from '@/shared/lib/openFile'
 import {
   Alert,
+  Avatar,
   IconCheck,
+  IconCheckSolid,
+  IconCopy,
   IconEdit,
   IconFileText,
   IconOpen,
   IconRefresh,
   IconSendLine,
+  Popover,
   Image,
   ImagePreviewGroup,
   Tabs,
+  useToast,
 } from '@/shared/ui'
-import type { AiAvailability, AiGeneration, AiPostIntent, AiTemplateOption } from '../api'
+import {
+  AI_GENERAL_CAPTION_KEY,
+  type AiAvailability,
+  type AiGeneration,
+  type AiPostIntent,
+  type AiTemplateOption,
+} from '../api'
 import { AiGenerationProgress } from './AiGenerationProgress'
+import { turnTimeAgo } from '../model/turnTime'
 import { AiMark } from './AiMark'
+import { PageCheckList } from './PageCheckList'
 
 export type AiTurnActions = {
   /** "Use": opens the post screen filled with the suggestion. */
   onUse: (turn: AiGeneration) => void
-  onPost: (turn: AiGeneration, intent: AiPostIntent) => void
+  /** `pageIds`: where it goes, the turn's own Pages unless it was made without any. */
+  onPost: (turn: AiGeneration, intent: AiPostIntent, pageIds: string[]) => void
   onAnotherIdea: (turn: AiGeneration) => void
   onEdit: (turn: AiGeneration) => void
   onOpenContent: (contentId: string) => void
@@ -106,7 +120,8 @@ function ActionButton({
   children: ReactNode
   primary?: boolean
   disabled?: boolean
-  onClick: () => void
+  /** Left out when a Popover around the button handles the click. */
+  onClick?: () => void
 }) {
   return (
     <button
@@ -128,6 +143,126 @@ function ActionButton({
   )
 }
 
+/** How long the copy icon shows its check. */
+const COPIED_MS = 1500
+
+/** A small icon button, named for screen readers. */
+function IconAction({
+  label,
+  disabled = false,
+  onClick,
+  children,
+}: {
+  label: string
+  disabled?: boolean
+  onClick: () => void
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="flex size-6 items-center justify-center rounded-md text-icon-sm text-text-primary transition-colors hover:bg-ai-50 hover:text-ai-700 focus-visible:focus-ring disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      {children}
+    </button>
+  )
+}
+
+/** How long ago the turn was made, kept current while the chat stays open. */
+function TurnTime({ createdAt }: { createdAt: string }) {
+  const { t, i18n } = useTranslation('aiContent')
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000)
+    return () => window.clearInterval(timer)
+  }, [])
+  return (
+    <time dateTime={createdAt} className="text-caption text-text-secondary">
+      {turnTimeAgo(createdAt, now, i18n.resolvedLanguage ?? 'vi-VN') ?? t('chat.justNow')}
+    </time>
+  )
+}
+
+/**
+ * "Publish now" or "Send for approval". A suggestion made without Pages goes to the only Page
+ * there is, or asks which ones first.
+ */
+function PostButton({
+  turn,
+  pages,
+  canPublishDirect,
+  busy,
+  onPost,
+}: {
+  turn: AiGeneration
+  pages: AiAvailability['pages']
+  canPublishDirect: boolean
+  busy: boolean
+  onPost: AiTurnActions['onPost']
+}) {
+  const { t } = useTranslation('aiContent')
+  const [open, setOpen] = useState(false)
+  const [picked, setPicked] = useState<string[]>([])
+  const intent: AiPostIntent = canPublishDirect ? 'publish_now' : 'approval_publish_now'
+  const label = t(canPublishDirect ? 'chat.publishNow' : 'chat.submit')
+
+  if (turn.socialAccountIds.length || pages.length <= 1) {
+    const pageIds = turn.socialAccountIds.length
+      ? turn.socialAccountIds
+      : pages.map((page) => page.id)
+    return (
+      <ActionButton
+        icon={<IconSendLine />}
+        disabled={busy}
+        onClick={() => onPost(turn, intent, pageIds)}
+      >
+        {label}
+      </ActionButton>
+    )
+  }
+
+  return (
+    <Popover
+      placement="bottomLeft"
+      open={open}
+      onOpenChange={(next) => setOpen(next && !busy)}
+      content={
+        <div className="grid w-[288px] gap-2 p-2">
+          <p className="px-2 pt-1 text-label-md text-text-primary">{t('chat.pickPages')}</p>
+          <PageCheckList
+            pages={pages}
+            value={picked}
+            onChange={setPicked}
+            hoverClassName="hover:bg-bg-surface-muted"
+          />
+          <div className="flex justify-end">
+            <ActionButton
+              primary
+              icon={<IconSendLine />}
+              disabled={busy || picked.length === 0}
+              onClick={() => {
+                setOpen(false)
+                onPost(turn, intent, picked)
+              }}
+            >
+              {label}
+            </ActionButton>
+          </div>
+        </div>
+      }
+    >
+      <span className="inline-flex rounded-lg">
+        <ActionButton icon={<IconSendLine />} disabled={busy}>
+          {label}
+        </ActionButton>
+      </span>
+    </Popover>
+  )
+}
+
 function SuggestionCard({
   turn,
   pages,
@@ -144,30 +279,60 @@ function SuggestionCard({
   actions: AiTurnActions
 }) {
   const { t } = useTranslation('aiContent')
+  const toast = useToast()
+  const [copied, setCopied] = useState(false)
+  const copiedTimer = useRef<number | undefined>(undefined)
+  useEffect(() => () => window.clearTimeout(copiedTimer.current), [])
   const suggestion = turn.suggestion!
   const ids = turn.socialAccountIds
-  const [pageId, setPageId] = useState(ids[0] ?? '')
+  const [pageId, setPageId] = useState(ids[0] ?? AI_GENERAL_CAPTION_KEY)
   const nameOf = (id: string) => pages.find((page) => page.id === id)?.name ?? t('chat.unknownPage')
+  const pageTag = (id: string) => (
+    <span className="inline-flex min-w-0 items-center gap-2">
+      <span aria-hidden className="inline-flex shrink-0">
+        <Avatar
+          name={nameOf(id)}
+          src={pages.find((page) => page.id === id)?.avatarUrl}
+          size="xs"
+          fallbackClassName="text-caption"
+        />
+      </span>
+      <span className="truncate">{nameOf(id)}</span>
+    </span>
+  )
   const used = turn.contentId
+  const caption = suggestion.captions[pageId] ?? ''
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(caption)
+    } catch {
+      toast.error({ title: t('chat.copyError') })
+      return
+    }
+    setCopied(true)
+    window.clearTimeout(copiedTimer.current)
+    copiedTimer.current = window.setTimeout(() => setCopied(false), COPIED_MS)
+  }
 
   return (
     <div className="grid gap-3">
-      <p className="text-body-sm text-text-secondary">{t('chat.suggestionIntro')}</p>
-      <div className="grid gap-3 rounded-xl border border-border-subtle bg-bg-surface p-4 shadow-xs">
+      <div
+        data-turn-card
+        className="grid gap-3 rounded-xl border border-border-subtle bg-bg-surface p-3 shadow-xs"
+      >
         {ids.length > 1 ? (
           <Tabs
             variant="line"
             value={pageId}
             ariaLabel={t('chat.pagesLabel')}
-            options={ids.map((id) => ({ value: id, label: nameOf(id) }))}
+            options={ids.map((id) => ({ value: id, label: pageTag(id) }))}
             onChange={setPageId}
           />
-        ) : (
-          <span className="text-label-sm text-text-tertiary">{nameOf(pageId)}</span>
-        )}
-        <p className="text-body-sm whitespace-pre-wrap text-text-primary">
-          {suggestion.captions[pageId] ?? ''}
-        </p>
+        ) : ids.length ? (
+          <span className="text-label-sm text-text-tertiary">{pageTag(pageId)}</span>
+        ) : null}
+        <p className="text-body-sm whitespace-pre-wrap text-text-primary">{caption}</p>
         {suggestion.images.length ? (
           <ImagePreviewGroup>
             <ul className="flex flex-wrap gap-2" aria-label={t('chat.images')}>
@@ -193,11 +358,34 @@ function SuggestionCard({
         {turn.imageErrorCode ? (
           <p className="text-body-sm text-warning-700">{t('chat.imageMissing')}</p>
         ) : null}
+        {turn.usedBestPosts ? (
+          <p className="text-body-sm text-text-secondary">{t('chat.basedOnBestPosts')}</p>
+        ) : null}
         {turn.unreadableFiles.length ? (
           <p className="text-body-sm text-warning-700">
             {t('chat.unreadable', { names: turn.unreadableFiles.join(', ') })}
           </p>
         ) : null}
+        <div className="flex items-center justify-between gap-3">
+          <TurnTime createdAt={turn.createdAt} />
+          <div className="flex items-center gap-2">
+            <IconAction label={t(copied ? 'chat.copied' : 'chat.copy')} onClick={() => void copy()}>
+              {copied ? <IconCheckSolid /> : <IconCopy />}
+            </IconAction>
+            {used ? null : (
+              <>
+                <span aria-hidden className="h-3 w-px bg-border-subtle" />
+                <IconAction
+                  label={t('chat.anotherIdea')}
+                  disabled={busy}
+                  onClick={() => actions.onAnotherIdea(turn)}
+                >
+                  <IconRefresh />
+                </IconAction>
+              </>
+            )}
+          </div>
+        </div>
       </div>
       {used ? (
         <div className="flex flex-wrap items-center gap-3">
@@ -214,22 +402,13 @@ function SuggestionCard({
           <ActionButton primary icon={<IconCheck />} onClick={() => actions.onUse(turn)}>
             {t('chat.use')}
           </ActionButton>
-          <ActionButton
-            icon={<IconSendLine />}
-            disabled={busy}
-            onClick={() =>
-              actions.onPost(turn, canPublishDirect ? 'publish_now' : 'approval_publish_now')
-            }
-          >
-            {t(canPublishDirect ? 'chat.publishNow' : 'chat.submit')}
-          </ActionButton>
-          <ActionButton
-            icon={<IconRefresh />}
-            disabled={busy}
-            onClick={() => actions.onAnotherIdea(turn)}
-          >
-            {t('chat.anotherIdea')}
-          </ActionButton>
+          <PostButton
+            turn={turn}
+            pages={pages}
+            canPublishDirect={canPublishDirect}
+            busy={busy}
+            onPost={actions.onPost}
+          />
           <ActionButton
             icon={<IconEdit />}
             disabled={busy || editing}
@@ -311,7 +490,7 @@ function AssistantMessage({
   else body = <p className="text-body-sm text-text-secondary">{t('progress.failed')}</p>
 
   return (
-    <div className="flex items-start gap-3">
+    <div data-turn-answer={turn.id} className="flex scroll-mt-12 items-start gap-3">
       <span
         aria-hidden
         className="flex size-8 shrink-0 items-center justify-center rounded-full border border-ai-100 bg-ai-50"

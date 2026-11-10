@@ -28,6 +28,8 @@ export const errorsViVN = {
     AI_PROVIDER_FAILED: 'Dịch vụ AI không xử lý được yêu cầu này.',
     AI_QUOTA_EXCEEDED: 'Gói của bạn đã dùng hết hạn mức AI trong tháng này.',
     AI_SUGGESTION_USED: 'Gợi ý này đã được dùng rồi.',
+    AI_ONBOARDING_BUSY: 'AI đang đọc bài của bạn, vui lòng đợi một lát.',
+    AI_ONBOARDING_DONE: 'Brand này đã nhận gợi ý mẫu rồi.',
     AI_DISABLED: 'Tính năng tạo bài bằng AI hiện đang tắt.',
     AI_INVALID_OUTPUT: 'AI chưa tạo được kết quả dùng được. Vui lòng thử lại.',
     AI_GENERATION_ABANDONED: 'Lần tạo này không hoàn tất được. Vui lòng thử lại.',

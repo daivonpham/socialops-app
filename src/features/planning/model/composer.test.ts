@@ -126,6 +126,15 @@ describe('per-account captions', () => {
     ).toEqual(['page-a', 'page-b'])
   })
 
+  it('fills the caption of a suggestion made without Pages and leaves the Pages to pick', () => {
+    expect(
+      createComposerDraftFromAiSuggestion(
+        { socialAccountIds: [], captions: {}, generalCaption: 'For all', images: [] },
+        ['page-a', 'page-b'],
+      ),
+    ).toMatchObject({ targetIds: [], caption: 'For all', captionMode: 'shared' })
+  })
+
   it('fills a post from an AI suggestion, per Page only when the captions differ', () => {
     const images = [{ id: 'img-1', url: 'https://files.test/1', name: 'ai-1' }]
     const shared = createComposerDraftFromAiSuggestion(

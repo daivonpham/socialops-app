@@ -301,7 +301,6 @@ export const planningViVN = {
     platformUnavailable: 'Chức năng đăng TikTok chưa khả dụng.',
   },
   composer: {
-    fromAi: 'Bài viết được điền từ gợi ý AI. Kiểm tra lại trước khi lưu.',
     title: 'Tạo bài viết {{platform}}',
     editTitle: 'Chỉnh sửa bài viết {{platform}}',
     description: 'Tạo một nội dung và đăng lên một hoặc nhiều tài khoản.',

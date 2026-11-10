@@ -6,6 +6,9 @@ import type {
   AiConversation,
   AiConversationSummary,
   AiGenerationStarted,
+  AiOnboarding,
+  AiProfileSuggestion,
+  ConfirmAiOnboardingInput,
   AiPostIntent,
   AiTemplateOption,
   BrandAiProfile,
@@ -36,6 +39,38 @@ export async function updateBrandAiProfile({
 }: UpdateBrandAiProfileInput & { brandId: string }) {
   return (await apiClient.put<CommonApiResponse<BrandAiProfile>>(`${base(brandId)}/profile`, input))
     .data.data
+}
+
+export async function getAiOnboarding(brandId: string) {
+  return (await apiClient.get<CommonApiResponse<AiOnboarding>>(`${base(brandId)}/onboarding`)).data
+    .data
+}
+
+export async function suggestAiProfile(brandId: string) {
+  return (
+    await apiClient.post<CommonApiResponse<AiProfileSuggestion>>(
+      `${base(brandId)}/onboarding/suggest`,
+    )
+  ).data.data
+}
+
+export async function skipAiOnboarding(brandId: string) {
+  await apiClient.post(`${base(brandId)}/onboarding/skip`)
+}
+
+/** Saves the profile and starts the three samples; the key keeps a repeat from doing it twice. */
+export async function confirmAiOnboarding({
+  brandId,
+  idempotencyKey,
+  ...input
+}: ConfirmAiOnboardingInput & { brandId: string; idempotencyKey: string }) {
+  return (
+    await apiClient.post<CommonApiResponse<{ conversationId: string }>>(
+      `${base(brandId)}/onboarding/confirm`,
+      input,
+      { headers: { 'Idempotency-Key': idempotencyKey } },
+    )
+  ).data.data
 }
 
 /** The key stays the same for one press, so a repeated request starts one generation. */
@@ -80,15 +115,18 @@ export async function postAiSuggestion({
   brandId,
   generationId,
   intent,
+  socialAccountIds,
 }: {
   brandId: string
   generationId: string
   intent: AiPostIntent
+  /** Only for a suggestion made without Pages. */
+  socialAccountIds?: string[]
 }) {
   return (
     await apiClient.post<CommonApiResponse<{ contentId: string }>>(
       `${base(brandId)}/generations/${generationId}/post`,
-      { intent },
+      { intent, ...(socialAccountIds ? { socialAccountIds } : {}) },
     )
   ).data.data
 }

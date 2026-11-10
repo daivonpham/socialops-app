@@ -75,7 +75,11 @@ export function Modal({
       footer={footer}
       width={width}
       className={floatingClose ? 'app-modal-floating-close' : undefined}
-      styles={padding === 'none' ? { content: { padding: 0, overflow: 'hidden' } } : undefined}
+      styles={
+        padding === 'none'
+          ? { content: { padding: 0, overflow: floatingClose ? undefined : 'hidden' } }
+          : undefined
+      }
       rootClassName={blurBackdrop ? 'app-modal-blur-backdrop' : undefined}
       closeIcon={
         floatingClose ? (

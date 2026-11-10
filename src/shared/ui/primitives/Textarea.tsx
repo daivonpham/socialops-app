@@ -1,4 +1,4 @@
-import type { ChangeEventHandler, FocusEventHandler } from 'react'
+import type { ChangeEventHandler, FocusEventHandler, KeyboardEventHandler } from 'react'
 
 export type TextareaProps = {
   value?: string
@@ -6,6 +6,7 @@ export type TextareaProps = {
   onChange?: ChangeEventHandler<HTMLTextAreaElement>
   onFocus?: FocusEventHandler<HTMLTextAreaElement>
   onBlur?: FocusEventHandler<HTMLTextAreaElement>
+  onKeyDown?: KeyboardEventHandler<HTMLTextAreaElement>
   placeholder?: string
   className?: string
   id?: string

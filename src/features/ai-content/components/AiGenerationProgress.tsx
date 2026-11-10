@@ -42,7 +42,7 @@ export function AiGenerationProgress({ turn }: { turn: AiGeneration }) {
                   {done ? (
                     <IconCheck aria-hidden className="text-success-500 opacity-60" />
                   ) : active ? (
-                    <Spin size="sm" />
+                    <Spin size="sm" tone="ai" indicator="ring" />
                   ) : (
                     <span aria-hidden className="size-2 rounded-full bg-neutral-300" />
                   )}

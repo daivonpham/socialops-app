@@ -1,18 +1,24 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  confirmAiOnboarding,
   followUpAiGeneration,
   getAiAvailability,
   getAiConversation,
   getAiConversations,
+  getAiOnboarding,
   getAiTemplates,
   getBrandAiProfile,
   postAiSuggestion,
+  skipAiOnboarding,
+  suggestAiProfile,
   startAiGeneration,
   updateBrandAiProfile,
 } from './service'
 import type { AiConversation } from './types'
 
 const POLL_MS = 2000
+/** The history sync takes minutes, so the first-run screen looks now and then. */
+const SYNC_POLL_MS = 5000
 
 export const AI_CONTENT_QUERY_KEYS = {
   root: (brandId: string | null) => ['ai-content', brandId] as const,
@@ -21,6 +27,8 @@ export const AI_CONTENT_QUERY_KEYS = {
   templates: (brandId: string | null) =>
     [...AI_CONTENT_QUERY_KEYS.root(brandId), 'templates'] as const,
   profile: (brandId: string | null) => [...AI_CONTENT_QUERY_KEYS.root(brandId), 'profile'] as const,
+  onboarding: (brandId: string | null) =>
+    [...AI_CONTENT_QUERY_KEYS.root(brandId), 'onboarding'] as const,
   conversations: (brandId: string | null) =>
     [...AI_CONTENT_QUERY_KEYS.root(brandId), 'conversations'] as const,
   conversation: (brandId: string | null, id: string | null) =>
@@ -59,6 +67,33 @@ export function useUpdateBrandAiProfile() {
       queryClient.invalidateQueries({ queryKey: AI_CONTENT_QUERY_KEYS.root(brandId) }),
   })
 }
+
+export function useAiOnboarding(brandId: string) {
+  return useQuery({
+    queryKey: AI_CONTENT_QUERY_KEYS.onboarding(brandId),
+    queryFn: () => getAiOnboarding(brandId),
+    refetchInterval: (query) => (query.state.data?.state === 'syncing' ? SYNC_POLL_MS : false),
+  })
+}
+
+export const useSuggestAiProfile = () => useMutation({ mutationFn: suggestAiProfile })
+
+/** Answering the screen changes what the button opens, so availability is read again. */
+function useOnboardingAnswer<A extends string | { brandId: string }, R>(
+  fn: (input: A) => Promise<R>,
+) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: (_, input) =>
+      queryClient.invalidateQueries({
+        queryKey: AI_CONTENT_QUERY_KEYS.root(typeof input === 'string' ? input : input.brandId),
+      }),
+  })
+}
+
+export const useSkipAiOnboarding = () => useOnboardingAnswer(skipAiOnboarding)
+export const useConfirmAiOnboarding = () => useOnboardingAnswer(confirmAiOnboarding)
 
 /** A new turn changes the chat and the list of chats, so both are read again. */
 function useTurnMutation<A, R extends { conversationId: string }>(fn: (input: A) => Promise<R>) {

@@ -30,6 +30,8 @@ export const errorsEnUS = {
     AI_PROVIDER_FAILED: 'The AI service could not complete this request.',
     AI_QUOTA_EXCEEDED: 'Your plan has reached its AI limit for this month.',
     AI_SUGGESTION_USED: 'This suggestion has already been used.',
+    AI_ONBOARDING_BUSY: 'AI is already reading your posts. Please wait a moment.',
+    AI_ONBOARDING_DONE: 'This Brand has already had its sample suggestions.',
     AI_DISABLED: 'AI generation is turned off right now.',
     AI_INVALID_OUTPUT: 'The AI could not produce a usable result. Try again.',
     AI_GENERATION_ABANDONED: 'This generation could not finish. Try again.',

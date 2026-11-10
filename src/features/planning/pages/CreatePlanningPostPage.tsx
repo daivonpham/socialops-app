@@ -480,8 +480,6 @@ function PlanningComposerWorkspace({
         </div>
       </header>
 
-      {aiSuggestion ? <Alert variant="soft" tone="info" title={t('composer.fromAi')} /> : null}
-
       {saveContent.isError || submitError ? (
         <Alert
           variant="soft"

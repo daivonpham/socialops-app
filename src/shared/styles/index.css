@@ -370,7 +370,6 @@
   initial-value: 0deg;
 }
 
-
 /* Shared scrollbar treatment for every intentionally scrollable product surface. */
 @layer utilities {
   /* Always emitted because popup triggers receive this class at runtime. */
@@ -432,5 +431,38 @@
   }
   to {
     transform: translateX(250%);
+  }
+}
+
+/* AI chat: the card someone was just taken to lights up once, after the scroll has landed. When
+   motion is reduced the outline shows without fading, and the class is removed from code. */
+@layer components {
+  .ai-turn-flash {
+    @apply relative;
+  }
+
+  .ai-turn-flash::after {
+    @apply pointer-events-none absolute inset-0 rounded-xl ring-2 ring-ai-300;
+    content: '';
+    opacity: 0;
+    animation: ai-turn-flash 1.4s ease-out 250ms both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ai-turn-flash::after {
+      animation: none !important;
+      opacity: 1;
+    }
+  }
+}
+
+@keyframes ai-turn-flash {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  20%,
+  50% {
+    opacity: 1;
   }
 }
