@@ -154,6 +154,7 @@ export function useAttachments(brandId: string) {
     readyIds: items.flatMap((item) => (item.uploaded ? [item.uploaded.id] : [])),
     full: items.length >= ATTACHMENTS_MAX,
     uploading: items.some((item) => item.status === 'uploading'),
+    failed: items.some((item) => item.status === 'failed'),
   }
 }
 

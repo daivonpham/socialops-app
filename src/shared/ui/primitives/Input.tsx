@@ -1,9 +1,12 @@
-import type { ChangeEventHandler, ReactNode } from 'react'
+import type { ChangeEventHandler, FocusEventHandler, KeyboardEventHandler, ReactNode } from 'react'
 
 export type InputProps = {
   value?: string
   defaultValue?: string
   onChange?: ChangeEventHandler<HTMLInputElement>
+  onKeyDown?: KeyboardEventHandler<HTMLInputElement>
+  onBlur?: FocusEventHandler<HTMLInputElement>
+  autoFocus?: boolean
   placeholder?: string
   /** Leading visual inside the control, e.g. an email icon. */
   prefix?: ReactNode

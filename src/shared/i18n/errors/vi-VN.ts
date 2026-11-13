@@ -26,7 +26,12 @@ export const errorsViVN = {
     AI_AGENT_NOT_CONFIGURED: 'AI chưa được cấu hình.',
     AI_PROVIDER_UNAVAILABLE: 'Dịch vụ AI đang bận. Vui lòng thử lại sau ít phút.',
     AI_PROVIDER_FAILED: 'Dịch vụ AI không xử lý được yêu cầu này.',
-    AI_QUOTA_EXCEEDED: 'Gói của bạn đã dùng hết hạn mức AI trong tháng này.',
+    AI_QUOTA_EXCEEDED: 'Workspace đã dùng hết Credits AI trong tháng này.',
+    AI_MEMBER_QUOTA_EXCEEDED: 'Phần Credits của bạn tháng này đã hết.',
+    AI_PLAN_DISABLED: 'Gói hiện tại chưa có tính năng AI.',
+    AI_PLAN_SEATS_EXCEEDED:
+      'Workspace đang có nhiều thành viên hơn gói cho phép, nên tạm thời chỉ chủ sở hữu dùng được AI.',
+    AI_CREDITS_OVER_ALLOCATED: 'Tổng Credits đã cấp vượt quá số Credits của gói.',
     AI_SUGGESTION_USED: 'Gợi ý này đã được dùng rồi.',
     AI_ONBOARDING_BUSY: 'AI đang đọc bài của bạn, vui lòng đợi một lát.',
     AI_ONBOARDING_DONE: 'Brand này đã nhận gợi ý mẫu rồi.',
@@ -65,6 +70,7 @@ export const errorsViVN = {
 
     // Workspaces and invitations
     WORKSPACE_ACCESS_DENIED: 'Bạn không có quyền truy cập workspace này.',
+    WORKSPACE_SEAT_LIMIT_REACHED: 'Workspace đã đủ số thành viên gói cho phép.',
     WORKSPACE_OWNER_REQUIRED: 'Chỉ chủ sở hữu workspace mới làm được việc này.',
     OWNER_ROLE_PROTECTED: 'Không thể đổi hoặc xóa vai trò chủ sở hữu.',
     OWNER_REQUIRED_FOR_FULL_ACCESS: 'Chỉ chủ sở hữu mới cấp hoặc đổi được Toàn bộ quyền.',

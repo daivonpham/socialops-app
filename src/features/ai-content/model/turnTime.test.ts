@@ -1,21 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { turnTimeAgo } from './turnTime'
+import { turnDuration } from './turnTime'
 
-const NOW = Date.parse('2026-11-09T10:00:00.000Z')
-const ago = (ms: number): string => new Date(NOW - ms).toISOString()
+const START = '2026-11-09T10:00:00.000Z'
+const after = (ms: number): string => new Date(Date.parse(START) + ms).toISOString()
 
-describe('turnTimeAgo', () => {
-  it('leaves the first minute to the "just now" wording', () => {
-    expect(turnTimeAgo(ago(59_000), NOW, 'en-US')).toBeNull()
-    expect(turnTimeAgo(ago(-5_000), NOW, 'en-US')).toBeNull()
+describe('turnDuration', () => {
+  it('reads minutes and seconds in the language shown', () => {
+    expect(turnDuration(START, after(142_000), 'en-US')).toBe('2m 22s')
+    expect(turnDuration(START, after(142_000), 'vi-VN')).toBe('2 phút 22 giây')
   })
 
-  it('counts minutes, then hours, in the language shown', () => {
-    expect(turnTimeAgo(ago(5 * 60_000), NOW, 'en-US')).toBe('5 minutes ago')
-    expect(turnTimeAgo(ago(3 * 3_600_000), NOW, 'vi-VN')).toBe('3 giờ trước')
+  it('leaves out zero parts and rounds a quick turn up to a second', () => {
+    expect(turnDuration(START, after(120_000), 'en-US')).toBe('2m')
+    expect(turnDuration(START, after(3_660_000), 'en-US')).toBe('1h 1m')
+    expect(turnDuration(START, after(200), 'en-US')).toBe('1s')
   })
 
-  it('gives the date from a day on', () => {
-    expect(turnTimeAgo(ago(26 * 3_600_000), NOW, 'en-US')).toMatch(/11\/08\/2026/)
+  it('shows nothing without an end, or with one before the start', () => {
+    expect(turnDuration(START, null, 'en-US')).toBeNull()
+    expect(turnDuration(START, after(-5_000), 'en-US')).toBeNull()
   })
 })

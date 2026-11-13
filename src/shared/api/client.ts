@@ -24,6 +24,11 @@ export function setAccessToken(token: string | null) {
   accessToken = token
 }
 
+/** For requests made outside `apiClient`, such as an event stream read with `fetch`. */
+export function getAccessToken() {
+  return accessToken
+}
+
 export function onSessionExpired(handler: (() => void) | null) {
   sessionExpiredHandler = handler
 }

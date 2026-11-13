@@ -1,5 +1,21 @@
 export const aiContentEnUS = {
   button: 'Create with AI',
+  credits: {
+    title: 'Credits left',
+    unlimited: 'No limit',
+    empty: {
+      renews: 'Renews {{date}}',
+      workspace: {
+        title: 'Your AI assistant is out of energy this month',
+        description: 'This workspace has used its Credits. The assistant returns when they renew.',
+      },
+      member: {
+        title: 'You have used your Credits for this month',
+        description:
+          'The workspace still has Credits, but your share is used up. Ask the workspace owner for more, or wait until they renew.',
+      },
+    },
+  },
   beta: 'Beta',
   modal: {
     title: 'AI assistant',
@@ -50,22 +66,15 @@ export const aiContentEnUS = {
     startError: 'Could not start creating the post.',
   },
   progress: {
-    title: 'Creating your post',
-    steps: {
-      writing: 'Write the content',
-      editing: 'Make the requested changes',
-      image: 'Create the image',
-      checking: 'Check the profile',
-      finishing: 'Finish the post',
-    },
     running: {
+      analyzing: 'Thinking',
       writing: 'Writing the content',
       editing: 'Making the requested changes',
       image: 'Creating the image',
       checking: 'Checking the profile',
       finishing: 'Finishing the post',
     },
-    canClose: 'You can close this window. The result will be saved in your chat history.',
+    queued: 'Waiting in line',
     doneTitle: 'Your post is ready',
     doneDescription: 'Review it, change what you like, then save or send it for approval.',
     submittedDescription: 'It has been sent for approval. You can still open and edit it.',
@@ -111,11 +120,14 @@ export const aiContentEnUS = {
     yourImage: 'Your image',
     unreadable: 'Could not read {{names}}, so the AI did not use what it says.',
     imageMissing: 'The image could not be made. You can add one on the post screen.',
+    imagesMissing: '{{count}} more could not be created. You can add images in the editor.',
+    imagesPending: 'Creating the images. The buttons appear once they are done.',
+    finishing: 'Finishing the post.',
     use: 'Use',
     publishNow: 'Publish now',
     submit: 'Send for approval',
     anotherIdea: 'Try another idea',
-    justNow: 'Just now',
+    workedFor: 'Worked for {{duration}}',
     copy: 'Copy caption',
     copied: 'Copied',
     copyError: 'Could not copy the caption.',

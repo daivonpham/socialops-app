@@ -23,6 +23,7 @@ import {
   useDeleteWorkspaceMember,
   useLeaveWorkspace,
   useMemberAccessOptions,
+  useWorkspaceAiCredits,
   useWorkspaceMembers,
   useWorkspaces,
   type WorkspaceMemberDto,
@@ -30,15 +31,18 @@ import {
 import { AccessSummary } from '../components/AccessSummary'
 import { EditMemberModal } from '../components/EditMemberModal'
 import { InviteMembersSection } from '../components/InviteMembersSection'
+import { MemberCreditsModal } from '../components/MemberCreditsModal'
+import { WorkspaceCreditsSummary } from '../components/WorkspaceCreditsSummary'
 import { canManageMembers, canManageWorkspace, memberAccessInput } from '../model/member-role'
 import { useEnterWorkspace } from '../model/use-enter-workspace'
 import { useApiErrorMessage } from '@/shared/hooks'
+import { formatNumber, type AppLocale } from '@/shared/i18n'
 
 const PAGE_SIZE = 20
 
 /** Settings-style layout: section label on the left, its controls on the right. */
 export default function MembersPage() {
-  const { t } = useTranslation('workspaces')
+  const { t, i18n } = useTranslation('workspaces')
   const errorMessage = useApiErrorMessage('workspaces')
   const toast = useToast()
   const { workspaceId, setWorkspace } = useActiveWorkspace()
@@ -56,6 +60,13 @@ export default function MembersPage() {
   const workspace = workspaces.data?.find((item) => item.id === workspaceId)
   const actorRole = workspace?.role
   const canManage = canManageMembers(actorRole)
+  const isOwner = actorRole === 'owner'
+  const aiCredits = useWorkspaceAiCredits(workspaceId, isOwner)
+  const [creditsMember, setCreditsMember] = useState<WorkspaceMemberDto | null>(null)
+  const givenCredits = useMemo(
+    () => new Map((aiCredits.data?.allocations ?? []).map((row) => [row.memberId, row.credits])),
+    [aiCredits.data],
+  )
   // An Admin removes members from their own Brands/Pages only; the member stays in the Workspace.
   const removesFromWorkspace = canManageWorkspace(actorRole)
   // Page names/avatars are only readable by members who can manage access.
@@ -116,6 +127,43 @@ export default function MembersPage() {
           />
         ),
       },
+      ...(isOwner
+        ? ([
+            {
+              key: 'credits',
+              title: t('members.credits.column'),
+              width: 'default',
+              size: 170,
+              render: (_, member) => {
+                // Viewers cannot use AI, so there is nothing to give them.
+                if (member.role === 'viewer') return null
+                const given = givenCredits.get(member.id) ?? null
+                return (
+                  <span className="flex items-center gap-1">
+                    <span className="text-body-sm text-text-secondary">
+                      {given === null
+                        ? t('members.credits.shared')
+                        : formatNumber(given, i18n.language as AppLocale)}
+                    </span>
+                    <Tooltip title={t('members.credits.edit')}>
+                      <span className="inline-flex">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={<IconEdit aria-hidden />}
+                          aria-label={t('members.credits.editFor', {
+                            name: member.displayName || member.email,
+                          })}
+                          onClick={() => setCreditsMember(member)}
+                        />
+                      </span>
+                    </Tooltip>
+                  </span>
+                )
+              },
+            },
+          ] satisfies DataTableColumn<WorkspaceMemberDto>[])
+        : []),
       {
         key: 'actions',
         title: '',
@@ -156,7 +204,7 @@ export default function MembersPage() {
           ) : null,
       },
     ]
-  }, [accessOptions.data, brandNames, t, user?.id])
+  }, [accessOptions.data, brandNames, givenCredits, i18n.language, isOwner, t, user?.id])
 
   if (!workspaceId) return <EmptyState title={t('members.noWorkspace')} description="" />
   if (members.isPending || workspaces.isPending) return <SectionSkeleton rows={8} />
@@ -189,6 +237,15 @@ export default function MembersPage() {
             accessOptions={accessOptions.data}
             brandNames={brandNames}
           />
+        </SettingsSection>
+      ) : null}
+
+      {isOwner ? (
+        <SettingsSection
+          title={t('members.credits.title')}
+          description={t('members.credits.description')}
+        >
+          <WorkspaceCreditsSummary query={aiCredits} />
         </SettingsSection>
       ) : null}
 
@@ -230,6 +287,14 @@ export default function MembersPage() {
         </SettingsSection>
       ) : null}
 
+      {creditsMember ? (
+        <MemberCreditsModal
+          workspaceId={workspaceId}
+          member={creditsMember}
+          current={givenCredits.get(creditsMember.id) ?? null}
+          onClose={() => setCreditsMember(null)}
+        />
+      ) : null}
       {editMember ? (
         <EditMemberModal
           workspaceId={workspaceId}

@@ -31,6 +31,7 @@ import type {
 } from '../api'
 import {
   approvalStatusLabelKey,
+  approvalTransitions,
   createComposerDraftFromContent,
   PLANNING_APPROVAL_STATUS_TONE,
   PLANNING_STATUS_TONE,
@@ -41,6 +42,7 @@ import { FacebookPostPreview } from './preview/FacebookPostPreview'
 import { TikTokPostPreview } from './preview/TikTokPostPreview'
 import { CaptionClamp } from './CaptionClamp'
 import { PlanningStatusTag } from './PlanningStatusTag'
+import { ApprovalButtons } from './ApprovalStatusSelect'
 import { PLANNING_ACCESS } from '../config/planning-access'
 
 export function PlanningPostModal({
@@ -82,6 +84,11 @@ export function PlanningPostModal({
   // edit or delete what is published) need `publishing.publish_direct`.
   const canWrite = hasPermission(granted, PLANNING_ACCESS.publish[0])
   const canPublishDirect = hasPermission(granted, PLANNING_ACCESS.publishDirect[0])
+  const canApprove = hasPermission(granted, PLANNING_ACCESS.approve[0])
+  // Waiting on this person: approving is then the main action, not editing.
+  const awaitingApproval =
+    content !== null &&
+    approvalTransitions(content, { canApprove, canSubmit: false }).includes('approved')
   const timeZone = getLocalTimeZone()
   const firstPublished = content?.publications?.find((item) => item.status === 'published') ?? null
   const supportsPublishedEdit =
@@ -287,13 +294,14 @@ export function PlanningPostModal({
               ) : null}
               {canEdit ? (
                 <Button
-                  variant="primary"
+                  variant={awaitingApproval ? 'secondary' : 'primary'}
                   icon={<IconEdit aria-hidden />}
                   onClick={() => onEdit(content)}
                 >
                   {t('detail.edit')}
                 </Button>
               ) : null}
+              <ApprovalButtons content={content} canApprove={canApprove} />
             </div>
           ) : null
         }

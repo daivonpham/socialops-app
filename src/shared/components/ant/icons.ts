@@ -104,6 +104,7 @@ export {
   LuStore as IconStore,
   LuPenLine as IconPenLine,
   LuPencil as IconPencil,
+  LuSquarePen as IconCompose,
   LuFileText as IconNote,
   LuLayers as IconLayersLine,
   LuShieldCheck as IconShieldCheck,

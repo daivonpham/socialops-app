@@ -4,7 +4,9 @@ import {
   deleteWorkspace,
   getWorkspaces,
   updateWorkspace,
+  getWorkspaceAiCredits,
   getWorkspaceMembers,
+  updateMemberAiCredits,
   updateWorkspaceMember,
   deleteWorkspaceMember,
   assignWorkspaceMemberBrand,
@@ -27,6 +29,7 @@ export const WORKSPACE_QUERY_KEYS = {
     ['workspaces', workspaceId, 'members', page] as const,
   accessOptions: (workspaceId: string | null) =>
     ['workspaces', workspaceId, 'access-options'] as const,
+  aiCredits: (workspaceId: string | null) => ['workspaces', workspaceId, 'ai-credits'] as const,
   invitation: (token: string | null) => ['invitations', token] as const,
   myInvitations: () => ['invitations', 'mine'] as const,
 }
@@ -56,6 +59,23 @@ export function useWorkspaceMembers(workspaceId: string | null, page: number) {
     queryKey: WORKSPACE_QUERY_KEYS.members(workspaceId, page),
     queryFn: () => getWorkspaceMembers(workspaceId!, page),
     enabled: Boolean(workspaceId),
+  })
+}
+
+export function useWorkspaceAiCredits(workspaceId: string | null, enabled: boolean) {
+  return useQuery({
+    queryKey: WORKSPACE_QUERY_KEYS.aiCredits(workspaceId),
+    queryFn: () => getWorkspaceAiCredits(workspaceId!),
+    enabled: workspaceId !== null && enabled,
+  })
+}
+
+export function useUpdateMemberAiCredits() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: updateMemberAiCredits,
+    onSuccess: (data, { workspaceId }) =>
+      queryClient.setQueryData(WORKSPACE_QUERY_KEYS.aiCredits(workspaceId), data),
   })
 }
 

@@ -377,21 +377,26 @@
     @apply border-border-focus ring-2 ring-brand-100;
   }
 
-  .app-scrollbar {
+  .app-scrollbar,
+  /* antd lists that fit its row estimate scroll natively; they get the same thin bar. */
+  .ant-select-dropdown .rc-virtual-list-holder {
     scrollbar-width: thin;
     scrollbar-color: theme(colors.border.DEFAULT) transparent;
   }
 
-  .app-scrollbar::-webkit-scrollbar {
+  .app-scrollbar::-webkit-scrollbar,
+  .ant-select-dropdown .rc-virtual-list-holder::-webkit-scrollbar {
     width: 10px;
     height: 10px;
   }
 
-  .app-scrollbar::-webkit-scrollbar-track {
+  .app-scrollbar::-webkit-scrollbar-track,
+  .ant-select-dropdown .rc-virtual-list-holder::-webkit-scrollbar-track {
     background: transparent;
   }
 
-  .app-scrollbar::-webkit-scrollbar-thumb {
+  .app-scrollbar::-webkit-scrollbar-thumb,
+  .ant-select-dropdown .rc-virtual-list-holder::-webkit-scrollbar-thumb {
     min-width: 32px;
     min-height: 32px;
     border: 3px solid transparent;
@@ -400,37 +405,51 @@
     background-clip: content-box;
   }
 
-  .app-scrollbar::-webkit-scrollbar-thumb:hover {
+  .app-scrollbar::-webkit-scrollbar-thumb:hover,
+  .ant-select-dropdown .rc-virtual-list-holder::-webkit-scrollbar-thumb:hover {
     @apply bg-text-disabled;
   }
 
-  .app-scrollbar::-webkit-scrollbar-corner {
+  .app-scrollbar::-webkit-scrollbar-corner,
+  .ant-select-dropdown .rc-virtual-list-holder::-webkit-scrollbar-corner {
     background: transparent;
   }
 }
 
-/* AI generation: a highlight sweeps along the track while a turn is being made. When motion is
-   reduced it rests in the middle, so the bar still reads as "in progress". */
+/* AI chat: the line saying what the AI is doing is dark text with a light sweeping across it,
+   left to right. When motion is reduced it is plain dark text. */
 @layer components {
-  .ai-progress-sweep {
-    @apply absolute inset-y-0 start-0 w-2/5 rounded-full bg-linear-to-r from-transparent via-ai-400 to-transparent;
-    animation: ai-progress-sweep 1.6s ease-in-out infinite;
+  .ai-shimmer-text {
+    color: transparent;
+    background-image: linear-gradient(
+      90deg,
+      theme('colors.text.primary') 0%,
+      theme('colors.text.primary') 40%,
+      theme('colors.text.disabled') 50%,
+      theme('colors.text.primary') 60%,
+      theme('colors.text.primary') 100%
+    );
+    background-size: 250% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    animation: ai-shimmer-text 2s linear infinite;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ai-progress-sweep {
+    .ai-shimmer-text {
       animation: none !important;
-      transform: translateX(75%);
+      background-image: none;
+      @apply text-text-primary;
     }
   }
 }
 
-@keyframes ai-progress-sweep {
+@keyframes ai-shimmer-text {
   from {
-    transform: translateX(-100%);
+    background-position: 100% 0;
   }
   to {
-    transform: translateX(250%);
+    background-position: 0% 0;
   }
 }
 

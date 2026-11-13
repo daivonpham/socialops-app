@@ -3,6 +3,22 @@ import type { aiContentEnUS } from './en-US'
 
 export const aiContentViVN = {
   button: 'Tạo bằng AI',
+  credits: {
+    title: 'Credits còn lại',
+    unlimited: 'Không giới hạn',
+    empty: {
+      renews: 'Làm mới {{date}}',
+      workspace: {
+        title: 'Trợ lý AI đã hết năng lượng tháng này',
+        description: 'Workspace đã dùng hết Credits. Trợ lý sẽ trở lại khi Credits được làm mới.',
+      },
+      member: {
+        title: 'Bạn đã dùng hết Credits của mình tháng này',
+        description:
+          'Workspace vẫn còn Credits nhưng phần của bạn đã hết. Hãy nhờ chủ Workspace cấp thêm, hoặc đợi đến kỳ làm mới.',
+      },
+    },
+  },
   beta: 'Beta',
   modal: {
     title: 'Trợ lý AI',
@@ -52,22 +68,15 @@ export const aiContentViVN = {
     startError: 'Không bắt đầu tạo bài được.',
   },
   progress: {
-    title: 'Đang tạo bài',
-    steps: {
-      writing: 'Viết nội dung',
-      editing: 'Sửa theo yêu cầu',
-      image: 'Tạo hình ảnh',
-      checking: 'Kiểm tra hồ sơ',
-      finishing: 'Hoàn thiện bài viết',
-    },
     running: {
+      analyzing: 'Đang suy nghĩ',
       writing: 'Đang viết nội dung',
       editing: 'Đang sửa theo yêu cầu',
       image: 'Đang tạo hình ảnh',
       checking: 'Đang kiểm tra hồ sơ',
       finishing: 'Đang hoàn thiện bài viết',
     },
-    canClose: 'Bạn có thể đóng cửa sổ. Kết quả sẽ được lưu trong lịch sử trò chuyện.',
+    queued: 'Đang xếp hàng',
     doneTitle: 'Bài đã sẵn sàng',
     doneDescription: 'Xem lại, sửa tuỳ ý rồi lưu hoặc gửi duyệt.',
     submittedDescription: 'Bài đã được gửi duyệt. Bạn vẫn có thể mở và sửa.',
@@ -112,11 +121,14 @@ export const aiContentViVN = {
     yourImage: 'Ảnh bạn gửi',
     unreadable: 'Không đọc được file {{names}}, nên AI chưa dùng nội dung của file này.',
     imageMissing: 'Chưa tạo được hình. Bạn có thể thêm hình trong màn soạn bài.',
+    imagesMissing: 'Còn {{count}} hình chưa tạo được. Bạn có thể thêm hình trong màn soạn bài.',
+    imagesPending: 'Đang tạo hình. Các nút sẽ hiện khi xong.',
+    finishing: 'Đang hoàn thiện bài viết.',
     use: 'Sử dụng',
     publishNow: 'Đăng ngay',
     submit: 'Gửi duyệt',
     anotherIdea: 'Thử ý khác',
-    justNow: 'Vừa xong',
+    workedFor: 'Đã xử lý trong {{duration}}',
     copy: 'Sao chép caption',
     copied: 'Đã sao chép',
     copyError: 'Không sao chép được caption.',

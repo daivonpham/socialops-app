@@ -1,4 +1,5 @@
 import { apiClient } from '@/shared/api/client'
+import { readEventStream } from '@/shared/api/eventStream'
 import type { CommonApiResponse } from '@/shared/api/types'
 import type {
   AiAttachment,
@@ -10,6 +11,7 @@ import type {
   AiProfileSuggestion,
   ConfirmAiOnboardingInput,
   AiPostIntent,
+  AiStreamMessage,
   AiTemplateOption,
   BrandAiProfile,
   StartAiGenerationInput,
@@ -198,4 +200,27 @@ export async function uploadAiAttachment(
 /** Lets the API delete an attachment the customer removed. */
 export async function releaseAiAttachment(brandId: string, attachmentId: string) {
   await apiClient.delete(`${base(brandId)}/attachments/${attachmentId}`)
+}
+
+/** The text of a running turn as it is written, until the turn ends or `signal` aborts. */
+export function streamAiGeneration(
+  brandId: string,
+  generationId: string,
+  onMessage: (message: AiStreamMessage) => void,
+  signal: AbortSignal,
+) {
+  return readEventStream(
+    `${base(brandId)}/generations/${generationId}/stream`,
+    (message) => {
+      if (
+        typeof message === 'object' &&
+        message !== null &&
+        'kind' in message &&
+        'seq' in message &&
+        typeof message.seq === 'number'
+      )
+        onMessage(message as AiStreamMessage)
+    },
+    signal,
+  )
 }

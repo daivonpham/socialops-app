@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { isApiErrorCode } from '@/shared/api/errors'
 import { useAuth } from '@/shared/auth'
 import { useApiErrorMessage } from '@/shared/hooks'
+import { formatDate } from '@/shared/i18n'
 import {
   Alert,
   ConfirmDialog,
@@ -23,6 +24,7 @@ import {
   useAiConversation,
   useAiTemplates,
   useFollowUpAiGeneration,
+  useRefreshAiAvailability,
   usePostAiSuggestion,
   useStartAiGeneration,
   type AiAvailability,
@@ -31,12 +33,18 @@ import {
   type AiSuggestionHandoff,
   type AiTemplateOption,
 } from '../api'
-import { readOpenChat, rememberOpenChat } from '../model/chatMemory'
+import {
+  readChosenPages,
+  readOpenChat,
+  rememberChosenPages,
+  rememberOpenChat,
+} from '../model/chatMemory'
 import { AiSidebar } from './AiSidebar'
 import { AiChatTurn, type AiTurnActions } from './AiChatTurn'
 import { AiMark } from './AiMark'
 import assistantBackground from '@/assets/ai/assistant-background.svg'
 import assistantRobot from '@/assets/ai/assistant-robot.svg'
+import { AiCreditsEmpty } from './AiCreditsEmpty'
 import { AiOnboarding } from './AiOnboarding'
 import { BrandAiProfileModal } from './BrandAiProfileModal'
 import { AttachButton, AttachmentList, useAttachments } from './ComposerAttachments'
@@ -82,10 +90,11 @@ export function AiCreateModal({
   onCreated: () => void
   onClose: () => void
 }) {
-  const { t } = useTranslation('aiContent')
+  const { t, i18n } = useTranslation('aiContent')
   const errorMessage = useApiErrorMessage('aiContent')
   const toast = useToast()
   const { user } = useAuth()
+  const refreshCredits = useRefreshAiAvailability(brandId)
   const templates = useAiTemplates(brandId)
   const start = useStartAiGeneration()
   const followUp = useFollowUpAiGeneration()
@@ -99,6 +108,8 @@ export function AiCreateModal({
   const [collapsed, setCollapsed] = useState(false)
   const [conversationId, setConversationId] = useState(() => readOpenChat(user?.id, brandId))
   const [editing, setEditing] = useState<AiGeneration | null>(null)
+  // A request sent while a file is still uploading goes out as soon as the uploads finish.
+  const [queued, setQueued] = useState(false)
   const [publishing, setPublishing] = useState<{ turn: AiGeneration; pageIds: string[] } | null>(
     null,
   )
@@ -118,6 +129,10 @@ export function AiCreateModal({
   // One Page is simply used; otherwise the Page Planning is filtered to, or none yet.
   const initialPage =
     pages.length === 1 ? pages[0] : pages.find((page) => page.id === defaultPageId)
+  // Without either, the Pages chosen last time, of those still usable.
+  const [rememberedPages] = useState(() =>
+    readChosenPages(user?.id, brandId).filter((id) => pages.some((page) => page.id === id)),
+  )
   // No error messages here: the send button stays off until the request is complete.
   const watchedPages = Form.useWatch('pageIds', form)
   const watchedBrief = Form.useWatch('brief', form)
@@ -128,12 +143,28 @@ export function AiCreateModal({
       extraFields.every((field) => !field.required || filled(field.key))
   const sending = start.isPending || followUp.isPending
   const sendError = start.error ?? followUp.error
+  const creditsGone = isApiErrorCode(sendError, 'AI_MEMBER_QUOTA_EXCEEDED')
+    ? 'member'
+    : isApiErrorCode(sendError, 'AI_QUOTA_EXCEEDED')
+      ? 'workspace'
+      : null
+
+  // A failed upload stops the queued request, so the customer sees it and can retry or remove it.
+  useEffect(() => {
+    if (!queued || attachments.uploading) return
+    setQueued(false)
+    if (!attachments.failed) form.submit()
+  }, [queued, attachments.uploading, attachments.failed, form])
 
   // Sending for approval needs Pages, so taking the last one away turns it off.
   useEffect(() => {
     if (watchedPages?.length === 0 && form.getFieldValue('autoSubmit'))
       form.setFieldValue('autoSubmit', false)
   }, [watchedPages, form])
+
+  useEffect(() => {
+    if (watchedPages) rememberChosenPages(user?.id, brandId, watchedPages)
+  }, [watchedPages, user?.id, brandId])
 
   // Reopening lands where the dialog was closed (D14).
   useEffect(
@@ -149,14 +180,17 @@ export function AiCreateModal({
   // A turn sent for approval made a post: Planning shows it from now on.
   useEffect(() => {
     let created = false
+    let finished = false
     for (const turn of turns) {
       const before = statuses.current.get(turn.id)
       if (before && before !== 'succeeded' && turn.status === 'succeeded' && turn.contentId)
         created = true
+      if (before && before !== turn.status && !unfinished(turn)) finished = true
       statuses.current.set(turn.id, turn.status)
     }
     if (created) onCreated()
-  }, [turns, onCreated])
+    if (finished) refreshCredits()
+  }, [turns, onCreated, refreshCredits])
 
   // The newest turn stays in view.
   const lastTurn = turns.at(-1)
@@ -183,6 +217,7 @@ export function AiCreateModal({
 
   const afterSend = (nextConversationId: string) => {
     setConversationId(nextConversationId)
+    refreshCredits()
     setRequestKey(newKey())
     setEditing(null)
     setTemplateKey(FREEFORM)
@@ -190,7 +225,11 @@ export function AiCreateModal({
   }
 
   const submit = async (values: Values) => {
-    if (!ready || attachments.uploading || sending || working) return
+    if (!ready || sending || working) return
+    if (attachments.uploading) {
+      setQueued(true)
+      return
+    }
     const text = values.brief?.[TOPIC_KEY]?.trim() ?? ''
     let started: { conversationId: string }
     try {
@@ -343,6 +382,7 @@ export function AiCreateModal({
         {turns.map((turn) => (
           <AiChatTurn
             key={turn.id}
+            brandId={brandId}
             turn={turn}
             pages={pages}
             templates={templates.data}
@@ -394,7 +434,7 @@ export function AiCreateModal({
             layout="vertical"
             requiredMark={false}
             initialValues={{
-              pageIds: initialPage ? [initialPage.id] : [],
+              pageIds: initialPage ? [initialPage.id] : rememberedPages,
               brief: {},
               autoSubmit: false,
             }}
@@ -415,6 +455,7 @@ export function AiCreateModal({
                 pages={pages}
                 hasProfile={availability.hasProfile}
                 historyDays={availability.historyDays}
+                credits={availability}
                 currentId={conversationId}
                 collapsed={collapsed}
                 background={assistantBackground}
@@ -441,11 +482,18 @@ export function AiCreateModal({
                 <div ref={composer} className="px-6 pt-2 pb-5">
                   {sendError ? (
                     <div className="mb-3">
-                      <Alert
-                        variant="soft"
-                        tone="error"
-                        title={errorMessage(sendError, t('form.startError'))}
-                      />
+                      {creditsGone ? (
+                        <AiCreditsEmpty
+                          whose={creditsGone}
+                          resetDate={formatDate(availability.creditsResetAt, i18n.language)}
+                        />
+                      ) : (
+                        <Alert
+                          variant="soft"
+                          tone="error"
+                          title={errorMessage(sendError, t('form.startError'))}
+                        />
+                      )}
                     </div>
                   ) : null}
                   <div className="rounded-xl border border-border-subtle bg-bg-surface px-4 pt-3 pb-2 shadow-xs transition-colors focus-within:border-ai-400">
@@ -502,8 +550,8 @@ export function AiCreateModal({
                       />
                       <SendButton
                         label={t('form.submit')}
-                        loading={sending}
-                        disabled={!ready || attachments.uploading || working}
+                        loading={sending || queued}
+                        disabled={!ready || working}
                       />
                     </div>
                   </div>

@@ -28,6 +28,16 @@ export interface WorkspaceMemberDto {
   createdAt: string
 }
 
+/** Only the Owner reads this, and it says nothing about what one member used. */
+export type WorkspaceAiCredits = {
+  /** Null means no limit. */
+  monthlyCredits: number | null
+  remaining: number | null
+  resetsAt: string
+  /** A null `credits` shares what is not handed out. */
+  allocations: Array<{ memberId: string; credits: number | null }>
+}
+
 export type MemberBrandAccessDto = {
   brandId: string
   pageAccess: 'ALL' | 'SELECTED'

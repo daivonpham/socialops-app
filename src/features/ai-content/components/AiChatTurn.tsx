@@ -17,6 +17,7 @@ import {
   Popover,
   Image,
   ImagePreviewGroup,
+  Spin,
   Tabs,
   useToast,
 } from '@/shared/ui'
@@ -24,12 +25,14 @@ import {
   AI_GENERAL_CAPTION_KEY,
   type AiAvailability,
   type AiGeneration,
+  type AiPartialSuggestion,
   type AiPostIntent,
+  type AiLiveText,
   type AiTemplateOption,
+  useAiLiveText,
 } from '../api'
-import { AiGenerationProgress } from './AiGenerationProgress'
-import { turnTimeAgo } from '../model/turnTime'
-import { AiMark } from './AiMark'
+import { AiGenerationProgress, AiWorking } from './AiGenerationProgress'
+import { turnDuration } from '../model/turnTime'
 import { PageCheckList } from './PageCheckList'
 
 export type AiTurnActions = {
@@ -171,19 +174,37 @@ function IconAction({
   )
 }
 
-/** How long ago the turn was made, kept current while the chat stays open. */
-function TurnTime({ createdAt }: { createdAt: string }) {
+/**
+ * "Worked for 2m 22s" above the answer. While the AI works it counts up each second from when
+ * the request was sent; nothing shows on finished turns from before the end time was kept.
+ */
+function WorkedFor({ turn }: { turn: AiGeneration }) {
   const { t, i18n } = useTranslation('aiContent')
+  const unfinished = turn.status === 'queued' || turn.status === 'running'
+  const now = useSecondTick(unfinished)
+  // A clock a little behind the server's still reads as a second, not as nothing.
+  const end = unfinished
+    ? new Date(Math.max(now, Date.parse(turn.createdAt))).toISOString()
+    : turn.finishedAt
+  const duration = turnDuration(turn.createdAt, end, i18n.resolvedLanguage ?? 'vi-VN')
+  if (!duration) return null
+  return (
+    <p className="border-b border-border-subtle pb-3 text-body-sm text-text-tertiary">
+      {t('chat.workedFor', { duration })}
+    </p>
+  )
+}
+
+/** The time now, renewed each second while `active`. */
+function useSecondTick(active: boolean): number {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 60_000)
+    if (!active) return
+    setNow(Date.now())
+    const timer = window.setInterval(() => setNow(Date.now()), 1000)
     return () => window.clearInterval(timer)
-  }, [])
-  return (
-    <time dateTime={createdAt} className="text-caption text-text-secondary">
-      {turnTimeAgo(createdAt, now, i18n.resolvedLanguage ?? 'vi-VN') ?? t('chat.justNow')}
-    </time>
-  )
+  }, [active])
+  return now
 }
 
 /**
@@ -316,11 +337,8 @@ function SuggestionCard({
   }
 
   return (
-    <div className="grid gap-3">
-      <div
-        data-turn-card
-        className="grid gap-3 rounded-xl border border-border-subtle bg-bg-surface p-3 shadow-xs"
-      >
+    <div className="grid gap-4">
+      <div data-turn-card className="grid gap-3 rounded-xl">
         {ids.length > 1 ? (
           <Tabs
             variant="line"
@@ -358,6 +376,11 @@ function SuggestionCard({
         {turn.imageErrorCode ? (
           <p className="text-body-sm text-warning-700">{t('chat.imageMissing')}</p>
         ) : null}
+        {turn.missingImages ? (
+          <p className="text-body-sm text-warning-700">
+            {t('chat.imagesMissing', { count: turn.missingImages })}
+          </p>
+        ) : null}
         {turn.usedBestPosts ? (
           <p className="text-body-sm text-text-secondary">{t('chat.basedOnBestPosts')}</p>
         ) : null}
@@ -366,63 +389,177 @@ function SuggestionCard({
             {t('chat.unreadable', { names: turn.unreadableFiles.join(', ') })}
           </p>
         ) : null}
-        <div className="flex items-center justify-between gap-3">
-          <TurnTime createdAt={turn.createdAt} />
-          <div className="flex items-center gap-2">
-            <IconAction label={t(copied ? 'chat.copied' : 'chat.copy')} onClick={() => void copy()}>
-              {copied ? <IconCheckSolid /> : <IconCopy />}
-            </IconAction>
-            {used ? null : (
-              <>
-                <span aria-hidden className="h-3 w-px bg-border-subtle" />
-                <IconAction
-                  label={t('chat.anotherIdea')}
-                  disabled={busy}
-                  onClick={() => actions.onAnotherIdea(turn)}
-                >
-                  <IconRefresh />
-                </IconAction>
-              </>
-            )}
-          </div>
+      </div>
+      {/* The actions on the left, copy and another idea at the far right. */}
+      <div className="flex flex-wrap items-center gap-2">
+        {used ? (
+          <>
+            <span className="inline-flex items-center gap-1 rounded-full bg-success-50 px-3 py-1 text-label-sm text-success-700">
+              <IconCheck aria-hidden />
+              {t('chat.used')}
+            </span>
+            <ActionButton icon={<IconOpen />} onClick={() => actions.onOpenContent(used)}>
+              {t('progress.open')}
+            </ActionButton>
+          </>
+        ) : (
+          <>
+            <ActionButton primary icon={<IconCheck />} onClick={() => actions.onUse(turn)}>
+              {t('chat.use')}
+            </ActionButton>
+            <PostButton
+              turn={turn}
+              pages={pages}
+              canPublishDirect={canPublishDirect}
+              busy={busy}
+              onPost={actions.onPost}
+            />
+            <ActionButton
+              icon={<IconEdit />}
+              disabled={busy || editing}
+              onClick={() => actions.onEdit(turn)}
+            >
+              {t('chat.edit')}
+            </ActionButton>
+          </>
+        )}
+        <div className="ms-auto flex items-center gap-2">
+          <IconAction label={t(copied ? 'chat.copied' : 'chat.copy')} onClick={() => void copy()}>
+            {copied ? <IconCheckSolid /> : <IconCopy />}
+          </IconAction>
+          {used ? null : (
+            <>
+              <span aria-hidden className="h-3 w-px bg-border-subtle" />
+              <IconAction
+                label={t('chat.anotherIdea')}
+                disabled={busy}
+                onClick={() => actions.onAnotherIdea(turn)}
+              >
+                <IconRefresh />
+              </IconAction>
+            </>
+          )}
         </div>
       </div>
-      {used ? (
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="inline-flex items-center gap-1 rounded-full bg-success-50 px-3 py-1 text-label-sm text-success-700">
-            <IconCheck aria-hidden />
-            {t('chat.used')}
-          </span>
-          <ActionButton icon={<IconOpen />} onClick={() => actions.onOpenContent(used)}>
-            {t('progress.open')}
-          </ActionButton>
-        </div>
-      ) : (
-        <div className="flex flex-wrap gap-2">
-          <ActionButton primary icon={<IconCheck />} onClick={() => actions.onUse(turn)}>
-            {t('chat.use')}
-          </ActionButton>
-          <PostButton
-            turn={turn}
-            pages={pages}
-            canPublishDirect={canPublishDirect}
-            busy={busy}
-            onPost={actions.onPost}
+    </div>
+  )
+}
+
+/** The images ready so far, and a tile for each one still being made. */
+function PartialImages({ partial }: { partial: AiPartialSuggestion }) {
+  const { t } = useTranslation('aiContent')
+  if (!partial.images.length && !partial.pendingImages) return null
+  return (
+    <ul className="flex flex-wrap gap-2" aria-label={t('chat.images')}>
+      {partial.images.map((image) => (
+        <li key={image.id}>
+          <Image
+            src={image.url}
+            alt={image.name}
+            wrapperClassName="!block size-[120px] overflow-hidden rounded-lg border border-border-subtle"
+            className="!size-full cursor-pointer object-cover"
           />
-          <ActionButton
-            icon={<IconEdit />}
-            disabled={busy || editing}
-            onClick={() => actions.onEdit(turn)}
-          >
-            {t('chat.edit')}
-          </ActionButton>
+        </li>
+      ))}
+      {Array.from({ length: partial.pendingImages }, (_, index) => (
+        <li
+          key={index}
+          className="flex size-[120px] items-center justify-center rounded-lg border border-ai-100 bg-ai-50"
+        >
+          <Spin size="sm" tone="ai" indicator="ring" />
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/**
+ * A suggestion whose words are ready and whose images are not. It has no actions yet: what would
+ * be posted is not settled until the images are.
+ */
+function PartialSuggestion({
+  turn,
+  partial,
+  captions,
+  pages,
+}: {
+  turn: AiGeneration
+  partial: AiPartialSuggestion
+  captions: Record<string, string>
+  pages: AiAvailability['pages']
+}) {
+  const { t } = useTranslation('aiContent')
+  const ids = turn.socialAccountIds.length ? turn.socialAccountIds : [AI_GENERAL_CAPTION_KEY]
+  const nameOf = (id: string) => pages.find((page) => page.id === id)?.name ?? t('chat.unknownPage')
+  return (
+    <div className="grid gap-3">
+      {ids.map((id) => (
+        <div key={id} className="grid gap-1">
+          {ids.length > 1 ? (
+            <span className="text-label-sm text-text-tertiary">{nameOf(id)}</span>
+          ) : null}
+          <p className="text-body-sm whitespace-pre-wrap text-text-primary">{captions[id] ?? ''}</p>
         </div>
-      )}
+      ))}
+      <PartialImages partial={partial} />
+      <p aria-live="polite" className="text-body-sm text-text-secondary">
+        {t(partial.pendingImages ? 'chat.imagesPending' : 'chat.finishing')}
+      </p>
+    </div>
+  )
+}
+
+/**
+ * The AI's words as it writes them. Not final: the checks may still take them back, so there are
+ * no actions yet, only what it is doing now.
+ */
+function LiveText({
+  turn,
+  live,
+  pages,
+}: {
+  turn: AiGeneration
+  live: AiLiveText
+  pages: AiAvailability['pages']
+}) {
+  const { t } = useTranslation('aiContent')
+  const caret = (
+    <span
+      aria-hidden
+      className="ms-[2px] inline-block h-[1em] w-[2px] animate-pulse bg-ai-500 align-text-bottom"
+    />
+  )
+  if (live.kind === 'reply')
+    return (
+      <p className="text-body-sm whitespace-pre-wrap text-text-primary">
+        {live.text}
+        {caret}
+      </p>
+    )
+  const ids = Object.keys(live.captions)
+  const nameOf = (id: string) => pages.find((page) => page.id === id)?.name ?? t('chat.unknownPage')
+  const step = turn.phase === 'checking' ? 'checking' : turn.kind === 'edit' ? 'editing' : 'writing'
+  return (
+    <div className="grid gap-3">
+      {ids.map((id, index) => (
+        <div key={id} className="grid gap-1">
+          {ids.length > 1 ? (
+            <span className="text-label-sm text-text-tertiary">{nameOf(id)}</span>
+          ) : null}
+          <p className="text-body-sm whitespace-pre-wrap text-text-primary">
+            {live.captions[id]}
+            {index === ids.length - 1 ? caret : null}
+          </p>
+        </div>
+      ))}
+      {turn.partial ? <PartialImages partial={turn.partial} /> : null}
+      <AiWorking label={t(`progress.running.${step}`)} />
     </div>
   )
 }
 
 function AssistantMessage({
+  brandId,
   turn,
   pages,
   canPublishDirect,
@@ -430,6 +567,7 @@ function AssistantMessage({
   editing,
   actions,
 }: {
+  brandId: string
   turn: AiGeneration
   pages: AiAvailability['pages']
   canPublishDirect: boolean
@@ -439,10 +577,32 @@ function AssistantMessage({
 }) {
   const { t } = useTranslation('aiContent')
   const errorMessage = useApiErrorMessage('aiContent')
+  const unfinished = turn.status === 'queued' || turn.status === 'running'
+  // "Send for approval" shows no suggestion on the way, and checked captions replace the stream.
+  const live = useAiLiveText(
+    brandId,
+    turn.id,
+    unfinished && !turn.autoSubmit && !turn.partial?.captions,
+  )
 
   let body: ReactNode
-  if (turn.status === 'queued' || turn.status === 'running')
-    body = <AiGenerationProgress turn={turn} />
+  if (unfinished && turn.partial?.captions)
+    body = (
+      <PartialSuggestion
+        turn={turn}
+        partial={turn.partial}
+        captions={turn.partial.captions}
+        pages={pages}
+      />
+    )
+  else if (unfinished && live) body = <LiveText turn={turn} live={live} pages={pages} />
+  else if (unfinished)
+    body = (
+      <div className="grid gap-3">
+        <AiGenerationProgress turn={turn} />
+        {turn.partial ? <PartialImages partial={turn.partial} /> : null}
+      </div>
+    )
   else if (turn.status === 'failed')
     body = (
       <div>
@@ -453,6 +613,8 @@ function AssistantMessage({
         />
       </div>
     )
+  else if (turn.reply)
+    body = <p className="text-body-sm whitespace-pre-wrap text-text-primary">{turn.reply}</p>
   else if (turn.autoSubmit && turn.contentId) {
     const contentId = turn.contentId
     body = (
@@ -468,6 +630,11 @@ function AssistantMessage({
         </div>
         {turn.imageErrorCode ? (
           <p className="text-body-sm text-warning-700">{t('progress.imageMissing')}</p>
+        ) : null}
+        {turn.missingImages ? (
+          <p className="text-body-sm text-warning-700">
+            {t('chat.imagesMissing', { count: turn.missingImages })}
+          </p>
         ) : null}
         <div>
           <ActionButton icon={<IconOpen />} onClick={() => actions.onOpenContent(contentId)}>
@@ -490,20 +657,16 @@ function AssistantMessage({
   else body = <p className="text-body-sm text-text-secondary">{t('progress.failed')}</p>
 
   return (
-    <div data-turn-answer={turn.id} className="flex scroll-mt-12 items-start gap-3">
-      <span
-        aria-hidden
-        className="flex size-8 shrink-0 items-center justify-center rounded-full border border-ai-100 bg-ai-50"
-      >
-        <AiMark className="w-[20px]" />
-      </span>
-      <div className="min-w-0 flex-1">{body}</div>
+    <div data-turn-answer={turn.id} className="grid min-w-0 scroll-mt-12 gap-4">
+      <WorkedFor turn={turn} />
+      {body}
     </div>
   )
 }
 
 /** One turn of the chat: the request on the right, the answer on the left. */
 export function AiChatTurn({
+  brandId,
   turn,
   pages,
   templates,
@@ -512,6 +675,7 @@ export function AiChatTurn({
   editing,
   actions,
 }: {
+  brandId: string
   turn: AiGeneration
   pages: AiAvailability['pages']
   templates: AiTemplateOption[] | undefined
@@ -523,9 +687,10 @@ export function AiChatTurn({
   actions: AiTurnActions
 }) {
   return (
-    <li className="grid gap-4">
+    <li className="grid gap-8">
       <UserMessage turn={turn} templates={templates} />
       <AssistantMessage
+        brandId={brandId}
         turn={turn}
         pages={pages}
         canPublishDirect={canPublishDirect}

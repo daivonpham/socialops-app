@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   confirmAiOnboarding,
@@ -12,11 +13,15 @@ import {
   skipAiOnboarding,
   suggestAiProfile,
   startAiGeneration,
+  streamAiGeneration,
   updateBrandAiProfile,
 } from './service'
-import type { AiConversation } from './types'
+import type { AiConversation, AiLiveText } from './types'
 
 const POLL_MS = 2000
+/** A stream that drops is opened again after this, while the turn still runs, so many times. */
+const STREAM_RETRY_MS = 2000
+const STREAM_RETRIES = 5
 /** The history sync takes minutes, so the first-run screen looks now and then. */
 const SYNC_POLL_MS = 5000
 
@@ -41,6 +46,18 @@ export function useAiAvailability(brandId: string | null) {
     queryFn: () => getAiAvailability(brandId!),
     enabled: brandId !== null,
   })
+}
+
+/** Credits change when a turn is sent and when it finishes. */
+export function useRefreshAiAvailability(brandId: string | null) {
+  const queryClient = useQueryClient()
+  return useCallback(
+    () =>
+      void queryClient.invalidateQueries({
+        queryKey: AI_CONTENT_QUERY_KEYS.availability(brandId),
+      }),
+    [queryClient, brandId],
+  )
 }
 
 export function useAiTemplates(brandId: string | null, enabled = true) {
@@ -140,4 +157,59 @@ export function useAiConversation(brandId: string | null, conversationId: string
     enabled: brandId !== null && conversationId !== null,
     refetchInterval: (query) => (isUnfinished(query.state.data) ? POLL_MS : false),
   })
+}
+
+/**
+ * The text of a turn as the AI writes it, while `active`. Nothing while there is none yet, or
+ * after a check took it back. A stream that cannot open or drops is tried again a few times; the
+ * chat still polls for the result, so a lost stream only loses the live text.
+ */
+export function useAiLiveText(
+  brandId: string | null,
+  generationId: string,
+  active: boolean,
+): AiLiveText | null {
+  const [live, setLive] = useState<AiLiveText | null>(null)
+  useEffect(() => {
+    if (!active || !brandId) return
+    const controller = new AbortController()
+    let lastSeq = -1
+    let ended = false
+    let retryTimer: number | undefined
+    const listen = (attempt: number) => {
+      streamAiGeneration(
+        brandId,
+        generationId,
+        (message) => {
+          // Older than what is shown: a replay of the latest event, or a late message.
+          if (message.kind !== 'end' && message.seq <= lastSeq) return
+          lastSeq = Math.max(lastSeq, message.seq)
+          if (message.kind === 'end') ended = true
+          else if (message.kind === 'clear') setLive(null)
+          else
+            setLive(
+              message.kind === 'reply'
+                ? { kind: 'reply', text: message.text }
+                : {
+                    kind: 'captions',
+                    captions: message.captions,
+                  },
+            )
+        },
+        controller.signal,
+      )
+        .catch(() => undefined)
+        .then(() => {
+          if (ended || controller.signal.aborted || attempt >= STREAM_RETRIES) return
+          retryTimer = window.setTimeout(() => listen(attempt + 1), STREAM_RETRY_MS)
+        })
+    }
+    listen(0)
+    return () => {
+      controller.abort()
+      window.clearTimeout(retryTimer)
+    }
+  }, [active, brandId, generationId])
+  // Text from an earlier run of the hook stays out once the turn is no longer running.
+  return active ? live : null
 }

@@ -1,6 +1,11 @@
 export type AiAvailability = {
-  /** The system switch is on. */
+  /** The system switch is on and the plan includes AI. */
   enabled: boolean
+  /** Credits this person may still use this month; null means no limit. */
+  creditsRemaining: number | null
+  /** Credits this person has for the month in all; null means no limit. */
+  creditsTotal: number | null
+  creditsResetAt: string
   /** This person may create posts, and so generate them. */
   canGenerate: boolean
   /** May publish without approval: sees "Publish now" rather than "Send for approval". */
@@ -76,7 +81,22 @@ export type AiGenerationStarted = { id: string; conversationId: string }
 /** Where the caption of a request made without Pages is, in a suggestion's `captions`. */
 export const AI_GENERAL_CAPTION_KEY = 'general'
 
-export type AiGenerationPhase = 'queued' | 'writing' | 'image' | 'checking' | 'finishing'
+export type AiGenerationPhase =
+  'queued' | 'analyzing' | 'writing' | 'image' | 'checking' | 'finishing'
+/**
+ * What the chat shows of a turn while the AI writes it: its answer, or the captions by Page id.
+ * Each message carries everything so far. `clear` takes the text back (a check found a problem
+ * and it is being written again); `end` means the turn is over and the chat has its result.
+ */
+export type AiStreamMessage = { seq: number } & (
+  | { kind: 'reply'; text: string }
+  | { kind: 'captions'; captions: Record<string, string> }
+  | { kind: 'clear' }
+  | { kind: 'end' }
+)
+export type AiLiveText =
+  { kind: 'reply'; text: string } | { kind: 'captions'; captions: Record<string, string> }
+
 /** The AI's picture choice: post the customer's images, make a new one, or none. */
 export type AiImageAction = 'none' | 'use_attachment' | 'generate'
 export type AiAttachment = {
@@ -98,6 +118,15 @@ export type AiSuggestion = {
   images: AiTurnFile[]
 }
 
+/** What is ready of a suggestion still being made, whichever part came first. */
+export type AiPartialSuggestion = {
+  /** Null until the captions have passed their checks. */
+  captions: Record<string, string> | null
+  images: AiTurnFile[]
+  /** Images still being made. */
+  pendingImages: number
+}
+
 /** One turn of a chat: what was asked, and what came back. */
 export type AiGeneration = {
   id: string
@@ -105,6 +134,8 @@ export type AiGeneration = {
   /** A fresh request, "Try another idea", or "Edit again". */
   kind: 'new' | 'retry' | 'edit'
   createdAt: string
+  /** When the turn succeeded or failed; null while it runs and on older turns. */
+  finishedAt: string | null
   /** What was asked; an edit holds `instruction`. */
   brief: Record<string, string>
   templateKey: string | null
@@ -112,6 +143,9 @@ export type AiGeneration = {
   autoSubmit: boolean
   attachments: AiTurnFile[]
   suggestion: AiSuggestion | null
+  partial: AiPartialSuggestion | null
+  /** The AI only answered in the chat, so this turn has no suggestion. */
+  reply: string | null
   status: 'queued' | 'running' | 'succeeded' | 'failed'
   phase: AiGenerationPhase | null
   /** Null until the AI has written the captions and chosen. */
@@ -123,8 +157,10 @@ export type AiGeneration = {
   /** The post made from this turn; set means the suggestion is used. */
   contentId: string | null
   errorCode: string | null
-  /** The AI chose to make an image and none could be made. */
+  /** The AI chose to make images and none could be made. */
   imageErrorCode: string | null
+  /** New images that could not be made, when others could. */
+  missingImages: number
 }
 
 export type AiConversationSummary = { id: string; title: string; lastActivityAt: string }

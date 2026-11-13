@@ -27,3 +27,34 @@ export function rememberOpenChat(
     // Storage may be off; the dialog then opens on a new chat.
   }
 }
+
+const pagesKeyOf = (userId: string, brandId: string): string =>
+  `socialops.ai-pages.${userId}.${brandId}`
+
+/** The Pages last chosen in the dialog, per person and Brand, so a reload keeps them. */
+export function readChosenPages(userId: string | undefined, brandId: string): string[] {
+  if (!userId) return []
+  try {
+    const stored: unknown = JSON.parse(
+      window.localStorage.getItem(pagesKeyOf(userId, brandId)) ?? '[]',
+    )
+    return Array.isArray(stored) ? stored.filter((id): id is string => typeof id === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+export function rememberChosenPages(
+  userId: string | undefined,
+  brandId: string,
+  pageIds: string[],
+): void {
+  if (!userId) return
+  try {
+    if (pageIds.length)
+      window.localStorage.setItem(pagesKeyOf(userId, brandId), JSON.stringify(pageIds))
+    else window.localStorage.removeItem(pagesKeyOf(userId, brandId))
+  } catch {
+    // Storage may be off; the dialog then opens with no Page chosen.
+  }
+}

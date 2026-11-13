@@ -8,6 +8,7 @@ import {
   IconCheck,
   IconChevronDown,
   IconChevronRight,
+  IconCompose,
   IconInfo,
   IconLayers,
   IconPanelLeftClose,
@@ -22,6 +23,7 @@ import {
   Tooltip,
 } from '@/shared/ui'
 import { useAiConversations, type AiAvailability, type AiConversationSummary } from '../api'
+import { AiCreditsMeter, AiCreditsRail } from './AiCreditsMeter'
 import { AiMark } from './AiMark'
 import { PageCheckList } from './PageCheckList'
 
@@ -416,20 +418,87 @@ function GettingStarted({
   )
 }
 
+/** A small icon button beside the history heading, named by its tooltip. */
+function HeadingButton({
+  label,
+  pressed,
+  onClick,
+  children,
+}: {
+  label: string
+  pressed?: boolean
+  onClick: () => void
+  children: ReactNode
+}) {
+  return (
+    <Tooltip title={label}>
+      <button
+        type="button"
+        aria-label={label}
+        aria-pressed={pressed}
+        // Keeps the focus where it is, so the search box is not left (and folded) before the
+        // click that closes it lands.
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={onClick}
+        className={
+          'flex size-[28px] shrink-0 items-center justify-center rounded-lg text-icon-sm transition-colors hover:bg-bg-surface hover:text-ai-600 focus-visible:focus-ring ' +
+          (pressed ? 'bg-bg-surface text-ai-600' : 'text-text-secondary')
+        }
+      >
+        {children}
+      </button>
+    </Tooltip>
+  )
+}
+
+/** Search and "New chat" as icons, beside the history heading. */
+function HistoryTools({
+  searching,
+  onSearch,
+  onNew,
+}: {
+  searching: boolean
+  onSearch: () => void
+  onNew: () => void
+}) {
+  const { t } = useTranslation('aiContent')
+  return (
+    <div className="flex shrink-0 items-center gap-1">
+      <HeadingButton label={t('history.search')} pressed={searching} onClick={onSearch}>
+        <IconSearch aria-hidden />
+      </HeadingButton>
+      <HeadingButton label={t('history.new')} onClick={onNew}>
+        {/* The pen sticks out above the square, so the box centre sits high; down 1px to
+            line the square up with the heading's capitals. */}
+        <IconCompose aria-hidden className="translate-y-px" />
+      </HeadingButton>
+    </div>
+  )
+}
+
 /** Chats split into "Recent" and "Earlier", filtered by the search. */
 function ChatList({
   conversations,
   currentId,
   historyDays,
   onPick,
+  onNew,
 }: {
   conversations: AiConversationSummary[]
   currentId: string | null
   historyDays: number
   onPick: (id: string) => void
+  onNew: () => void
 }) {
   const { t } = useTranslation('aiContent')
   const [query, setQuery] = useState('')
+  // The search box shows only once its icon is clicked, and folds away again when left empty.
+  const [searching, setSearching] = useState(false)
+  const toggleSearch = () => {
+    if (searching) setQuery('')
+    setSearching(!searching)
+  }
+  const tools = <HistoryTools searching={searching} onSearch={toggleSearch} onNew={onNew} />
   const groups = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase()
     const shown = conversations.filter(
@@ -451,38 +520,59 @@ function ChatList({
 
   return (
     <div className="flex min-h-[200px] flex-1 flex-col gap-4">
-      <Input
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        prefix={<IconSearch aria-hidden className="text-text-tertiary" />}
-        placeholder={t('history.search')}
-        aria-label={t('history.search')}
-        allowClear
-      />
-      <div className="app-scrollbar -me-2 min-h-0 flex-1 overflow-y-auto pe-2">
+      {searching ? (
+        <Input
+          autoFocus
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key !== 'Escape') return
+            // Escape closes the search here, not the dialog around it.
+            event.stopPropagation()
+            setQuery('')
+            setSearching(false)
+          }}
+          onBlur={() => {
+            if (!query.trim()) setSearching(false)
+          }}
+          prefix={<IconSearch aria-hidden className="text-text-tertiary" />}
+          placeholder={t('history.search')}
+          aria-label={t('history.search')}
+          allowClear
+        />
+      ) : null}
+      <div className="app-scrollbar -me-2 min-h-0 flex-1 overflow-x-hidden overflow-y-auto pe-2">
         {groups.length === 0 ? (
-          <p className="py-6 text-center text-body-sm text-text-tertiary">
-            {t(query.trim() ? 'history.noMatch' : 'history.empty')}
-          </p>
+          <>
+            {/* No heading to sit beside, so the buttons keep their own row. */}
+            <div className="flex justify-end">{tools}</div>
+            <p className="py-6 text-center text-body-sm text-text-tertiary">
+              {t(query.trim() ? 'history.noMatch' : 'history.empty')}
+            </p>
+          </>
         ) : (
           groups.map((group, index) => (
             <section key={group.key} className="mb-4" aria-label={t(`history.${group.key}`)}>
-              <h4 className="mb-2 flex items-center gap-1 px-2 text-label-sm tracking-[0.04em] text-text-tertiary uppercase">
-                {t(`history.${group.key}`)}
-                {index === 0 ? (
-                  <Tooltip title={kept}>
-                    <span
-                      role="img"
-                      tabIndex={0}
-                      aria-label={kept}
-                      className="flex normal-case focus-visible:focus-ring"
-                    >
-                      <IconInfo aria-hidden />
-                    </span>
-                  </Tooltip>
-                ) : null}
-              </h4>
-              <ul className="grid gap-1">
+              <div className="mb-2 flex items-center gap-2 ps-2">
+                <h4 className="flex flex-1 items-center gap-1 text-label-sm tracking-[0.04em] text-text-tertiary uppercase">
+                  {t(`history.${group.key}`)}
+                  {index === 0 ? (
+                    <Tooltip title={kept}>
+                      <span
+                        role="img"
+                        tabIndex={0}
+                        aria-label={kept}
+                        className="flex normal-case focus-visible:focus-ring"
+                      >
+                        <IconInfo aria-hidden />
+                      </span>
+                    </Tooltip>
+                  ) : null}
+                </h4>
+                {index === 0 ? tools : null}
+              </div>
+              {/* The column must not grow to the longest title, or nothing is cut with "...". */}
+              <ul className="grid grid-cols-[minmax(0,1fr)] gap-1">
                 {group.items.map((item) => {
                   const current = item.id === currentId
                   return (
@@ -490,6 +580,7 @@ function ChatList({
                       <button
                         type="button"
                         aria-current={current ? 'true' : undefined}
+                        title={item.title || t('history.untitled')}
                         onClick={() => onPick(item.id)}
                         className={
                           'block w-full truncate rounded-lg px-3 py-2 text-start text-body-sm transition-colors focus-visible:focus-ring ' +
@@ -521,6 +612,7 @@ export function AiSidebar({
   pages,
   hasProfile,
   historyDays,
+  credits,
   currentId,
   collapsed,
   background,
@@ -534,6 +626,7 @@ export function AiSidebar({
   pages: Pages
   hasProfile: boolean
   historyDays: number
+  credits: Pick<AiAvailability, 'creditsRemaining' | 'creditsTotal' | 'creditsResetAt'>
   currentId: string | null
   collapsed: boolean
   background: string
@@ -546,14 +639,8 @@ export function AiSidebar({
 }) {
   const { t } = useTranslation('aiContent')
   const conversations = useAiConversations(brandId)
-  const form = Form.useFormInstance()
-  // One row open at a time, so the chat history keeps its room. With several Pages and none
-  // picked yet, the Pages row starts open.
-  const [openRow, setOpenRow] = useState<'pages' | 'options' | null>(() =>
-    pages.length > 1 && !(form.getFieldValue('pageIds') as string[] | undefined)?.length
-      ? 'pages'
-      : null,
-  )
+  // One row open at a time, so the chat history keeps its room. Both start closed.
+  const [openRow, setOpenRow] = useState<'pages' | 'options' | null>(null)
   // On the collapsed rail a row's icon opens the column with that row open.
   const toggleRow = (row: 'pages' | 'options') => () => {
     if (collapsed) {
@@ -597,7 +684,7 @@ export function AiSidebar({
         <div aria-hidden className="h-px w-full bg-ai-100" />
         <Tooltip title={t('history.new')} placement="right">
           <button type="button" aria-label={t('history.new')} onClick={onNew} className={railAi}>
-            <IconPlus aria-hidden />
+            <IconCompose aria-hidden />
           </button>
         </Tooltip>
         <ul className="grid gap-1" aria-label={t('history.title')}>
@@ -623,6 +710,7 @@ export function AiSidebar({
           {pagesField}
           {optionsField}
           <ProfileButton hasProfile={hasProfile} compact onOpen={onOpenProfile} />
+          <AiCreditsRail {...credits} />
         </div>
       </aside>
     )
@@ -651,15 +739,6 @@ export function AiSidebar({
         </Tooltip>
       </div>
 
-      <button
-        type="button"
-        onClick={onNew}
-        className="flex h-[40px] shrink-0 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-ai-400 to-ai-600 text-label-md text-text-inverse shadow-[0_4px_14px_-4px] shadow-ai-500/60 transition-[filter] hover:brightness-110 focus-visible:focus-ring"
-      >
-        <IconPlus aria-hidden className="text-icon-md" />
-        {t('history.new')}
-      </button>
-
       {conversations.isPending ? (
         <div className="flex min-h-[200px] flex-1 items-center justify-center">
           <Spin />
@@ -687,6 +766,7 @@ export function AiSidebar({
           currentId={currentId}
           historyDays={historyDays}
           onPick={onPick}
+          onNew={onNew}
         />
       )}
 
@@ -694,6 +774,7 @@ export function AiSidebar({
         {pagesField}
         {optionsField}
         <ProfileButton hasProfile={hasProfile} compact={false} onOpen={onOpenProfile} />
+        <AiCreditsMeter {...credits} />
       </div>
     </aside>
   )

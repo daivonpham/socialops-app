@@ -3,6 +3,27 @@ import type { workspacesEnUS } from './en-US'
 
 export const workspacesViVN = {
   members: {
+    credits: {
+      title: 'Credits AI',
+      description: 'Cấp Credits cho từng thành viên. Người chưa được cấp dùng chung phần còn lại.',
+      total: 'Tổng Credits mỗi tháng',
+      remaining: 'Còn lại tháng này',
+      resets: 'Làm mới',
+      unlimited: 'Không giới hạn',
+      column: 'Credits được cấp',
+      shared: 'Dùng chung',
+      edit: 'Cấp Credits',
+      editFor: 'Cấp Credits cho {{name}}',
+      amount: 'Số Credits mỗi tháng',
+      amountHint: 'Để trống để thành viên này dùng chung phần chưa cấp.',
+      invalid: 'Hãy nhập số nguyên hợp lệ.',
+      saved: 'Đã cập nhật Credits.',
+      saveError: 'Không cập nhật được Credits.',
+      loadError: 'Không tải được Credits.',
+      retry: 'Thử lại',
+      cancel: 'Hủy',
+      save: 'Lưu',
+    },
     pageTitle: 'Quản lý thành viên',
     pageDescription: 'Quản lý thành viên, thương hiệu, Trang và quyền hạn của họ tại đây.',
     inviteTitle: 'Mời thành viên',

@@ -13,8 +13,8 @@ export function Input({ label, hint, id, size = 'md', type, ...props }: InputPro
     )
   if (!label && !hint) return control
   return (
-    <label className="grid gap-1.5 text-label-md text-text-secondary" htmlFor={id}>
-      {label ? <span>{label}</span> : null}
+    <label className="grid gap-1.5" htmlFor={id}>
+      {label ? <span className="text-label-md text-text-secondary">{label}</span> : null}
       {control}
       {hint ? <span className="text-caption text-text-tertiary">{hint}</span> : null}
     </label>

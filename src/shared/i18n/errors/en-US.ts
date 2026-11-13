@@ -28,7 +28,12 @@ export const errorsEnUS = {
     AI_AGENT_NOT_CONFIGURED: 'AI is not set up yet.',
     AI_PROVIDER_UNAVAILABLE: 'The AI service is busy. Try again in a few minutes.',
     AI_PROVIDER_FAILED: 'The AI service could not complete this request.',
-    AI_QUOTA_EXCEEDED: 'Your plan has reached its AI limit for this month.',
+    AI_QUOTA_EXCEEDED: 'This workspace has used its AI Credits for this month.',
+    AI_MEMBER_QUOTA_EXCEEDED: 'Your share of Credits for this month is used up.',
+    AI_PLAN_DISABLED: 'Your current plan does not include AI.',
+    AI_PLAN_SEATS_EXCEEDED:
+      'This workspace has more members than its plan allows, so only the owner can use AI for now.',
+    AI_CREDITS_OVER_ALLOCATED: 'The Credits handed out would be more than the plan has.',
     AI_SUGGESTION_USED: 'This suggestion has already been used.',
     AI_ONBOARDING_BUSY: 'AI is already reading your posts. Please wait a moment.',
     AI_ONBOARDING_DONE: 'This Brand has already had its sample suggestions.',
@@ -68,6 +73,7 @@ export const errorsEnUS = {
 
     // Workspaces and invitations
     WORKSPACE_ACCESS_DENIED: 'You do not have access to this workspace.',
+    WORKSPACE_SEAT_LIMIT_REACHED: 'This workspace has reached the members its plan allows.',
     WORKSPACE_OWNER_REQUIRED: 'Only the workspace owner can do this.',
     OWNER_ROLE_PROTECTED: 'The owner role cannot be changed or removed.',
     OWNER_REQUIRED_FOR_FULL_ACCESS: 'Only the owner can grant or change full access.',

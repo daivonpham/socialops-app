@@ -61,8 +61,8 @@ export function Select({
   )
   if (!label) return control
   return (
-    <label className="grid gap-1.5 text-label-md text-text-secondary" htmlFor={id}>
-      <span>{label}</span>
+    <label className="grid gap-1.5" htmlFor={id}>
+      <span className="text-label-md text-text-secondary">{label}</span>
       {control}
     </label>
   )

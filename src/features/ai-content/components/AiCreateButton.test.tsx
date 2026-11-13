@@ -26,6 +26,9 @@ const AVAILABLE: AiAvailability = {
   hasProfile: true,
   needsOnboarding: false,
   historyDays: 30,
+  creditsRemaining: null,
+  creditsTotal: null,
+  creditsResetAt: '2026-12-01T00:00:00.000Z',
 }
 const CHAT_KEY = 'socialops.ai-chat.user-1.brand-1'
 
@@ -34,6 +37,7 @@ const turn = (overrides: Partial<AiGeneration> = {}): AiGeneration => ({
   conversationId: 'conv-1',
   kind: 'new',
   createdAt: '2026-11-07T08:00:00.000Z',
+  finishedAt: '2026-11-07T08:02:22.000Z',
   brief: { topic: 'New cold brew' },
   templateKey: null,
   socialAccountIds: ['page-a'],
@@ -59,6 +63,9 @@ const turn = (overrides: Partial<AiGeneration> = {}): AiGeneration => ({
   contentId: null,
   errorCode: null,
   imageErrorCode: null,
+  partial: null,
+  reply: null,
+  missingImages: 0,
   ...overrides,
 })
 
@@ -118,6 +125,12 @@ async function openDialog(user: ReturnType<typeof userEvent.setup>) {
   return screen.findByRole('dialog')
 }
 
+/** Opens the Pages row, which starts folded, and ticks a Page. */
+async function pickPage(user: ReturnType<typeof userEvent.setup>, name: string) {
+  await user.click(await screen.findByRole('button', { name: /Pages to post to/ }))
+  await user.click(await screen.findByRole('checkbox', { name }))
+}
+
 describe('AiCreateButton', () => {
   beforeEach(() => {
     i18n.changeLanguage('en-US')
@@ -161,7 +174,7 @@ describe('AiCreateButton', () => {
       ' New cold brew ',
     )
     // With several Pages and none picked, the Page list is already open in the left column.
-    await user.click(await screen.findByRole('checkbox', { name: 'Page A' }))
+    await pickPage(user, 'Page A')
     await user.click(within(dialog).getByRole('button', { name: /Create post/ }))
 
     expect(await within(dialog).findByText('Writing the content')).toBeInTheDocument()
@@ -208,11 +221,44 @@ describe('AiCreateButton', () => {
         name: 'Chats are kept for 30 days after the last message, with their files.',
       }),
     ).toBeInTheDocument()
-    await user.type(within(dialog).getByLabelText('Search chats'), 'nothing like it')
+    // The search box opens from its icon, and Escape folds it away again.
+    expect(within(dialog).queryByRole('textbox', { name: 'Search chats' })).not.toBeInTheDocument()
+    await user.click(within(dialog).getByRole('button', { name: 'Search chats' }))
+    const search = within(dialog).getByRole('textbox', { name: 'Search chats' })
+    expect(search).toHaveFocus()
+    await user.type(search, 'nothing like it')
     expect(within(dialog).getByText('No chats match.')).toBeInTheDocument()
-    await user.clear(within(dialog).getByLabelText('Search chats'))
+    await user.keyboard('{Escape}')
+    expect(within(dialog).queryByRole('textbox', { name: 'Search chats' })).not.toBeInTheDocument()
+    expect(dialog).toBeInTheDocument()
     await user.click(within(dialog).getByRole('button', { name: 'New cold brew' }))
     expect(await within(dialog).findByText('Cold brew is here')).toBeInTheDocument()
+  })
+
+  it('keeps the Pages chosen for the next time, without ones no longer usable', async () => {
+    window.localStorage.setItem(
+      'socialops.ai-pages.user-1.brand-1',
+      JSON.stringify(['page-b', 'page-gone']),
+    )
+    mockApi()
+    const { user } = renderButton()
+    let dialog = await openDialog(user)
+    // With Pages already chosen, their row starts folded and names them.
+    await user.click(
+      await within(dialog).findByRole('button', { name: /Pages to post to: Page B$/ }),
+    )
+    expect(screen.getByRole('checkbox', { name: 'Page B' })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'Page A' })).not.toBeChecked()
+
+    await user.click(screen.getByRole('checkbox', { name: 'Page A' }))
+    await user.click(within(dialog).getByRole('button', { name: /close/i }))
+    dialog = await openDialog(user)
+    expect(
+      await within(dialog).findByRole('button', { name: /Pages to post to: Page A, Page B$/ }),
+    ).toBeInTheDocument()
+    expect(
+      JSON.parse(window.localStorage.getItem('socialops.ai-pages.user-1.brand-1') ?? '[]'),
+    ).toEqual(['page-b', 'page-a'])
   })
 
   it('publishes after a confirmation, then shows the suggestion as used', async () => {
@@ -299,12 +345,12 @@ describe('AiCreateButton', () => {
     }
   })
 
-  it('shows when the answer came, copies its caption and offers another idea as icons', async () => {
+  it('shows how long the AI worked, copies its caption and offers another idea as icons', async () => {
     window.localStorage.setItem(CHAT_KEY, 'conv-1')
-    mockApi({}, () => chat([turn({ createdAt: new Date().toISOString() })]))
+    mockApi({}, () => chat([turn()]))
     const { user } = renderButton()
     const dialog = await openDialog(user)
-    expect(await within(dialog).findByText('Just now')).toBeInTheDocument()
+    expect(await within(dialog).findByText('Worked for 2m 22s')).toBeInTheDocument()
     await user.click(within(dialog).getByRole('button', { name: 'Copy caption' }))
     expect(await navigator.clipboard.readText()).toBe('Cold brew is here')
     // The icon answers for a moment; no toast.
@@ -394,6 +440,152 @@ describe('AiCreateButton', () => {
     expect(
       await within(dialog).findByText('Creating the image', {}, { timeout: 5000 }),
     ).toBeInTheDocument()
+  })
+
+  it('shows an answer in the chat as words, with no suggestion or actions', async () => {
+    window.localStorage.setItem(CHAT_KEY, 'conv-1')
+    mockApi({}, () => chat([turn({ suggestion: null, reply: 'Hello there!' })]))
+    const { user } = renderButton()
+    const dialog = await openDialog(user)
+    expect(await within(dialog).findByText('Hello there!')).toBeInTheDocument()
+    expect(within(dialog).queryByRole('button', { name: 'Use' })).not.toBeInTheDocument()
+    expect(within(dialog).queryByText(/Something went wrong/)).not.toBeInTheDocument()
+  })
+
+  it('says only what the AI is doing while it thinks', async () => {
+    window.localStorage.setItem(CHAT_KEY, 'conv-1')
+    mockApi({}, () => chat([turn({ status: 'running', phase: 'analyzing', suggestion: null })]))
+    const { user } = renderButton()
+    const dialog = await openDialog(user)
+    expect(await within(dialog).findByText('Thinking')).toBeInTheDocument()
+    expect(within(dialog).queryByText('Writing the content')).not.toBeInTheDocument()
+  })
+
+  it('counts the time up while the AI works', async () => {
+    window.localStorage.setItem(CHAT_KEY, 'conv-1')
+    const createdAt = new Date(Date.now() - 5_000).toISOString()
+    mockApi({}, () =>
+      chat([
+        turn({
+          status: 'running',
+          phase: 'analyzing',
+          suggestion: null,
+          createdAt,
+          finishedAt: null,
+        }),
+      ]),
+    )
+    const { user } = renderButton()
+    const dialog = await openDialog(user)
+    const first = await within(dialog).findByText(/^Worked for \d+s$/)
+    const seconds = () => Number(/(\d+)s$/.exec(first.textContent ?? '')?.[1])
+    const before = seconds()
+    await waitFor(() => expect(seconds()).toBeGreaterThan(before), { timeout: 2500 })
+  })
+
+  describe('the live text', () => {
+    /** Answers the turn's stream with these events, then closes it as the API does. */
+    const stream = (events: object[]) =>
+      server.use(
+        http.get(
+          '*/brands/brand-1/ai/generations/gen-1/stream',
+          () =>
+            new HttpResponse(events.map((event) => `data: ${JSON.stringify(event)}\n\n`).join(''), {
+              headers: { 'content-type': 'text/event-stream' },
+            }),
+        ),
+      )
+
+    it('shows the captions as the AI writes them, with no actions yet', async () => {
+      window.localStorage.setItem(CHAT_KEY, 'conv-1')
+      stream([
+        { kind: 'captions', captions: { 'page-a': 'Cold' }, seq: 1 },
+        { kind: 'captions', captions: { 'page-a': 'Cold brew is' }, seq: 2 },
+      ])
+      mockApi({}, () => chat([turn({ status: 'running', phase: 'writing', suggestion: null })]))
+      const { user } = renderButton()
+      const dialog = await openDialog(user)
+      expect(await within(dialog).findByText('Cold brew is')).toBeInTheDocument()
+      expect(within(dialog).getByText('Writing the content')).toBeInTheDocument()
+      expect(within(dialog).queryByRole('button', { name: 'Use' })).not.toBeInTheDocument()
+    })
+
+    it('takes the text back when a check finds a problem, and ignores an older message', async () => {
+      window.localStorage.setItem(CHAT_KEY, 'conv-1')
+      stream([
+        { kind: 'captions', captions: { 'page-a': 'Too cheap' }, seq: 1 },
+        { kind: 'clear', seq: 2 },
+        { kind: 'captions', captions: { 'page-a': 'Late and old' }, seq: 1 },
+      ])
+      mockApi({}, () => chat([turn({ status: 'running', phase: 'checking', suggestion: null })]))
+      const { user } = renderButton()
+      const dialog = await openDialog(user)
+      expect(await within(dialog).findByText('Checking the profile')).toBeInTheDocument()
+      await waitFor(() => expect(within(dialog).queryByText('Too cheap')).not.toBeInTheDocument())
+      expect(within(dialog).queryByText('Late and old')).not.toBeInTheDocument()
+    })
+
+    it('streams an answer in the chat', async () => {
+      window.localStorage.setItem(CHAT_KEY, 'conv-1')
+      stream([{ kind: 'reply', text: 'Hello! What should', seq: 1 }])
+      mockApi({}, () => chat([turn({ status: 'running', phase: 'analyzing', suggestion: null })]))
+      const { user } = renderButton()
+      const dialog = await openDialog(user)
+      expect(await within(dialog).findByText('Hello! What should')).toBeInTheDocument()
+    })
+
+    it('says a turn is waiting in line rather than seeming stuck', async () => {
+      window.localStorage.setItem(CHAT_KEY, 'conv-1')
+      mockApi({}, () => chat([turn({ status: 'queued', phase: 'queued', suggestion: null })]))
+      const { user } = renderButton()
+      const dialog = await openDialog(user)
+      expect(await within(dialog).findByText('Waiting in line')).toBeInTheDocument()
+    })
+  })
+
+  it('shows the caption while images are made, with no actions until they are done', async () => {
+    window.localStorage.setItem(CHAT_KEY, 'conv-1')
+    const current = turn({
+      status: 'running',
+      phase: 'image',
+      suggestion: null,
+      partial: { captions: { 'page-a': 'Words first' }, images: [], pendingImages: 2 },
+    })
+    mockApi({}, () => chat([current]))
+    const { user } = renderButton()
+    const dialog = await openDialog(user)
+    expect(await within(dialog).findByText('Words first')).toBeInTheDocument()
+    expect(
+      within(dialog).getByText('Creating the images. The buttons appear once they are done.'),
+    ).toBeInTheDocument()
+    expect(within(dialog).queryByRole('button', { name: 'Use' })).not.toBeInTheDocument()
+  })
+
+  it('shows images that came first beside the steps still running', async () => {
+    window.localStorage.setItem(CHAT_KEY, 'conv-1')
+    const current = turn({
+      status: 'running',
+      phase: 'writing',
+      suggestion: null,
+      partial: {
+        captions: null,
+        images: [
+          {
+            id: 'i',
+            type: 'image',
+            name: 'early',
+            url: 'https://files.test/i',
+            fromCustomer: false,
+          },
+        ],
+        pendingImages: 1,
+      },
+    })
+    mockApi({}, () => chat([current]))
+    const { user } = renderButton()
+    const dialog = await openDialog(user)
+    expect(await within(dialog).findByText('Writing the content')).toBeInTheDocument()
+    expect(within(dialog).getByAltText('early')).toBeInTheDocument()
   })
 
   it('turns away old Word and Excel files with how to fix them', async () => {
@@ -577,7 +769,7 @@ describe('AiCreateButton', () => {
     const { user } = renderButton()
     const dialog = await openDialog(user)
     await user.type(within(dialog).getByLabelText('What do you want to post about?'), 'Sale')
-    await user.click(await screen.findByRole('checkbox', { name: 'Page A' }))
+    await pickPage(user, 'Page A')
     await user.click(within(dialog).getByRole('button', { name: /Create post/ }))
     expect(
       await within(dialog).findByText('AI generation is turned off right now.'),
@@ -599,10 +791,48 @@ describe('AiCreateButton', () => {
     const { user } = renderButton()
     const dialog = await openDialog(user)
     await user.type(within(dialog).getByLabelText('What do you want to post about?'), 'Sale')
-    await user.click(await screen.findByRole('checkbox', { name: 'Page A' }))
+    await pickPage(user, 'Page A')
     await user.click(within(dialog).getByRole('button', { name: /Create post/ }))
     expect(await within(dialog).findByText('AI is not set up yet.')).toBeInTheDocument()
     expect(within(dialog).queryByText(/AI_AGENT_NOT_CONFIGURED/)).not.toBeInTheDocument()
+  })
+
+  it.each([
+    ['AI_QUOTA_EXCEEDED', 'Your AI assistant is out of energy this month'],
+    ['AI_MEMBER_QUOTA_EXCEEDED', 'You have used your Credits for this month'],
+  ])('shows the out-of-Credits card for %s, with when they renew', async (code, title) => {
+    mockApi()
+    server.use(
+      http.post('*/brands/brand-1/ai/generations', () =>
+        HttpResponse.json({ error: { code, message: 'none left', fields: [] } }, { status: 429 }),
+      ),
+    )
+    const { user } = renderButton()
+    const dialog = await openDialog(user)
+    await user.type(within(dialog).getByLabelText('What do you want to post about?'), 'Sale')
+    await pickPage(user, 'Page A')
+    await user.click(within(dialog).getByRole('button', { name: /Create post/ }))
+    expect(await within(dialog).findByText(title)).toBeInTheDocument()
+    expect(within(dialog).getByText(/Renews/)).toBeInTheDocument()
+  })
+
+  it('shows the Credits left of the month in the column, and warns when few remain', async () => {
+    mockApi({ creditsRemaining: 5, creditsTotal: 100 })
+    const { user } = renderButton()
+    const dialog = await openDialog(user)
+    const meter = within(dialog).getByRole('progressbar', { name: 'Credits left' })
+    expect(meter).toHaveAttribute('aria-valuenow', '5')
+    expect(meter.firstElementChild).toHaveClass('bg-warning-500')
+    expect(within(dialog).getByText('5')).toBeInTheDocument()
+    expect(within(dialog).getByText(/\/ 100/)).toBeInTheDocument()
+  })
+
+  it('says there is no limit, with no meter, on a plan without one', async () => {
+    mockApi()
+    const { user } = renderButton()
+    const dialog = await openDialog(user)
+    expect(within(dialog).getByText('No limit')).toBeInTheDocument()
+    expect(within(dialog).queryByRole('progressbar')).not.toBeInTheDocument()
   })
 
   describe('first-run screen', () => {
@@ -722,12 +952,12 @@ describe('AiCreateButton', () => {
     const dialog = await openDialog(user)
     expect(screen.queryByRole('checkbox', { name: 'Page A' })).not.toBeInTheDocument()
     await user.click(within(dialog).getByRole('button', { name: 'Collapse' }))
-    expect(within(dialog).queryByLabelText('Search chats')).not.toBeInTheDocument()
+    expect(within(dialog).queryByRole('button', { name: 'Search chats' })).not.toBeInTheDocument()
     await user.type(within(dialog).getByLabelText('What do you want to post about?'), 'Sale')
     await user.click(within(dialog).getByRole('button', { name: /Create post/ }))
     await waitFor(() => expect(body.socialAccountIds).toEqual(['page-a']))
     await user.click(within(dialog).getByRole('button', { name: 'Expand' }))
-    expect(within(dialog).getByLabelText('Search chats')).toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: 'Search chats' })).toBeInTheDocument()
   })
 
   it('guides a first-time user through three steps in place of the empty history', async () => {
@@ -736,10 +966,11 @@ describe('AiCreateButton', () => {
     const { user } = renderButton()
     const dialog = await openDialog(user)
     const steps = await within(dialog).findByRole('region', { name: 'Get started' })
-    expect(within(dialog).queryByLabelText('Search chats')).not.toBeInTheDocument()
+    expect(within(dialog).queryByRole('button', { name: 'Search chats' })).not.toBeInTheDocument()
     expect(within(steps).queryByText('(done)')).not.toBeInTheDocument()
 
-    // Picking a Page ticks the second step.
+    // The second step opens the Pages row, and picking a Page ticks it.
+    await user.click(within(steps).getByRole('button', { name: /Choose Pages to post to/ }))
     await user.click(await screen.findByRole('checkbox', { name: 'Page A' }))
     expect(
       within(steps).getByRole('button', { name: /Choose Pages to post to.*done/ }),
@@ -793,14 +1024,22 @@ describe('AiCreateButton', () => {
         released.push(String(params.id))
         return new HttpResponse(null, { status: 204 })
       }),
+      http.post('*/brands/brand-1/ai/generations', async ({ request }) => {
+        sent.push(await request.json())
+        return HttpResponse.json(
+          { data: { id: 'gen-1', conversationId: 'conv-1' } },
+          { status: 201 },
+        )
+      }),
     )
+    const sent: unknown[] = []
     const revokeUrl = vi.fn()
     // jsdom has no object URLs; give them for this test only.
     Object.assign(URL, { createObjectURL: () => 'blob:preview', revokeObjectURL: revokeUrl })
     const { user } = renderButton()
     const dialog = await openDialog(user)
     await user.type(within(dialog).getByLabelText('What do you want to post about?'), 'Cold brew')
-    await user.click(await screen.findByRole('checkbox', { name: 'Page A' }))
+    await pickPage(user, 'Page A')
     const picker = dialog.querySelector<HTMLInputElement>('input[type="file"]')!
     await user.upload(picker, [
       new File(['x'], 'banner.png', { type: 'image/png' }),
@@ -815,20 +1054,18 @@ describe('AiCreateButton', () => {
     // Wait for the lazily loaded preview, which replaces the list once it arrives.
     expect(await within(dialog).findByRole('img', { name: 'banner.png' })).toBeInTheDocument()
     expect(within(dialog).getByRole('status', { name: 'Uploading brief.pdf' })).toBeInTheDocument()
-    // Nothing is sent while a file is still uploading.
-    expect(within(dialog).getByRole('button', { name: /Create post/ })).toBeDisabled()
-
-    finishPdf()
-    await waitFor(() =>
-      expect(within(dialog).queryByRole('status', { name: /Uploading/ })).not.toBeInTheDocument(),
-    )
-    expect(within(dialog).getByRole('button', { name: /Create post/ })).toBeEnabled()
-
     const list = within(dialog).getByRole('list', { name: 'Attached files' })
     await user.click(within(list).getByRole('button', { name: 'Remove banner.png' }))
     await waitFor(() => expect(released).toEqual(['att-banner.png']))
     expect(revokeUrl).toHaveBeenCalledWith('blob:preview')
     expect(within(list).getAllByRole('listitem')).toHaveLength(1)
+
+    // Sending while a file is still uploading waits for it, then goes out with it.
+    await user.click(within(dialog).getByRole('button', { name: /Create post/ }))
+    expect(sent).toEqual([])
+    finishPdf()
+    await waitFor(() => expect(sent).toHaveLength(1))
+    expect(sent[0]).toMatchObject({ attachmentIds: ['att-brief.pdf'] })
     Reflect.deleteProperty(URL, 'createObjectURL')
     Reflect.deleteProperty(URL, 'revokeObjectURL')
   })

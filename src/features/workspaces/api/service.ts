@@ -4,6 +4,7 @@ import type {
   CreateWorkspaceInput,
   UpdateWorkspaceInput,
   WorkspaceDto,
+  WorkspaceAiCredits,
   WorkspaceMemberDto,
   UpdateWorkspaceMemberInput,
   WorkspaceMemberBrandInput,
@@ -54,6 +55,29 @@ export async function updateWorkspaceMember({
   const { data } = await apiClient.patch<CommonApiResponse<WorkspaceMemberDto>>(
     `/workspaces/${workspaceId}/members/${memberId}`,
     { role },
+  )
+  return data.data
+}
+
+export async function getWorkspaceAiCredits(workspaceId: string) {
+  const { data } = await apiClient.get<CommonApiResponse<WorkspaceAiCredits>>(
+    `/workspaces/${workspaceId}/ai-credits`,
+  )
+  return data.data
+}
+
+export async function updateMemberAiCredits({
+  workspaceId,
+  memberId,
+  credits,
+}: {
+  workspaceId: string
+  memberId: string
+  credits: number | null
+}) {
+  const { data } = await apiClient.put<CommonApiResponse<WorkspaceAiCredits>>(
+    `/workspaces/${workspaceId}/ai-credits/members/${memberId}`,
+    { credits },
   )
   return data.data
 }

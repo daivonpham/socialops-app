@@ -5,6 +5,7 @@ import dayjs, { type Dayjs, type OpUnitType } from 'dayjs'
 import { useMemo, type ComponentProps } from 'react'
 import type { CountryCode } from 'libphonenumber-js'
 import { isValidPhone } from '@/shared/lib/formatHelpers'
+import { IconInfo } from './icons'
 
 type AntFormComponentProps = ComponentProps<typeof AntForm>
 export type FormProps<Values extends object = Record<string, unknown>> = Omit<
@@ -124,7 +125,23 @@ function FormItem({
     return values.includes(dateAfterField) ? values : [...values, dateAfterField]
   }, [dateAfterField, dependencies])
 
-  return <AntForm.Item {...rest} rules={mergedRules} dependencies={mergedDependencies} />
+  // A text hint sits behind an (i) beside the label instead of a line under the field.
+  const tooltip =
+    typeof rest.tooltip === 'string'
+      ? {
+          title: rest.tooltip,
+          icon: <IconInfo className="cursor-help text-icon-sm text-text-tertiary" />,
+        }
+      : rest.tooltip
+
+  return (
+    <AntForm.Item
+      {...rest}
+      tooltip={tooltip}
+      rules={mergedRules}
+      dependencies={mergedDependencies}
+    />
+  )
 }
 
 function FormBase<Values extends object = Record<string, unknown>>(props: FormProps<Values>) {
