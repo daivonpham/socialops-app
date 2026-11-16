@@ -121,8 +121,6 @@ export const aiContentEnUS = {
     unreadable: 'Could not read {{names}}, so the AI did not use what it says.',
     imageMissing: 'The image could not be made. You can add one on the post screen.',
     imagesMissing: '{{count}} more could not be created. You can add images in the editor.',
-    imagesPending: 'Creating the images. The buttons appear once they are done.',
-    finishing: 'Finishing the post.',
     use: 'Use',
     publishNow: 'Publish now',
     submit: 'Send for approval',

@@ -27,7 +27,9 @@ export function periodDates(period: Period): Range {
     const lastPreviousMonth = shift(firstThisMonth, -1)
     return [`${lastPreviousMonth.slice(0, 7)}-01`, lastPreviousMonth]
   }
-  return [shift(today, 1 - Number(period.preset.slice(0, -1))), today]
+  // "Last N days" are the N whole days before today, as Facebook counts them: today is not over.
+  const yesterday = shift(today, -1)
+  return [shift(yesterday, 1 - Number(period.preset.slice(0, -1))), yesterday]
 }
 
 export function reportDatePresets(

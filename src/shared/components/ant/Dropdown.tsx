@@ -7,6 +7,7 @@ import {
   type CSSProperties,
   type ReactElement,
 } from 'react'
+import { matchesSearch } from '@/shared/lib/search'
 import type { DropdownMenuItem, DropdownProps } from '@/shared/ui/primitives/Dropdown'
 import { IconCheck, IconSearch } from './icons'
 import { PopupSurface } from './PopupSurface'
@@ -15,7 +16,7 @@ function matchesQuery(item: DropdownMenuItem, query: string): boolean {
   if ('type' in item) return query.length === 0
   if (query.length === 0) return true
   const searchableText = item.searchText ?? (typeof item.label === 'string' ? item.label : '')
-  return searchableText.toLowerCase().includes(query.toLowerCase())
+  return matchesSearch(searchableText, query)
 }
 
 function toMenuItems(

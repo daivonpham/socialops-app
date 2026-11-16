@@ -110,6 +110,7 @@ export const errorsViVN = {
     // Planning
     CONTENT_VERSION_CONFLICT:
       'Bài viết vừa được người khác chỉnh sửa. Tải lại để xem bản mới nhất.',
+    CONTENT_CANCELLED: 'Bài viết này đã bị xóa.',
     CONTENT_NOT_EDITABLE: 'Không thể sửa bài viết lúc này.',
     CONTENT_NOT_RESCHEDULABLE: 'Không thể đổi lịch bài viết này.',
     CONTENT_NOT_APPROVABLE: 'Chỉ bản nháp mới được đổi trạng thái duyệt.',

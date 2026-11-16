@@ -37,17 +37,20 @@ export function HighlightsCard({
     0,
   )
   if (viewers.value > 0) {
-    const change = formatNumberText(Math.abs(viewers.change), locale)
+    const change = formatNumberText(Math.abs(viewers.change ?? 0), locale)
     items.push({
       key: 'viewers',
-      label: t('dashboard.highlights.viewersChange'),
-      value: !compare
-        ? formatCompact(viewers.value, locale)
-        : viewers.change > 0
-          ? t('dashboard.highlights.viewersUp', { value: `${change}%` })
-          : viewers.change < 0
-            ? t('dashboard.highlights.viewersDown', { value: `${change}%` })
-            : t('dashboard.highlights.viewersFlat'),
+      label: t(
+        compare ? 'dashboard.highlights.viewersChange' : 'dashboard.highlights.viewersTotal',
+      ),
+      value:
+        !compare || viewers.change === null
+          ? formatCompact(viewers.value, locale)
+          : viewers.change > 0
+            ? t('dashboard.highlights.viewersUp', { value: `${change}%` })
+            : viewers.change < 0
+              ? t('dashboard.highlights.viewersDown', { value: `${change}%` })
+              : t('dashboard.highlights.viewersFlat'),
       detail: t('dashboard.highlights.viewersDetail', {
         value: formatCompact(viewers.value, locale),
         day: formatDayMonth(dashboard.trend.labels[peak] ?? ''),

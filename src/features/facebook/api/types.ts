@@ -37,7 +37,11 @@ export type MetricKey =
 export type MetricDto = {
   key: MetricKey
   value: number
-  change: number
+  /**
+   * Null when the previous period was 0: nothing to compare with, shown as "—". Left out when
+   * comparison is off, and then nothing is shown.
+   */
+  change?: number | null
   estimated?: boolean
   unit?: 'number' | 'percent'
 }
@@ -105,8 +109,7 @@ export type FacebookRecentPostsQuery = FacebookQuery & {
   page: number
   limit: number
   search?: string
-  sortBy?:
-    'publishedAt' | 'mediaViews' | 'reactions' | 'comments' | 'shares' | 'contentInteractions'
+  sortBy?: FacebookPostSort
   sortOrder?: 'asc' | 'desc'
 }
 
@@ -117,16 +120,92 @@ export type FacebookRecentPostsDto = {
   limit: number
 }
 
+export const FACEBOOK_POST_SORTS = [
+  'publishedAt',
+  'mediaViews',
+  'viewers',
+  'reactions',
+  'comments',
+  'shares',
+  'contentInteractions',
+  'clicks',
+  'linkClicks',
+  'videoViews',
+  'videoViewTime',
+  'videoAvgTime',
+  'newFollowers',
+] as const
+export type FacebookPostSort = (typeof FACEBOOK_POST_SORTS)[number]
+
+/** A synced post; null means Facebook gave no figure. Times are in milliseconds. */
 export type FacebookRecentPostDto = Omit<
   FacebookPostDto,
   'mediaViews' | 'reactions' | 'comments' | 'shares' | 'contentInteractions' | 'clicks'
 > & {
   contentType: 'post' | 'reel' | 'story'
   mediaViews: number | null
+  viewers: number | null
   reactions: number | null
   comments: number | null
   shares: number | null
   contentInteractions: number | null
+  clicks: number | null
+  linkClicks: number | null
+  videoViews: number | null
+  videoViewTimeMs: number | null
+  videoAvgTimeMs: number | null
+  videoLengthMs: number | null
+  newFollowers: number | null
+}
+
+export type FacebookPostMedia = { type: 'image' | 'video'; imageUrl?: string }
+
+export type FacebookPostVideoDetails = {
+  organicViews?: number
+  paidViews?: number
+  autoplayedViews?: number
+  clickedToPlayViews?: number
+  soundOnViews?: number
+  views15s?: number
+  views60s?: number
+  completeViews30s?: number
+  /** Share of viewers still watching at each second, from 1 down to 0. */
+  retention?: number[]
+  viewsBySource?: Record<string, number>
+  viewTimeByAgeGender?: Record<string, number>
+  viewTimeByCountry?: Record<string, number>
+  viewTimeByRegion?: Record<string, number>
+  reelPlays?: number
+  reelInitialPlays?: number
+  reelReplays?: number
+}
+
+export type FacebookPostDetailDto = {
+  post: FacebookRecentPostDto & {
+    format?: 'reel' | 'video' | 'album' | 'photo' | 'text' | 'link'
+    reactionTypes: Record<string, number>
+    details: {
+      clicksByType?: Record<string, number>
+      media?: FacebookPostMedia[]
+      video?: FacebookPostVideoDetails
+    }
+    metricsUpdatedAt: string
+  }
+  /** The post's running totals, one point per day since it was first synced. */
+  daily: Array<{
+    date: string
+    mediaViews: number | null
+    viewers: number | null
+    interactions: number | null
+    videoViews: number | null
+  }>
+  /** Median of the Page's other posts of the same kind in the 90 days before; null if too few. */
+  typical: {
+    posts: number
+    mediaViews: number | null
+    viewers: number | null
+    interactions: number | null
+  } | null
 }
 
 export type FacebookAnalyticsDto = {
@@ -230,7 +309,7 @@ export type FacebookSyncStatusDto = {
 
 export type FacebookPostFormat = 'reel' | 'video' | 'album' | 'photo' | 'text' | 'link'
 
-type DashboardKpi = { value: number; previous: number; change: number; series: number[] }
+type DashboardKpi = { value: number; previous: number; change: number | null; series: number[] }
 type DashboardSeries = { current: number[]; previous: number[] }
 
 export type FacebookDashboardPostDto = {
@@ -243,6 +322,8 @@ export type FacebookDashboardPostDto = {
   thumbnailUrl?: string
   permalinkUrl?: string
   viewers: number
+  /** Media views: Meta's "Views", counted every time the post is seen. */
+  views: number
   engagements: number
   comments: number
   engagementRate: number
@@ -305,6 +386,8 @@ export type FacebookDashboardDto = {
     averageViewers: number
     engagementRate: number
   }>
+  /** Stories published in the period: counted only, their figures are not synced. */
+  formatStories: number
   pages: Array<{
     pageId: string
     pageName: string
@@ -312,7 +395,7 @@ export type FacebookDashboardDto = {
     followers: number
     netFollows: number
     viewers: number
-    viewersChange: number
+    viewersChange: number | null
     engagements: number
     engagementRate: number
     posts: number

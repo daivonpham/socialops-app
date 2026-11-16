@@ -112,6 +112,7 @@ export const errorsEnUS = {
     // Planning
     CONTENT_VERSION_CONFLICT:
       'This post was changed by someone else. Reload to see the latest version.',
+    CONTENT_CANCELLED: 'This post was deleted.',
     CONTENT_NOT_EDITABLE: 'This post cannot be edited right now.',
     CONTENT_NOT_RESCHEDULABLE: 'This post cannot be rescheduled.',
     CONTENT_NOT_APPROVABLE: 'Only drafts can change approval.',

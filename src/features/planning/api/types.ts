@@ -71,6 +71,8 @@ export type PlanningContent = {
   type?: PlanningPostType
   link?: string
   media?: PlanningMedia[]
+  /** A Reel's chosen cover; Facebook picks one when there is none. */
+  thumbnail?: PlanningMedia
   platformSettings?: Record<string, boolean | string>
   platform: PlanningPlatform
   targets: PlanningTarget[]
@@ -155,6 +157,8 @@ export type CreatePlanningContentInput = {
   captionMode: PlanningCaptionMode
   link?: string
   media: PlanningMedia[]
+  /** A Reel's cover, uploaded like other media; `null` clears it. */
+  thumbnail?: PlanningMedia | null
   publications: Array<{
     socialAccountId: string
     captionOverride?: string

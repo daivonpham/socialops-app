@@ -1,3 +1,4 @@
+import { toPlainCaption } from '@/shared/lib/plainCaption'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { hasPermission, usePermissions } from '@/shared/permissions'
@@ -80,8 +81,7 @@ export function PlanningList({
               <PlanningMediaThumbnail content={row} className="size-12 rounded-lg" />
               <span className="min-w-0">
                 <span className="line-clamp-2 text-body-sm leading-relaxed text-text-primary">
-                  {pendingPublication?.pendingCaption ||
-                    row.caption ||
+                  {toPlainCaption(pendingPublication?.pendingCaption || row.caption) ||
                     t(`postType.${getPostType(row)}`)}
                 </span>
                 <span className="mt-1 block text-caption text-text-tertiary">

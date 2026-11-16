@@ -36,7 +36,7 @@ import {
 import { ManageFacebookPagesDrawer } from '../components/ManageFacebookPagesDrawer'
 import { FacebookPostsTab } from '../components/FacebookPostsTab'
 import { FacebookPageSwitcher } from '../components/FacebookPageSwitcher'
-import { FacebookSyncBanner } from '../components/FacebookSyncStatus'
+import { FacebookFirstSync, FacebookSyncBanner } from '../components/FacebookSyncStatus'
 import { FacebookDashboard } from '../components/dashboard/FacebookDashboard'
 import { FACEBOOK_ACCESS } from '../config/facebook-access'
 import { CodedError, parseErrorCode } from '@/shared/api/errors'
@@ -182,6 +182,10 @@ export default function FacebookPage() {
     compare: filters.compare,
   }
 
+  // The sync notices only concern the Pages on screen.
+  const shownPageIds =
+    selectedPageId === 'all' ? connectedPages.map((page) => page.id) : [selectedPageId]
+
   const contentType =
     FACEBOOK_POST_CONTENT_TYPES.find((value) => value === filters.contentType) ??
     ('all' satisfies FacebookPostContentType)
@@ -234,7 +238,7 @@ export default function FacebookPage() {
         reconnecting={connect.isPending}
         onReconnect={startConnect}
       />
-      <FacebookSyncBanner brandId={brandId} />
+      <FacebookSyncBanner brandId={brandId} pageIds={shownPageIds} />
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Tabs
@@ -257,21 +261,23 @@ export default function FacebookPage() {
           />
         </div>
       </div>
-      {tab === 'overview' ? (
-        <FacebookDashboard
-          brandId={brandId}
-          query={query}
-          pages={visiblePages}
-          onSelectPage={(pageId) => setFilters({ pageId })}
-        />
-      ) : (
-        <FacebookPostsTab
-          brandId={brandId}
-          query={query}
-          contentType={contentType}
-          onClearContentType={() => setFilters({ contentType: 'all' })}
-        />
-      )}
+      <FacebookFirstSync brandId={brandId} pageIds={shownPageIds}>
+        {tab === 'overview' ? (
+          <FacebookDashboard
+            brandId={brandId}
+            query={query}
+            pages={visiblePages}
+            onSelectPage={(pageId) => setFilters({ pageId })}
+          />
+        ) : (
+          <FacebookPostsTab
+            brandId={brandId}
+            query={query}
+            contentType={contentType}
+            onClearContentType={() => setFilters({ contentType: 'all' })}
+          />
+        )}
+      </FacebookFirstSync>
       <ManageFacebookPagesDrawer
         brandId={brandId}
         integration={{ ...data, pages: visiblePages }}

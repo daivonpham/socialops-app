@@ -29,6 +29,7 @@ export function PostingTimesCard({
     <DashboardCard
       className={className}
       title={t('dashboard.postingTimes.title')}
+      hint={t('dashboard.engagementRateFormula')}
       description={t('dashboard.postingTimes.description')}
       extra={
         best && bestSlot ? (

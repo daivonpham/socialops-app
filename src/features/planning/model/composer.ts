@@ -1,3 +1,4 @@
+import { toPlainCaption } from '@/shared/lib/plainCaption'
 import type {
   CreatePlanningContentInput,
   PlanningCaptionMode,
@@ -11,7 +12,19 @@ import type {
 
 export type PreviewViewport = 'mobile' | 'desktop'
 export type ScheduleMode = 'same_time' | 'by_account'
-export type ComposerMedia = PlanningMedia & { file?: File }
+/** `file` is set until the picked file is stored; `size` (bytes) stays for showing it. */
+export type ComposerMedia = PlanningMedia & { file?: File; size?: number }
+
+/**
+ * A Reel's cover: a frame of the video (`time` in seconds) or a picture of the user's own. A frame
+ * cover follows the video, so replacing the video drops it; an uploaded one stays.
+ */
+export type ComposerThumbnail = ComposerMedia & {
+  source: 'frame' | 'upload'
+  time?: number
+  /** The video a frame cover was taken from. */
+  videoId?: string
+}
 
 export type PlanningComposerDraft = {
   platform: PlanningPlatform
@@ -20,6 +33,8 @@ export type PlanningComposerDraft = {
   caption: string
   link: string
   media: ComposerMedia[]
+  /** Only Reels have one; other post types ignore it. */
+  thumbnail: ComposerThumbnail | null
   captionMode: PlanningCaptionMode
   /** Per-Page captions. Kept while the per-Page mode is off so turning it back on restores them. */
   captionOverrides: Record<string, string>
@@ -41,15 +56,16 @@ export type ComposerAiSuggestion = {
 
 /**
  * A Facebook post filled from an AI suggestion, for Pages still in `accountIds`. Pages with
- * different captions get them each; the same caption everywhere stays shared.
+ * different captions get them each; the same caption everywhere stays shared. Markdown comes off.
  */
 export function createComposerDraftFromAiSuggestion(
   suggestion: ComposerAiSuggestion,
   accountIds: string[],
 ): PlanningComposerDraft {
   const targetIds = suggestion.socialAccountIds.filter((id) => accountIds.includes(id))
-  const captions = targetIds.map((id) => suggestion.captions[id] ?? '')
-  const caption = captions[0] ?? suggestion.generalCaption ?? ''
+  // The post screen edits plain text, as the Page will show it; the Markdown stays in the chat.
+  const captions = targetIds.map((id) => toPlainCaption(suggestion.captions[id] ?? ''))
+  const caption = captions[0] ?? toPlainCaption(suggestion.generalCaption ?? '')
   const perAccount = targetIds.length > 1 && captions.some((text) => text !== caption)
   return {
     ...createComposerDraft('facebook'),
@@ -76,6 +92,7 @@ export function createComposerDraft(platform: PlanningPlatform): PlanningCompose
     caption: '',
     link: '',
     media: [],
+    thumbnail: null,
     captionMode: 'shared',
     captionOverrides: {},
     publishMode: 'publish_now',
@@ -185,6 +202,7 @@ export function createComposerDraftFromContent(content: PlanningContent): Planni
         : content.caption,
     link: content.link ?? '',
     media: content.media ?? fallbackMedia,
+    thumbnail: content.thumbnail ? { ...content.thumbnail, source: 'upload' } : null,
     captionMode: publications.length > 1 ? captionMode : 'shared',
     captionOverrides:
       publications.length > 1 && captionMode === 'per_target'
@@ -277,6 +295,15 @@ export function toCreatePlanningContentInput(
     captionMode: perAccount ? 'per_target' : 'shared',
     link: draft.postType === 'facebook_story' ? undefined : draft.link.trim() || undefined,
     media: draft.media.map(({ id, type, url, name }) => ({ id, type, url, name })),
+    thumbnail:
+      draft.postType === 'facebook_reel' && draft.thumbnail
+        ? {
+            id: draft.thumbnail.id,
+            type: 'image',
+            url: draft.thumbnail.url,
+            name: draft.thumbnail.name,
+          }
+        : null,
     intent,
     platformSettings: draft.platformSettings,
     publications: draft.targetIds.map((socialAccountId) => ({

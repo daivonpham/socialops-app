@@ -156,7 +156,7 @@ export const facebookEnUS = {
   metrics: {
     mediaViews: 'Media views',
     uniqueViewers: 'Unique viewers',
-    contentInteractions: 'Content interactions',
+    contentInteractions: 'Interactions (incl. clicks)',
     followers: 'Followers',
     published: 'Published posts',
     profileViews: 'Page visits',
@@ -200,14 +200,21 @@ export const facebookEnUS = {
   },
 
   dashboard: {
+    engagementRateFormula: 'Eng. rate = (reactions + comments + shares) ÷ viewers',
     previousPeriod: 'Previous period',
     currentPeriod: 'Current period',
     estimated: 'Estimated',
+    engagementRateHint:
+      "Engagements with the Page's posts as Facebook counts them (reactions, comments, shares and clicks) ÷ viewers in the period. The rate of each post counts only reactions, comments and shares.",
+    contentInteractionsHint:
+      "What Facebook counts on the Page's posts: reactions, comments, shares and clicks on the post. Meta Business Suite leaves clicks out, so its number is lower.",
     estimatedHint:
       'Meta reports exact viewers only per Page for 7 or 28 days. Other periods or several Pages are added up, so the number may be higher than the actual one.',
     trend: {
       title: 'Content trend',
       description: 'Hover the chart to see each day',
+      videoViewsDescription:
+        'Views of 3 seconds or more of the videos and Reels published in the period, by publish day',
       metric: 'Chart metric',
       total: 'Total {{metric}}',
       average: 'Average / day',
@@ -215,8 +222,8 @@ export const facebookEnUS = {
       metrics: {
         viewers: 'Viewers',
         views: 'Views',
-        engagements: 'Engagements',
-        videoViews: 'Video views',
+        engagements: 'Engagements (incl. clicks)',
+        videoViews: 'Video views (by publish date)',
       },
     },
     interactions: {
@@ -274,6 +281,8 @@ export const facebookEnUS = {
       countries: 'Top countries',
       cities: 'Top cities',
       other: 'Other',
+      showMore: 'Show more',
+      showLess: 'Show less',
       unavailable:
         'Meta has not returned this breakdown. Pages under 100 followers usually have none.',
     },
@@ -281,6 +290,7 @@ export const facebookEnUS = {
       title: 'Performance by format',
       description: 'Average engagement rate · {{count}} posts',
       summary: '{{count}} posts · avg {{value}} viewers',
+      storySummary: '{{count}} stories',
       empty: 'No posts in this period.',
       names: {
         reel: 'Reels',
@@ -289,6 +299,7 @@ export const facebookEnUS = {
         photo: 'Photo',
         text: 'Status',
         link: 'Link',
+        story: 'Stories',
       },
     },
     pages: {
@@ -312,6 +323,7 @@ export const facebookEnUS = {
       description: 'Top 5 posts in the period',
       sortBy: 'Rank posts by',
       viewers: 'Viewers',
+      views: 'Views',
       engagements: 'Engagements',
       comments: 'Comments',
       engagementRate: 'Eng. rate',
@@ -322,6 +334,7 @@ export const facebookEnUS = {
     highlights: {
       title: 'Highlights',
       viewersChange: 'Viewers vs previous period',
+      viewersTotal: 'Viewers in this period',
       viewersUp: 'Up {{value}}',
       viewersDown: 'Down {{value}}',
       viewersFlat: 'Unchanged',
@@ -336,6 +349,140 @@ export const facebookEnUS = {
       topPostDetail: '{{viewers}} viewers · {{rate}} engagement rate',
       addToReport: 'Add to report',
       empty: 'Not enough data in this period for highlights yet.',
+    },
+  },
+
+  duration: {
+    seconds: '{{value}}s',
+    minutes: '{{minutes}}m {{seconds}}s',
+    hours: '{{hours}}h {{minutes}}m',
+  },
+  initialSync: {
+    title: 'Syncing your data from Facebook',
+    description:
+      'SocialOps is fetching the last 12 months of posts and figures. The first sync usually takes a few minutes, and the numbers appear on their own when it is done. You can leave this page.',
+    progress: '{{done}} of {{total}} Pages done',
+    pageSyncing: 'Syncing',
+    pageRetrying: 'Facebook has not answered yet, retrying',
+    pageDone: 'Done',
+    bannerTitle: 'Syncing data for {{pages}}',
+    bannerDescription:
+      'The figures shown may be incomplete and update on their own when the sync is done.',
+  },
+  postColumns: {
+    mediaViews: 'Views',
+    mediaViewsHint: 'How many times the post was played or shown on screen.',
+    viewers: 'Viewers',
+    viewersHint: 'People who saw the post at least once.',
+    contentInteractions: 'Interactions',
+    contentInteractionsHint: 'Reactions, comments and shares together.',
+    reactions: 'Reactions',
+    reactionsHint: 'Like, Love, Haha and the other reactions.',
+    comments: 'Comments',
+    commentsHint: 'Comments on the post.',
+    shares: 'Shares',
+    sharesHint: 'How many times the post was shared.',
+    clicks: 'Clicks',
+    clicksHint: 'Every click on the post: opening a photo, playing a video, clicking a link…',
+    linkClicks: 'Link clicks',
+    linkClicksHint: 'Clicks on the link in the post.',
+    newFollowers: 'Follows',
+    newFollowersHint:
+      'People who followed the Page from the post. Facebook reports it for videos and Reels only.',
+    videoViews: 'Video views',
+    videoViewsHint: 'Video views of 3 seconds or more.',
+    videoViewTime: 'Watch time',
+    videoViewTimeHint: 'Total time people spent watching the video.',
+    videoAvgTime: 'Avg. watch time',
+    videoAvgTimeHint: 'Average time watched per video view.',
+    openDetail: 'Open details of {{title}}',
+  },
+  postDetail: {
+    back: 'Back to posts',
+    eyebrow: 'Content library',
+    title: 'Post insights',
+    loadError: 'Could not load the post',
+    notFoundTitle: 'Post not found',
+    notFoundDescription:
+      'The post may have been deleted on Facebook or belong to a Page you cannot view.',
+    updatedAt: 'Figures updated {{time}}',
+    openOnFacebook: 'Open on Facebook',
+    typicalHint:
+      'Against the median of {{count}} posts of the same kind on the Page in the 90 days before this one.',
+    aboveTypical: '+{{percent}} vs. typical post',
+    belowTypical: '-{{percent}} vs. typical post',
+    viewsOverTime: {
+      title: 'Views over time',
+      thisPost: 'This post',
+      typical: 'Your typical post',
+    },
+    interactions: {
+      titleUnknown: 'Interactions',
+      hint: 'Reactions, comments and shares on the post together.',
+      reactions: 'Reactions',
+      comments: 'Comments',
+      shares: 'Shares',
+      byType: 'Reactions by type',
+      reaction: {
+        like: 'Like',
+        love: 'Love',
+        care: 'Care',
+        haha: 'Haha',
+        wow: 'Wow',
+        sorry: 'Sad',
+        anger: 'Angry',
+      },
+    },
+    clicks: {
+      title: 'Clicks by type',
+      empty: 'No clicks yet.',
+      type: {
+        'link clicks': 'Link clicks',
+        'photo view': 'Photo views',
+        'video play': 'Video plays',
+        'other clicks': 'Other clicks',
+      },
+    },
+    video: {
+      title: 'Video performance',
+      views: 'Video views (3 seconds)',
+      viewTime: 'Total watch time',
+      avgTime: 'Average watch time',
+      length: 'Video length',
+      views15s: 'Watched 15 seconds',
+      views60s: 'Watched 60 seconds',
+      completeViews30s: 'Watched to the end or 30 seconds',
+      soundOnViews: 'Watched with sound on',
+      autoplayedViews: 'Autoplayed',
+      clickedToPlayViews: 'Clicked to play',
+      organicViews: 'Organic views',
+      paidViews: 'Paid views',
+      reelPlays: 'Reel plays',
+      reelInitialPlays: 'Initial plays',
+      reelReplays: 'Replays',
+    },
+    retention: {
+      title: 'Audience retention',
+      hint: 'Share of viewers still watching at each second of the video.',
+      share: 'Still watching',
+      second: 'Second {{second}}',
+    },
+    sources: {
+      title: 'How people found the video',
+      type: {
+        page_owned: 'From your Page',
+        shared: 'From shares',
+        crossposted: 'Crossposted',
+        boosted: 'Ads',
+      },
+    },
+    audience: {
+      title: 'Who watched your video',
+      hint: 'As a share of watch time.',
+      ageGender: 'Age and gender',
+      countries: 'Top countries',
+      regions: 'Top regions',
+      gender: { F: 'Women', M: 'Men', U: 'Unknown' },
     },
   },
 } as const

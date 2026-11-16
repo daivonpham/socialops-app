@@ -1,3 +1,4 @@
+import { toPlainCaption } from '@/shared/lib/plainCaption'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import type {
@@ -127,7 +128,7 @@ export function PlanningCalendar({
         const isStack = group.length > 1
         return {
           id: isStack ? `stack:${content.id}` : content.id,
-          title: content.title ?? content.caption,
+          title: content.title ?? toPlainCaption(content.caption),
           start: planningCalendarEventDate(content),
           // A stack opens its list on click; its posts are rescheduled one by one from the post.
           editable: !isStack && getPlanningDragPolicy(content.status, canPublishDirect).draggable,
@@ -471,7 +472,9 @@ export function PlanningCalendar({
       >
         {pendingReschedule ? (
           <div className="grid gap-3 text-body-sm text-text-secondary">
-            <p>{pendingReschedule.content.title ?? pendingReschedule.content.caption}</p>
+            <p>
+              {pendingReschedule.content.title ?? toPlainCaption(pendingReschedule.content.caption)}
+            </p>
             <p>
               {t('reschedule.change', {
                 previous: formatDateTime(pendingReschedule.previousAt, i18n.resolvedLanguage),

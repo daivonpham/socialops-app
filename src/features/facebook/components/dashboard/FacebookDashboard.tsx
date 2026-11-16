@@ -59,6 +59,10 @@ export function FacebookDashboard({
       <MetricCards
         metrics={dashboardMetrics(data, compare)}
         estimatedHint={t('dashboard.estimatedHint')}
+        hints={{
+          contentInteractions: t('dashboard.contentInteractionsHint'),
+          engagementRate: t('dashboard.engagementRateHint'),
+        }}
       />
       <div className="grid gap-4 xl:grid-cols-3">
         <ContentTrendCard className="xl:col-span-2" dashboard={data} compare={compare} />
@@ -70,7 +74,11 @@ export function FacebookDashboard({
       </div>
       <div className="grid gap-4 xl:grid-cols-5">
         <AudienceCard className="xl:col-span-3" audience={data.audience} />
-        <FormatPerformanceCard className="xl:col-span-2" formats={data.formats} />
+        <FormatPerformanceCard
+          className="xl:col-span-2"
+          formats={data.formats}
+          stories={data.formatStories}
+        />
       </div>
       {query.pageId === 'all' && data.pages.length > 1 ? (
         <PagePerformanceCard
@@ -93,9 +101,15 @@ function dashboardMetrics(data: FacebookDashboardDto, compare: boolean): MetricD
   const { kpis } = data
   const metric = (
     key: MetricDto['key'],
-    kpi: { value: number; change: number },
+    kpi: { value: number; change: number | null },
     extra: Partial<MetricDto> = {},
-  ): MetricDto => ({ key, value: kpi.value, change: compare ? kpi.change : 0, ...extra })
+  ): MetricDto => ({
+    key,
+    value: kpi.value,
+    // With comparison off there is no previous period, so no change is shown at all.
+    ...(compare ? { change: kpi.change } : {}),
+    ...extra,
+  })
   return [
     metric('mediaViews', kpis.views),
     metric('uniqueViewers', kpis.viewers, { estimated: kpis.viewers.estimated }),

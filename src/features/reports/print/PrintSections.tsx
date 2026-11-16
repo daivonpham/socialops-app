@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
+  formatCityLabel,
   formatCountryLabel,
   formatDate,
   formatDateTime,
@@ -361,7 +362,10 @@ export function PrintSection({
                 ],
                 [
                   t('print.cities'),
-                  section.cities.map((row) => ({ label: row.name, value: row.value })),
+                  section.cities.map((row) => ({
+                    label: formatCityLabel(row.name, i18n.language),
+                    value: row.value,
+                  })),
                 ],
               ] as const
             ).map(([title, rows]) => (

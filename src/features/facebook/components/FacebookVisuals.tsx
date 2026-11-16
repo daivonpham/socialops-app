@@ -4,6 +4,7 @@ import {
   IconArrowDown,
   IconArrowUp,
   IconHeart,
+  IconInfo,
   IconLike,
   IconMembers,
   IconPost,
@@ -18,10 +19,13 @@ import type { MetricDto, MetricKey, TrendPointDto } from '../api'
 export function MetricCards({
   metrics,
   estimatedHint,
+  hints,
 }: {
   metrics: MetricDto[]
   /** Explains estimated values on hover. */
   estimatedHint?: string
+  /** How a metric is worked out, behind an info icon next to its name. */
+  hints?: Partial<Record<MetricKey, string>>
 }) {
   const { t, i18n } = useTranslation('facebook')
   const locale = i18n.resolvedLanguage as AppLocale
@@ -29,7 +33,8 @@ export function MetricCards({
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {metrics.map((metric) => {
-        const positive = metric.change >= 0
+        // Null: the previous period had none, so there is no change to show.
+        const positive = metric.change == null || metric.change >= 0
         return (
           <div
             key={metric.key}
@@ -43,6 +48,13 @@ export function MetricCards({
                 <span className="text-label-sm leading-snug text-text-tertiary">
                   {t(`metrics.${metric.key}`)}
                 </span>
+                {hints?.[metric.key] ? (
+                  <Tooltip title={hints[metric.key]}>
+                    <span className="inline-flex text-caption text-text-tertiary">
+                      <IconInfo aria-label={hints[metric.key]} />
+                    </span>
+                  </Tooltip>
+                ) : null}
                 {metric.estimated ? (
                   <Tooltip title={estimatedHint}>
                     <span
@@ -64,15 +76,19 @@ export function MetricCards({
                     })}
               </strong>
             </div>
-            <span
-              className={
-                'absolute bottom-4 right-4 flex shrink-0 items-center gap-1 text-label-sm ' +
-                (positive ? 'text-success-700' : 'text-error-700')
-              }
-            >
-              {positive ? <IconArrowUp /> : <IconArrowDown />}
-              <span className="tabular-nums">{Math.abs(metric.change)}%</span>
-            </span>
+            {metric.change === undefined ? null : metric.change === null ? (
+              <span className="absolute bottom-4 right-4 text-label-sm text-text-tertiary">—</span>
+            ) : (
+              <span
+                className={
+                  'absolute bottom-4 right-4 flex shrink-0 items-center gap-1 text-label-sm ' +
+                  (positive ? 'text-success-700' : 'text-error-700')
+                }
+              >
+                {positive ? <IconArrowUp /> : <IconArrowDown />}
+                <span className="tabular-nums">{Math.abs(metric.change)}%</span>
+              </span>
+            )}
           </div>
         )
       })}

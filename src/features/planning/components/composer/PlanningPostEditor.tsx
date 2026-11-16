@@ -12,17 +12,14 @@ import { SocialAccountLabel } from '@/features/social-accounts'
 import {
   Button,
   Checkbox,
-  IconCheck,
+  FileUploadCard,
   IconChevronDown,
-  IconClose,
   IconImage,
   IconMobile,
   IconPost,
   IconReel,
   IconSettings,
   IconVideo,
-  IconWarning,
-  Image,
   Input,
   MediaDropzone,
   Popover,
@@ -35,10 +32,14 @@ import {
   setComposerCaptionMode,
   supportsCaptionPerAccount,
   usesCaptionPerAccount,
+  type ComposerMedia,
   type PlanningAccount,
   type PlanningComposerDraft,
 } from '../../model'
 import { PlanningAccountMultiSelect } from './PlanningAccountMultiSelect'
+import { ReelCoverField } from './ReelCoverPicker'
+import { clearVideoFrames, forgetVideoFrames, prepareVideoFrames } from './videoFrames'
+import { usePreviewPlayback } from '../preview/previewPlayback'
 
 const TIKTOK_BOOLEAN_SETTINGS = [
   ['allowComments', 'composer.settings.allowComments'],
@@ -57,12 +58,18 @@ export function PlanningPostEditor({
   setDraft,
   publishedMode = false,
   mediaUploads = {},
+  onRetryUpload,
+  onMediaAdded,
 }: {
   draft: PlanningComposerDraft
   accounts: PlanningAccount[]
   setDraft: Dispatch<SetStateAction<PlanningComposerDraft>>
   publishedMode?: boolean
   mediaUploads?: Record<string, MediaUploadState>
+  /** Sends the files that failed again. */
+  onRetryUpload?: () => void
+  /** Picked files, to be stored right away. */
+  onMediaAdded?: (media: ComposerMedia[]) => void
 }) {
   const { t } = useTranslation('planning')
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -76,10 +83,17 @@ export function PlanningPostEditor({
   const selectedAccounts = accounts.filter((account) => draft.targetIds.includes(account.id))
   const perAccountCaption = usesCaptionPerAccount(draft)
   const published = publishedMode
+  const playback = usePreviewPlayback()
+  // A Reel's video sits beside its cover, in one row.
+  const reelCover =
+    draft.postType === 'facebook_reel' && draft.media[0]?.type === 'video' ? draft.media[0] : null
 
   useEffect(() => {
     const urls = previewUrls.current
-    return () => urls.forEach((url) => URL.revokeObjectURL(url))
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url))
+      clearVideoFrames()
+    }
   }, [])
 
   const setSetting = (key: string, value: boolean | string) =>
@@ -107,11 +121,17 @@ export function PlanningPostEditor({
         type: file.type.startsWith('video/') ? ('video' as const) : ('image' as const),
         url: URL.createObjectURL(file),
         file,
+        size: file.size,
       }))
     if (!media.length) return
-    media.forEach((item) => previewUrls.current.add(item.url))
+    media.forEach((item) => {
+      previewUrls.current.add(item.url)
+      // The cover picker's strip of frames is read now, from the file, while it uploads.
+      if (item.type === 'video') prepareVideoFrames(item.id, item.url)
+    })
     if (singleMedia) {
       draft.media.forEach((item) => {
+        forgetVideoFrames(item.id)
         if (!item.file) return
         URL.revokeObjectURL(item.url)
         previewUrls.current.delete(item.url)
@@ -121,6 +141,7 @@ export function PlanningPostEditor({
       ...current,
       media: singleMedia ? media : [...current.media, ...media].slice(0, 10),
     }))
+    onMediaAdded?.(media)
   }
 
   return (
@@ -338,53 +359,56 @@ export function PlanningPostEditor({
         {!published && draft.media.length > 0 ? (
           <>
             <Divider />
-            <div className="flex flex-wrap gap-3">
-              {draft.media.map((item) => {
-                const upload = mediaUploads[item.id]
-                return (
-                  <div
-                    key={item.id}
-                    className={`relative size-24 overflow-hidden rounded-lg border bg-bg-surface-subtle ${upload?.status === 'failed' ? 'border-error-600' : 'border-border-subtle'}`}
-                  >
-                    {item.type === 'image' ? (
-                      <Image
-                        src={item.url}
-                        alt={item.name}
-                        className="size-full object-cover"
-                        wrapperClassName="block size-full"
-                        preview={{ mask: false }}
-                      />
-                    ) : (
-                      <video src={item.url} className="h-full w-full object-cover" muted />
-                    )}
-                    {upload ? <MediaUploadOverlay name={item.name} upload={upload} /> : null}
-                    {upload?.status === 'uploading' ? null : (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        disabled={published}
-                        icon={
-                          <span className="flex items-center justify-center leading-none">
-                            <IconClose aria-hidden className="block text-icon-sm" />
-                          </span>
+            <div className="flex flex-col gap-4 sm:flex-row">
+              <div
+                className={`grid min-w-0 flex-1 gap-3 ${draft.media.length > 1 ? 'md:grid-cols-2' : ''}`}
+              >
+                {draft.media.map((item) => {
+                  const upload = mediaUploads[item.id]
+                  return (
+                    <FileUploadCard
+                      key={item.id}
+                      name={item.name}
+                      preview={{ type: item.type, url: item.url }}
+                      size={item.size ?? item.file?.size}
+                      status={
+                        upload?.status === 'uploaded' ? 'complete' : (upload?.status ?? undefined)
+                      }
+                      percent={upload?.status === 'uploading' ? upload.percent : undefined}
+                      disabled={published}
+                      // The play button runs the preview's video; the card itself never plays.
+                      playback={
+                        item.type === 'video' && playback?.available
+                          ? { playing: playback.playing, onToggle: playback.toggle }
+                          : undefined
+                      }
+                      onRetry={onRetryUpload}
+                      onRemove={() => {
+                        forgetVideoFrames(item.id)
+                        if (item.file) {
+                          URL.revokeObjectURL(item.url)
+                          previewUrls.current.delete(item.url)
                         }
-                        aria-label={t('composer.media.remove', { name: item.name })}
-                        className="absolute right-1 top-1 flex size-media-action min-w-0 items-center justify-center rounded-pill border-0 bg-neutral-800 p-0 text-text-inverse shadow-sm hover:bg-neutral-900 hover:text-text-inverse"
-                        onClick={() => {
-                          if (item.file) {
-                            URL.revokeObjectURL(item.url)
-                            previewUrls.current.delete(item.url)
-                          }
-                          setDraft((current) => ({
-                            ...current,
-                            media: current.media.filter((media) => media.id !== item.id),
-                          }))
-                        }}
-                      />
-                    )}
-                  </div>
-                )
-              })}
+                        setDraft((current) => ({
+                          ...current,
+                          media: current.media.filter((media) => media.id !== item.id),
+                        }))
+                      }}
+                    />
+                  )
+                })}
+              </div>
+              {reelCover ? (
+                <div className="flex shrink-0">
+                  <ReelCoverField
+                    // As tall as the file card beside it; on narrow screens it sits below instead.
+                    className="size-[128px] sm:aspect-square sm:size-auto sm:h-full"
+                    video={reelCover}
+                    thumbnail={draft.thumbnail}
+                    onChange={(thumbnail) => setDraft((current) => ({ ...current, thumbnail }))}
+                  />
+                </div>
+              ) : null}
             </div>
           </>
         ) : null}
@@ -521,41 +545,6 @@ function FieldGroup({ label, children }: { label: string; children: ReactNode })
 
 function Divider() {
   return <div className="h-px bg-border-subtle" />
-}
-
-function MediaUploadOverlay({ name, upload }: { name: string; upload: MediaUploadState }) {
-  const { t } = useTranslation('planning')
-  if (upload.status === 'uploading') {
-    return (
-      <span
-        role="status"
-        aria-label={t('composer.media.itemUploading', { name, percent: upload.percent })}
-        className="absolute inset-0 flex items-center justify-center bg-neutral-950/50 text-label-md text-text-inverse"
-      >
-        {upload.percent}%
-      </span>
-    )
-  }
-  if (upload.status === 'uploaded') {
-    return (
-      <span
-        role="img"
-        aria-label={t('composer.media.itemUploaded', { name })}
-        className="absolute bottom-1 left-1 flex size-5 items-center justify-center rounded-pill bg-success-500 text-text-inverse shadow-sm"
-      >
-        <IconCheck aria-hidden className="text-icon-sm" />
-      </span>
-    )
-  }
-  return (
-    <span
-      role="img"
-      aria-label={t('composer.media.itemUploadFailed', { name })}
-      className="absolute inset-0 flex items-center justify-center bg-neutral-950/50 text-icon-lg text-text-inverse"
-    >
-      <IconWarning aria-hidden />
-    </span>
-  )
 }
 
 function TabLabel({ icon, label }: { icon: ReactNode; label: string }) {

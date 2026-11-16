@@ -19,6 +19,10 @@ export type ConfirmDialogProps = {
   onClose: () => void
 }
 
+/** Both actions keep half the width each; a label too long for it ends in "…" instead of overflowing. */
+const ACTION_CLASS =
+  'w-full min-w-0 [&.ant-btn]:min-w-0 [&_.ant-btn]:min-w-0 [&_.ant-btn]:w-full [&_.ant-btn>span]:truncate [&.ant-btn>span]:truncate'
+
 /**
  * The one confirmation pattern for the whole app: icon, title, description and two
  * equal-width actions. Callers keep domain copy; this owns the layout.
@@ -61,11 +65,11 @@ export function ConfirmDialog({
       onClose={close}
       footer={
         <div className="grid grid-cols-2 gap-3 pt-2">
-          <Button className="w-full" disabled={loading} onClick={close}>
+          <Button className={ACTION_CLASS} disabled={loading} onClick={close}>
             {cancelLabel ?? t('confirmDialog.cancel')}
           </Button>
           <Button
-            className="w-full"
+            className={ACTION_CLASS}
             variant={destructive ? 'destructive' : 'primary'}
             loading={loading}
             disabled={confirmDisabled}

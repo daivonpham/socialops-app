@@ -47,7 +47,11 @@ export function ContentTrendCard({
     <DashboardCard
       className={className}
       title={t('dashboard.trend.title')}
-      description={t('dashboard.trend.description')}
+      description={
+        metric === 'videoViews'
+          ? t('dashboard.trend.videoViewsDescription')
+          : t('dashboard.trend.description')
+      }
       extra={
         <Tabs
           value={metric}

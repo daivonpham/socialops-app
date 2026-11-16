@@ -22,6 +22,7 @@ import {
   Switch,
   Tooltip,
 } from '@/shared/ui'
+import { matchesSearch } from '@/shared/lib/search'
 import { useAiConversations, type AiAvailability, type AiConversationSummary } from '../api'
 import { AiCreditsMeter, AiCreditsRail } from './AiCreditsMeter'
 import { AiMark } from './AiMark'
@@ -500,10 +501,7 @@ function ChatList({
   }
   const tools = <HistoryTools searching={searching} onSearch={toggleSearch} onNew={onNew} />
   const groups = useMemo(() => {
-    const needle = query.trim().toLocaleLowerCase()
-    const shown = conversations.filter(
-      (item) => !needle || item.title.toLocaleLowerCase().includes(needle),
-    )
+    const shown = conversations.filter((item) => matchesSearch(item.title, query))
     const since = Date.now() - RECENT_DAYS * 24 * 60 * 60 * 1000
     return [
       {

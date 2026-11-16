@@ -1,5 +1,7 @@
 import { Drawer as AntDrawer } from 'antd'
 import { layout } from '@/shared/styles/tokens'
+import { Button } from './Button'
+import { IconClose } from './icons'
 import type { DrawerProps } from '@/shared/ui/primitives/Drawer'
 
 export function Drawer({
@@ -8,6 +10,7 @@ export function Drawer({
   title,
   placement = 'left',
   width = 'navigation',
+  closeLabel,
   children,
 }: DrawerProps) {
   return (
@@ -25,6 +28,18 @@ export function Drawer({
         }[width]
       }
       closable={false}
+      extra={
+        closeLabel ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={<IconClose aria-hidden />}
+            aria-label={closeLabel}
+            title={closeLabel}
+            onClick={onClose}
+          />
+        ) : undefined
+      }
       styles={{ body: { padding: 0 } }}
     >
       {children}

@@ -6,7 +6,9 @@ import type {
   FacebookIntegrationDto,
   FacebookOverviewDto,
   FacebookPageDto,
+  FacebookPostDetailDto,
   FacebookPostDto,
+  FacebookRecentPostDto,
   FacebookSyncStatusDto,
   MetricDto,
 } from './types'
@@ -444,7 +446,7 @@ export const facebookHandlers = [
     const page = Math.max(1, Number(url.searchParams.get('page') ?? 1))
     const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit') ?? 20)))
     const rows = POSTS.filter((post) => post.status === 'published')
-      .map((post) => ({ ...post, contentType: 'post' as const }))
+      .map(recentPostFor)
       .filter((post) => contentType === 'all' || post.contentType === contentType)
       .filter((post) => pageId === 'all' || post.pageId === pageId)
       .filter(
@@ -457,17 +459,75 @@ export const facebookHandlers = [
         const left =
           sortBy === 'publishedAt'
             ? Date.parse(a.publishedAt ?? a.createdAt)
-            : Number(a[sortBy as keyof FacebookPostDto] ?? 0)
+            : Number(a[sortBy as keyof typeof a] ?? 0)
         const right =
           sortBy === 'publishedAt'
             ? Date.parse(b.publishedAt ?? b.createdAt)
-            : Number(b[sortBy as keyof FacebookPostDto] ?? 0)
+            : Number(b[sortBy as keyof typeof b] ?? 0)
         return (left - right) * direction
       })
     return HttpResponse.json(
       envelope(
         { items: rows.slice((page - 1) * limit, page * limit), total: rows.length, page, limit },
         `/brands/${String(params.brandId)}/facebook/recent-posts`,
+      ),
+    )
+  }),
+  http.get('/api/brands/:brandId/facebook/recent-posts/:postId', async ({ params }) => {
+    await delay(300)
+    const source = POSTS.find((post) => post.id === params.postId)
+    if (!source)
+      return HttpResponse.json(
+        {
+          success: false,
+          error: { code: 'RESOURCE_NOT_FOUND', message: 'Facebook post was not found' },
+        },
+        { status: 404 },
+      )
+    const post = recentPostFor(source)
+    const days = 6
+    const detail: FacebookPostDetailDto = {
+      post: {
+        ...post,
+        format: post.mediaType === 'video' ? 'video' : 'photo',
+        reactionTypes: {
+          like: Math.round((post.reactions ?? 0) * 0.8),
+          love: Math.ceil((post.reactions ?? 0) * 0.2),
+        },
+        details: {
+          clicksByType: {
+            'photo view': Math.round((post.clicks ?? 0) * 0.7),
+            'other clicks': Math.round((post.clicks ?? 0) * 0.3),
+          },
+          ...(post.mediaType === 'video'
+            ? {
+                video: {
+                  retention: [1, 0.9, 0.75, 0.6, 0.5, 0.45, 0.4],
+                  viewsBySource: { page_owned: post.videoViews ?? 0 },
+                },
+              }
+            : {}),
+        },
+        metricsUpdatedAt: new Date().toISOString(),
+      },
+      daily: Array.from({ length: days }, (_, index) => ({
+        date: new Date(Date.now() - (days - 1 - index) * 86_400_000).toISOString().slice(0, 10),
+        mediaViews: Math.round(((post.mediaViews ?? 0) * (index + 1)) / days),
+        viewers: Math.round(((post.viewers ?? 0) * (index + 1)) / days),
+        interactions: Math.round(((post.contentInteractions ?? 0) * (index + 1)) / days),
+        videoViews: null,
+      })),
+      typical: {
+        posts: 12,
+        mediaViews: Math.round((post.mediaViews ?? 0) * 0.6),
+        viewers: null,
+        interactions: null,
+      },
+    }
+    return HttpResponse.json(
+      envelope(
+        detail,
+        `/brands/${String(params.brandId)}/facebook/recent-posts/${String(params.postId)}`,
       ),
     )
   }),
@@ -569,6 +629,25 @@ export const facebookHandlers = [
   }),
 ]
 
+/** A published mock post with the Posts list figures; video ones get watch figures. */
+function recentPostFor(post: FacebookPostDto): FacebookRecentPostDto {
+  const video = post.mediaType === 'video'
+  return {
+    ...post,
+    contentType: 'post',
+    viewers: Math.round(post.mediaViews * 0.7),
+    reactions: post.reactions ?? null,
+    comments: post.comments ?? null,
+    shares: post.shares ?? null,
+    linkClicks: Math.round(post.clicks * 0.2),
+    videoViews: video ? Math.round(post.mediaViews * 0.4) : null,
+    videoViewTimeMs: video ? post.mediaViews * 4_000 : null,
+    videoAvgTimeMs: video ? 9_500 : null,
+    videoLengthMs: video ? 32_000 : null,
+    newFollowers: video ? Math.round(post.mediaViews / 500) : null,
+  }
+}
+
 function syncStatusFor(brandId: string): FacebookSyncStatusDto {
   const syncedAt = new Date().toISOString()
   return {
@@ -594,7 +673,7 @@ function dashboardFor(
   posts: FacebookPostDto[],
   days: number,
 ): FacebookDashboardDto {
-  const start = new Date(Date.now() - (days - 1) * 86_400_000)
+  const start = new Date(Date.now() - days * 86_400_000)
   const labels = Array.from({ length: days }, (_, index) =>
     new Date(start.getTime() + index * 86_400_000).toISOString().slice(0, 10),
   )
@@ -634,6 +713,7 @@ function dashboardFor(
     thumbnailUrl: post.thumbnailUrl,
     permalinkUrl: post.permalinkUrl,
     viewers: Math.round(post.mediaViews * 0.7),
+    views: post.mediaViews,
     engagements: post.contentInteractions,
     comments: post.comments ?? 0,
     engagementRate: post.mediaViews
@@ -724,11 +804,12 @@ function dashboardFor(
         { label: 'other', value: 11 },
       ],
     },
+    formatStories: 3,
     formats: [
       { format: 'reel', posts: 4, averageViewers: 17_100, engagementRate: 7.8 },
       { format: 'video', posts: 3, averageViewers: 10_800, engagementRate: 6.1 },
-      { format: 'album', posts: 2, averageViewers: 8_443, engagementRate: 5.9 },
-      { format: 'photo', posts: 6, averageViewers: 6_969, engagementRate: 5.4 },
+      // Albums count as photo posts here, as Meta counts them.
+      { format: 'photo', posts: 8, averageViewers: 7_337, engagementRate: 5.5 },
       { format: 'text', posts: 1, averageViewers: 3_038, engagementRate: 3.1 },
       { format: 'link', posts: 2, averageViewers: 4_110, engagementRate: 2.3 },
     ],

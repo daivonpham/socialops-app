@@ -555,9 +555,7 @@ describe('AiCreateButton', () => {
     const { user } = renderButton()
     const dialog = await openDialog(user)
     expect(await within(dialog).findByText('Words first')).toBeInTheDocument()
-    expect(
-      within(dialog).getByText('Creating the images. The buttons appear once they are done.'),
-    ).toBeInTheDocument()
+    expect(within(dialog).getByText('Creating the image')).toBeInTheDocument()
     expect(within(dialog).queryByRole('button', { name: 'Use' })).not.toBeInTheDocument()
   })
 
@@ -1066,6 +1064,49 @@ describe('AiCreateButton', () => {
     finishPdf()
     await waitFor(() => expect(sent).toHaveLength(1))
     expect(sent[0]).toMatchObject({ attachmentIds: ['att-brief.pdf'] })
+    Reflect.deleteProperty(URL, 'createObjectURL')
+    Reflect.deleteProperty(URL, 'revokeObjectURL')
+  })
+
+  it('attaches a pasted screenshot, named from its type, and leaves pasted text alone', async () => {
+    mockApi()
+    const created: Array<{ name: string; mimeType: string }> = []
+    server.use(
+      http.post('*/brands/brand-1/ai/attachments', async ({ request }) => {
+        created.push((await request.json()) as { name: string; mimeType: string })
+        return HttpResponse.json(
+          { data: { id: 'att-1', uploadUrl: 'https://upload.test/shot' } },
+          { status: 201 },
+        )
+      }),
+      http.put('https://upload.test/:name', () => new HttpResponse(null, { status: 200 })),
+      http.post('*/brands/brand-1/ai/attachments/:id/finalize', () =>
+        HttpResponse.json({
+          data: { id: 'att-1', type: 'image', name: 'shot.png', url: 'https://files.test/shot' },
+        }),
+      ),
+    )
+    Object.assign(URL, { createObjectURL: () => 'blob:preview', revokeObjectURL: vi.fn() })
+    const { user } = renderButton()
+    const dialog = await openDialog(user)
+    const area = within(dialog).getByLabelText('What do you want to post about?')
+
+    const textOnly = fireEvent.paste(area, { clipboardData: { files: [], items: [] } })
+    expect(textOnly).toBe(true)
+
+    const shot = new File(['x'], 'image', { type: 'image/png' })
+    const handled = fireEvent.paste(area, {
+      clipboardData: { files: [shot], items: [{ kind: 'file', getAsFile: () => shot }] },
+    })
+    expect(handled).toBe(false)
+    await waitFor(() => expect(created).toHaveLength(1))
+    expect(created[0]).toMatchObject({ mimeType: 'image/png' })
+    expect(created[0]!.name).toMatch(/^pasted-\d{14}\.png$/)
+    expect(
+      within(within(dialog).getByRole('list', { name: 'Attached files' })).getAllByRole(
+        'listitem',
+      ),
+    ).toHaveLength(1)
     Reflect.deleteProperty(URL, 'createObjectURL')
     Reflect.deleteProperty(URL, 'revokeObjectURL')
   })

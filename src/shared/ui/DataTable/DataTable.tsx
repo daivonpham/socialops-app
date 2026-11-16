@@ -28,6 +28,7 @@ import {
   type TableState,
   type Updater,
 } from '@tanstack/react-table'
+import { matchesSearch } from '@/shared/lib/search'
 import { componentToken } from '@/shared/styles/tokens'
 import { EmptyState } from '../AsyncState'
 import { Button } from '../primitives/Button'
@@ -321,7 +322,12 @@ export function DataTable<T extends object>({
         },
       }
 
-      return accessor ? { ...definition, accessorFn: accessor } : definition
+      // TanStack only sorts columns with an accessor; a sortable column that only renders reads
+      // its value by key, which is also what server-sorted tables send as the sort field.
+      const sortAccessor =
+        accessor ??
+        (column.sortable ? (row: T) => (row as Record<string, unknown>)[column.key] : undefined)
+      return sortAccessor ? { ...definition, accessorFn: sortAccessor } : definition
     })
 
     if (!selectable) return mapped
@@ -425,7 +431,9 @@ export function DataTable<T extends object>({
     enableRowSelection: selectable,
     enableRowRangeSelection: true,
     manualFiltering,
-    globalFilterFn: 'includesString',
+    // Matches with or without Vietnamese marks, like every search box in the app.
+    globalFilterFn: (row, columnId, filterValue) =>
+      matchesSearch(String(row.getValue(columnId) ?? ''), String(filterValue ?? '')),
     manualSorting,
     manualPagination: !pagination || pagination.mode === 'server',
     rowCount: pagination?.rowCount,

@@ -41,15 +41,21 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(fu
     void attempt.catch(() => setPlaying(false))
   }
 
-  useImperativeHandle(ref, () => ({
-    togglePlayback,
-    toggleMuted: () => {
-      const nextMuted = !videoRef.current?.muted
-      if (videoRef.current) videoRef.current.muted = nextMuted
-      setMuted(nextMuted)
-      return nextMuted
-    },
-  }))
+  // Created once: the controls only touch the element and state setters, and a new handle on
+  // every render (the progress re-renders often) would detach and reattach callback refs.
+  useImperativeHandle(
+    ref,
+    () => ({
+      togglePlayback,
+      toggleMuted: () => {
+        const nextMuted = !videoRef.current?.muted
+        if (videoRef.current) videoRef.current.muted = nextMuted
+        setMuted(nextMuted)
+        return nextMuted
+      },
+    }),
+    [],
+  )
 
   const progress = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0
 

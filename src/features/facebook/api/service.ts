@@ -16,6 +16,7 @@ import type {
   FacebookQuery,
   FacebookAvailablePageDto,
   FacebookSyncStatusDto,
+  FacebookPostDetailDto,
   FacebookOAuthStartDto,
   SelectFacebookPagesInput,
 } from './types'
@@ -100,6 +101,13 @@ export async function getFacebookRecentPosts(brandId: string, query: FacebookRec
       { params: query },
     )
   ).data
+}
+
+export async function getFacebookPostDetail(brandId: string, postId: string) {
+  const { data } = await apiClient.get<CommonApiResponse<FacebookPostDetailDto>>(
+    `/brands/${brandId}/facebook/recent-posts/${encodeURIComponent(postId)}`,
+  )
+  return data
 }
 
 export async function getFacebookDetails(brandId: string, query: FacebookQuery) {

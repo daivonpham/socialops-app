@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useCallback, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FaRegComment } from 'react-icons/fa'
 import { IoClose } from 'react-icons/io5'
@@ -27,6 +27,20 @@ import type { PlanningPostType } from '../../api'
 import type { PlanningAccount } from '../../model'
 import type { ComposerMedia, PreviewViewport } from '../../model/composer'
 import { CaptionClamp } from '../CaptionClamp'
+import { usePreviewPlayback } from './previewPlayback'
+
+/**
+ * What a published post shows instead of the composer's sample: when it went out and its real
+ * counts, already formatted. Left out while composing.
+ */
+export type FacebookPreviewFacts = {
+  time?: string
+  reactions?: string
+  comments?: string
+  shares?: string
+}
+
+const SAMPLE_FACTS = { reactions: '12.8K', comments: '846', shares: '1.2K' }
 
 export function FacebookPostPreview({
   account,
@@ -35,6 +49,7 @@ export function FacebookPostPreview({
   viewport,
   postType,
   fluid = false,
+  facts,
 }: {
   account?: PlanningAccount
   caption: string
@@ -42,6 +57,7 @@ export function FacebookPostPreview({
   viewport: PreviewViewport
   postType: PlanningPostType
   fluid?: boolean
+  facts?: FacebookPreviewFacts
 }) {
   if (postType === 'facebook_reel' || postType === 'facebook_story') {
     return (
@@ -52,18 +68,51 @@ export function FacebookPostPreview({
         viewport={viewport}
         story={postType === 'facebook_story'}
         fluid={fluid}
+        facts={facts}
       />
     )
   }
 
   const imageMedia = media.filter((item) => item.type === 'image')
   const video = media.find((item) => item.type === 'video')
+  return (
+    <FeedPreview
+      account={account}
+      caption={caption}
+      imageMedia={imageMedia}
+      video={video}
+      viewport={viewport}
+      fluid={fluid}
+      facts={facts}
+    />
+  )
+}
+
+function FeedPreview({
+  account,
+  caption,
+  imageMedia,
+  video,
+  viewport,
+  fluid,
+  facts,
+}: {
+  account?: PlanningAccount
+  caption: string
+  imageMedia: ComposerMedia[]
+  video?: ComposerMedia
+  viewport: PreviewViewport
+  fluid: boolean
+  facts?: FacebookPreviewFacts
+}) {
+  const playback = usePreviewPlayback()
+  const counts = { ...SAMPLE_FACTS, ...facts }
 
   return (
     <div
       className={`w-full shrink-0 overflow-hidden rounded-xl border border-border-subtle bg-bg-surface text-text-primary shadow-md transition-[max-width] duration-base ${fluid ? 'max-w-full' : viewport === 'mobile' ? 'max-w-[20rem]' : ''}`}
     >
-      <FacebookIdentity account={account} compact={viewport === 'mobile'} />
+      <FacebookIdentity account={account} compact={viewport === 'mobile'} time={facts?.time} />
       <div
         className={`text-text-primary ${viewport === 'mobile' ? 'px-3 pb-3 text-body-sm' : 'px-5 pb-4 text-body-md'}`}
       >
@@ -75,7 +124,13 @@ export function FacebookPostPreview({
       </div>
       {video ? (
         <div className="relative flex aspect-[6/5] items-center justify-center overflow-hidden bg-neutral-200">
-          <VideoPreview key={video.id} src={video.url} className="h-full w-full object-contain" />
+          <VideoPreview
+            key={video.id}
+            ref={playback?.bind}
+            src={video.url}
+            className="h-full w-full object-contain"
+            onPlayingChange={playback?.report}
+          />
         </div>
       ) : imageMedia.length > 0 ? (
         <FacebookImageGrid images={imageMedia} />
@@ -86,9 +141,9 @@ export function FacebookPostPreview({
         className={`flex items-center justify-between border-t border-border-subtle bg-bg-surface text-text-secondary ${viewport === 'mobile' ? 'gap-2 px-3 py-3' : 'gap-4 px-5 py-3'}`}
       >
         <div className={`flex items-center ${viewport === 'mobile' ? 'gap-4' : 'gap-6'}`}>
-          <EngagementMetric icon={<IconLike />} value="12.8K" />
-          <EngagementMetric icon={<FaRegComment />} value="846" />
-          <EngagementMetric icon={<TbShare3 />} value="1.2K" />
+          <EngagementMetric icon={<IconLike />} value={counts.reactions} />
+          <EngagementMetric icon={<FaRegComment />} value={counts.comments} />
+          <EngagementMetric icon={<TbShare3 />} value={counts.shares} />
         </div>
         <span
           className="flex shrink-0 items-center -space-x-1"
@@ -117,6 +172,7 @@ function FacebookVerticalPreview({
   viewport,
   story,
   fluid,
+  facts,
 }: {
   account?: PlanningAccount
   caption: string
@@ -124,11 +180,23 @@ function FacebookVerticalPreview({
   viewport: PreviewViewport
   story: boolean
   fluid: boolean
+  facts?: FacebookPreviewFacts
 }) {
+  const counts = { reactions: '1.2K', comments: '84', shares: '26', ...facts }
   const { t } = useTranslation('planning')
   const primaryMedia = media[0]
   const pageName = account?.name ?? 'Facebook Page'
-  const storyVideoRef = useRef<VideoPreviewHandle>(null)
+  const storyVideoRef = useRef<VideoPreviewHandle | null>(null)
+  const playback = usePreviewPlayback()
+  const bindPlayback = playback?.bind
+  // Stable, or React would detach and reattach the player on every render and stop playback.
+  const bindVideo = useCallback(
+    (handle: VideoPreviewHandle | null) => {
+      storyVideoRef.current = handle
+      bindPlayback?.(handle)
+    },
+    [bindPlayback],
+  )
   const [storyPlaying, setStoryPlaying] = useState(false)
   const [storyMuted, setStoryMuted] = useState(false)
   const storyHasVideo = story && primaryMedia?.type === 'video'
@@ -139,11 +207,14 @@ function FacebookVerticalPreview({
       {primaryMedia?.type === 'video' ? (
         <VideoPreview
           key={`${story ? 'story' : 'reel'}-${primaryMedia.id}`}
-          ref={story ? storyVideoRef : undefined}
+          ref={bindVideo}
           src={primaryMedia.url}
           className="h-full w-full object-contain"
           progressPosition={story ? 'top' : 'bottom'}
-          onPlayingChange={story ? setStoryPlaying : undefined}
+          onPlayingChange={(playing) => {
+            if (story) setStoryPlaying(playing)
+            playback?.report(playing)
+          }}
         />
       ) : primaryMedia ? (
         <PreviewImage media={primaryMedia} />
@@ -160,7 +231,7 @@ function FacebookVerticalPreview({
             <Avatar name={pageName} src={account?.avatarUrl} size="sm" />
             <strong className="min-w-0 truncate text-label-sm">{pageName}</strong>
             <span className="flex shrink-0 items-center gap-1 text-caption text-neutral-100">
-              {t('composer.preview.storyTime')}
+              {facts?.time ?? t('composer.preview.storyTime')}
               <IconGlobe aria-hidden />
             </span>
             <span className="ms-auto flex shrink-0 items-center gap-1">
@@ -215,9 +286,9 @@ function FacebookVerticalPreview({
             </div>
           </div>
           <div className="pointer-events-none absolute bottom-8 right-3 grid gap-4 text-center text-label-md">
-            <PreviewAction icon={<IconHeart />} value="1.2K" />
-            <PreviewAction icon={<FaRegComment />} value="84" />
-            <PreviewAction icon={<TbShare3 />} value="26" />
+            <PreviewAction icon={<IconHeart />} value={counts.reactions} />
+            <PreviewAction icon={<FaRegComment />} value={counts.comments} />
+            <PreviewAction icon={<TbShare3 />} value={counts.shares} />
           </div>
         </>
       )}
@@ -310,9 +381,12 @@ function PreviewImage({
 function FacebookIdentity({
   account,
   compact = false,
+  time,
 }: {
   account?: PlanningAccount
   compact?: boolean
+  /** When the post went out; "Just now" while composing. */
+  time?: string
 }) {
   return (
     <div className={`flex items-start ${compact ? 'gap-3 p-3' : 'gap-3 p-5 pb-4'}`}>
@@ -330,7 +404,7 @@ function FacebookIdentity({
           {account?.name ?? 'Facebook Page'}
         </p>
         <p className="mt-1 flex items-center gap-1 text-caption text-text-secondary">
-          Just now <span>·</span> <IconGlobe aria-hidden />
+          {time ?? 'Just now'} <span>·</span> <IconGlobe aria-hidden />
         </p>
       </div>
       <span

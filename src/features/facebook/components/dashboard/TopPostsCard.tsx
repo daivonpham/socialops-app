@@ -33,6 +33,7 @@ export function TopPostsCard({
     <DashboardCard
       className={className}
       title={t('dashboard.topPosts.title')}
+      hint={t('dashboard.engagementRateFormula')}
       description={t('dashboard.topPosts.description')}
       extra={
         <Tabs
@@ -62,6 +63,7 @@ function TopPostRow({ post, rank }: { post: FacebookDashboardPostDto; rank: numb
   const Icon = FORMAT_ICON[post.format]
   const stats = [
     { key: 'viewers', value: formatCompact(post.viewers, locale) },
+    { key: 'views', value: formatCompact(post.views, locale) },
     { key: 'engagements', value: formatCompact(post.engagements, locale) },
     { key: 'comments', value: formatCompact(post.comments, locale) },
     { key: 'engagementRate', value: formatPercent(post.engagementRate, locale, 1), strong: true },
@@ -95,7 +97,7 @@ function TopPostRow({ post, rank }: { post: FacebookDashboardPostDto; rank: numb
           </span>
         </span>
       </span>
-      <dl className="hidden shrink-0 grid-cols-4 gap-4 md:grid">
+      <dl className="hidden shrink-0 grid-cols-5 gap-4 md:grid">
         {stats.map((stat) => (
           <div key={stat.key} className="grid w-16 justify-items-end gap-[2px]">
             <dt className="text-caption text-text-tertiary">

@@ -6,7 +6,13 @@ import type { DateRangePickerProps } from '@/shared/ui/primitives/DateRangePicke
 
 const { RangePicker } = AntDatePicker
 
-export function DateRangePicker({ value, presets, onChange, ...props }: DateRangePickerProps) {
+export function DateRangePicker({
+  value,
+  presets,
+  onChange,
+  maxDate,
+  ...props
+}: DateRangePickerProps) {
   const { i18n } = useTranslation()
 
   return (
@@ -19,6 +25,7 @@ export function DateRangePicker({ value, presets, onChange, ...props }: DateRang
       }))}
       format={getDatePickerFormat(i18n.resolvedLanguage)}
       allowClear={false}
+      disabledDate={maxDate ? (date) => date.isAfter(maxDate, 'day') : undefined}
       inputReadOnly
       popupClassName="app-date-range-picker-popup"
       onChange={(dates) =>

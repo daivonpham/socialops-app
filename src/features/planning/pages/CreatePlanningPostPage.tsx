@@ -1,16 +1,24 @@
-import { useCallback, useRef, useState, type Dispatch, type SetStateAction } from 'react'
+import { useCallback, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { SocialAccountLabel } from '@/features/social-accounts'
+import { formatDateTime, type AppLocale } from '@/shared/i18n'
+import { isApiErrorCode } from '@/shared/api/errors'
 import { useActiveBrand } from '@/shared/scope'
 import {
   Alert,
   Button,
+  ConfirmDialog,
   DatePicker,
   Dropdown,
+  EmptyState,
+  IconCalendar,
   IconChevronDown,
   IconChevronLeft,
+  IconDelete,
+  IconPlus,
   IconSend,
+  IconSendLine,
   SectionSkeleton,
   useToast,
 } from '@/shared/ui'
@@ -31,9 +39,11 @@ import {
   PlanningPostEditor,
   type MediaUploadState,
 } from '../components/composer/PlanningPostEditor'
-import { getPlanningPath } from '../config/planning.routes'
+import { getPlanningCreatePath, getPlanningPath } from '../config/planning.routes'
 import { canPublishOnPlatform } from '../config/planning-capabilities'
 import { PlanningPostPreview } from '../components/preview/PlanningPostPreview'
+import { PreviewPlaybackProvider } from '../components/preview/previewPlayback'
+import { moveVideoFrames } from '../components/composer/videoFrames'
 import {
   allowedIntent,
   canSubmitComposer,
@@ -48,6 +58,7 @@ import {
   toUpdatePlanningContentInput,
   usesCaptionPerAccount,
   type ComposerAiSuggestion,
+  type ComposerMedia,
   type PlanningAccount,
   type PlanningComposerDraft,
   type PreviewViewport,
@@ -68,7 +79,7 @@ function readAiSuggestion(state: unknown): AiSuggestionState | null {
     ? (item as AiSuggestionState)
     : null
 }
-import { useApiErrorMessage } from '@/shared/hooks'
+import { useApiErrorMessage, useLeaveGuard } from '@/shared/hooks'
 import { useAuth } from '@/shared/auth'
 import { hasPermission, usePermissions } from '@/shared/permissions'
 import { PLANNING_ACCESS } from '../config/planning-access'
@@ -138,6 +149,8 @@ export default function CreatePlanningPostPage() {
 
   const content = contentQuery.data
   if (content && content.platform !== platform) return <Navigate to={planningPath} replace />
+  if (content?.status === 'cancelled')
+    return <CancelledPostNotice platform={platform} planningPath={planningPath} />
   const accounts = (accountsQuery.data ?? []).filter((account) => account.platform === platform)
 
   if (
@@ -172,7 +185,45 @@ export default function CreatePlanningPostPage() {
       requestedDate={requestedDate}
       requestedPostType={requestedPostType}
       aiSuggestion={aiSuggestion}
+      onCancelled={() => void contentQuery.refetch()}
     />
+  )
+}
+
+/** The post was deleted elsewhere: nothing left to save, only start over or go back. */
+function CancelledPostNotice({
+  platform,
+  planningPath,
+}: {
+  platform: PlanningPlatform
+  planningPath: string
+}) {
+  const { t } = useTranslation('planning')
+  const navigate = useNavigate()
+  return (
+    <div className="grid min-h-full place-items-center py-16">
+      <EmptyState
+        icon={
+          <span className="inline-flex size-12 items-center justify-center rounded-lg border border-border-subtle bg-bg-surface text-icon-lg text-text-secondary">
+            <IconDelete aria-hidden />
+          </span>
+        }
+        title={t('composer.cancelled.title')}
+        description={t('composer.cancelled.description')}
+        action={
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button onClick={() => navigate(planningPath)}>{t('composer.back')}</Button>
+            <Button
+              variant="primary"
+              icon={<IconPlus aria-hidden />}
+              onClick={() => navigate(getPlanningCreatePath(platform))}
+            >
+              {t('composer.cancelled.create')}
+            </Button>
+          </div>
+        }
+      />
+    </div>
   )
 }
 
@@ -242,6 +293,7 @@ function PublishedPlanningEditor({
     captionMode !== savedCaptionMode ||
     posted.some((publication, index) => captions[index]?.caption !== currentCaption(publication))
   const canSave = supported && changed && captions.every((item) => item.caption)
+  const leaveGuard = useLeaveGuard(changed && !saving)
 
   const onSave = async () => {
     if (!canSave || saving) return
@@ -256,6 +308,7 @@ function PublishedPlanningEditor({
         captions: captionMode === 'per_target' ? captions : [],
       })
       toast.success({ title: t('detail.editPublishedSuccess') })
+      leaveGuard.allowLeave()
       navigate(planningPath)
     } catch (error) {
       setSaveError(error)
@@ -318,6 +371,15 @@ function PublishedPlanningEditor({
           />
         </aside>
       </div>
+      <ConfirmDialog
+        open={leaveGuard.blocked}
+        title={t('composer.leaveTitle')}
+        description={t('composer.leaveDescription')}
+        confirmLabel={t('composer.leave')}
+        cancelLabel={t('composer.stay')}
+        onConfirm={leaveGuard.leave}
+        onClose={leaveGuard.stay}
+      />
     </div>
   )
 }
@@ -331,6 +393,7 @@ function PlanningComposerWorkspace({
   requestedDate,
   requestedPostType,
   aiSuggestion,
+  onCancelled,
 }: {
   brandId: string
   platform: PlanningPlatform
@@ -341,13 +404,15 @@ function PlanningComposerWorkspace({
   requestedPostType: PlanningPostType | null
   /** Filled from an AI suggestion; saving the post marks the suggestion used. */
   aiSuggestion: AiSuggestionState | null
+  /** Saving found the post deleted elsewhere: reload it so the page shows that instead. */
+  onCancelled?: () => void
 }) {
   const { t } = useTranslation('planning')
   const errorMessage = useApiErrorMessage('planning')
   const navigate = useNavigate()
   const shouldSchedule =
     !content && Boolean(requestedDate && requestedDate !== toDateKey(new Date()))
-  const [draft, setDraft] = useState(() => {
+  const [initialDraft] = useState(() => {
     const initialDraft = content
       ? createComposerDraftFromContent(content)
       : aiSuggestion
@@ -366,6 +431,7 @@ function PlanningComposerWorkspace({
       scheduledAt: `${requestedDate}T09:00`,
     }
   })
+  const [draft, setDraft] = useState(initialDraft)
   const [previewViewport, setPreviewViewport] = useState<PreviewViewport>('mobile')
   const [submitPhase, setSubmitPhase] = useState<'uploading' | 'saving' | null>(null)
   const [mediaUploads, setMediaUploads] = useState<Record<string, MediaUploadState>>({})
@@ -388,22 +454,81 @@ function PlanningComposerWorkspace({
   const createContent = useCreatePlanningContent(brandId)
   const updateContent = useUpdatePlanningContent(brandId)
   const setPreviewAccount = useCallback((accountId: string) => setPreviewAccountId(accountId), [])
+  // Only a post with something in it is worth a warning: Pages, type or date alone are quick to
+  // pick again. A new post asks whenever it has content, an AI one included; an edit, when changed.
+  const dirty = useMemo(
+    () =>
+      hasPostContent(draft) &&
+      (!content || draftSignature(draft) !== draftSignature(initialDraft)),
+    [content, draft, initialDraft],
+  )
+  const leaveGuard = useLeaveGuard(dirty && submitPhase === null)
+
+  const setItemUpload = (id: string, upload: MediaUploadState) =>
+    setMediaUploads((current) => ({ ...current, [id]: upload }))
+  // Picked files are stored right away, so they are kept even before the post is saved; a file
+  // no post ends up using is cleaned up by the API after a few days.
+  const uploadsInFlight = useRef(new Map<string, Promise<void>>())
+  /** The stored copy of each picked file, by the id it had in the composer. */
+  const storedMedia = useRef(new Map<string, ComposerMedia>())
+  const startUploads = (items: ComposerMedia[]) => {
+    for (const item of items) {
+      const file = item.file
+      if (!file || uploadsInFlight.current.has(item.id)) continue
+      setItemUpload(item.id, { status: 'uploading', percent: 0 })
+      const job = uploadPlanningMedia(brandId, file, (bytes) =>
+        setItemUpload(item.id, {
+          status: 'uploading',
+          percent: Math.floor((bytes * 100) / (file.size || 1)),
+        }),
+      )
+        .then((uploaded) => {
+          const stored: ComposerMedia = { ...uploaded, size: file.size }
+          storedMedia.current.set(item.id, stored)
+          moveVideoFrames(item.id, stored.id)
+          setDraft((current) => ({
+            ...current,
+            media: current.media.map((media) => (media.id === item.id ? stored : media)),
+          }))
+          // The marker moves to the stored file's id, which the composer now shows.
+          setMediaUploads((current) => {
+            const rest = { ...current }
+            delete rest[item.id]
+            return { ...rest, [stored.id]: { status: 'uploaded' } }
+          })
+        })
+        .catch(() => setItemUpload(item.id, { status: 'failed' }))
+        .finally(() => uploadsInFlight.current.delete(item.id))
+      uploadsInFlight.current.set(item.id, job)
+    }
+  }
+  const retryUploads = () =>
+    startUploads(draft.media.filter((item) => mediaUploads[item.id]?.status === 'failed'))
 
   const submit = async (intent: PlanningPublishIntent) => {
     if (submitting.current) return
+    const draftNow = draft
     submitting.current = true
     setSubmitError(null)
     try {
+      // Files still on their way are waited for; files that are stored are sent as stored.
+      if (uploadsInFlight.current.size) {
+        setSubmitPhase('uploading')
+        await Promise.all(uploadsInFlight.current.values())
+      }
+      const draft = {
+        ...draftNow,
+        media: draftNow.media.map((item) => storedMedia.current.get(item.id) ?? item),
+      }
       const files = draft.media.filter((item) => item.file)
-      const setItemUpload = (id: string, upload: MediaUploadState) =>
-        setMediaUploads((current) => ({ ...current, [id]: upload }))
       if (files.length) {
         setSubmitPhase('uploading')
-        setMediaUploads(
-          Object.fromEntries(
+        setMediaUploads((current) => ({
+          ...current,
+          ...Object.fromEntries(
             files.map((item) => [item.id, { status: 'uploading', percent: 0 } as const]),
           ),
-        )
+        }))
       } else setSubmitPhase('saving')
       const results = await Promise.allSettled(
         draft.media.map(async (item) => {
@@ -417,7 +542,7 @@ function PlanningComposerWorkspace({
               })
             })
             setItemUpload(item.id, { status: 'uploaded' })
-            return uploaded
+            return { ...uploaded, size: file.size }
           } catch (error) {
             setItemUpload(item.id, { status: 'failed' })
             throw error
@@ -430,7 +555,15 @@ function PlanningComposerWorkspace({
       setDraft((current) => ({ ...current, media }))
       if (results.some((result) => result.status === 'rejected'))
         throw new Error('Media upload failed')
-      const submittedDraft = { ...draft, media }
+      // A Reel cover picked on this screen is uploaded like the media; other types send none.
+      let thumbnail = draft.thumbnail
+      if (draft.postType === 'facebook_reel' && thumbnail?.file) {
+        const uploaded = await uploadPlanningMedia(brandId, thumbnail.file)
+        thumbnail = { ...thumbnail, id: uploaded.id, name: uploaded.name, file: undefined }
+        const stored = thumbnail
+        setDraft((current) => ({ ...current, thumbnail: stored }))
+      }
+      const submittedDraft = { ...draft, media, thumbnail }
       setSubmitPhase('saving')
       if (content) {
         await updateContent.mutateAsync(
@@ -443,8 +576,10 @@ function PlanningComposerWorkspace({
           idempotencyKey: createKey.current,
         })
       }
+      leaveGuard.allowLeave()
       navigate(planningPath)
     } catch (error) {
+      if (isApiErrorCode(error, 'CONTENT_CANCELLED')) onCancelled?.()
       setSubmitError(error)
     } finally {
       submitting.current = false
@@ -491,49 +626,85 @@ function PlanningComposerWorkspace({
         />
       ) : null}
 
-      <div className="grid min-h-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(28rem,0.9fr)]">
-        <div className="grid min-w-0 content-start gap-3">
-          <PlanningPostEditor
-            draft={draft}
-            accounts={accounts}
-            setDraft={setDraft}
-            mediaUploads={mediaUploads}
-          />
-          <PublishingActionBar
-            draft={draft}
-            accounts={accounts}
-            intent={publishIntent}
-            isEditing={Boolean(content)}
-            initialIntent={initialIntent}
-            canPublishDirect={canPublishDirect}
-            canSaveDraft={canSaveDraft}
-            loading={saveContent.isPending || submitPhase !== null}
-            submitPhase={submitPhase}
-            canSubmit={publishIntent === 'draft' || canSubmit}
-            onIntentChange={(intent) => {
-              setPublishIntent(intent)
-              setDraft((current) => ({
-                ...current,
-                publishMode: isScheduleIntent(intent) ? 'schedule' : 'publish_now',
-              }))
-            }}
-            onDraftChange={setDraft}
-            onSubmit={() => submit(publishIntent)}
-          />
+      {/* The file card plays the preview's video. */}
+      <PreviewPlaybackProvider>
+        <div className="grid min-h-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(28rem,0.9fr)]">
+          <div className="grid min-w-0 content-start gap-3">
+            <PlanningPostEditor
+              draft={draft}
+              accounts={accounts}
+              setDraft={setDraft}
+              mediaUploads={mediaUploads}
+              onRetryUpload={retryUploads}
+              onMediaAdded={startUploads}
+            />
+            <PublishingActionBar
+              draft={draft}
+              accounts={accounts}
+              intent={publishIntent}
+              isEditing={Boolean(content)}
+              initialIntent={initialIntent}
+              canPublishDirect={canPublishDirect}
+              canSaveDraft={canSaveDraft}
+              loading={saveContent.isPending || submitPhase !== null}
+              submitPhase={submitPhase}
+              canSubmit={publishIntent === 'draft' || canSubmit}
+              onIntentChange={(intent) => {
+                setPublishIntent(intent)
+                setDraft((current) => ({
+                  ...current,
+                  publishMode: isScheduleIntent(intent) ? 'schedule' : 'publish_now',
+                }))
+              }}
+              onDraftChange={setDraft}
+              onSubmit={() => submit(publishIntent)}
+            />
+          </div>
+          <aside className="min-w-0 xl:sticky xl:top-0 xl:h-[calc(100vh-7rem)]">
+            <PlanningPostPreview
+              draft={draft}
+              accounts={accounts}
+              previewAccountId={previewAccountId}
+              viewport={previewViewport}
+              onPreviewAccountChange={setPreviewAccount}
+              onViewportChange={setPreviewViewport}
+            />
+          </aside>
         </div>
-        <aside className="min-w-0 xl:sticky xl:top-0 xl:h-[calc(100vh-7rem)]">
-          <PlanningPostPreview
-            draft={draft}
-            accounts={accounts}
-            previewAccountId={previewAccountId}
-            viewport={previewViewport}
-            onPreviewAccountChange={setPreviewAccount}
-            onViewportChange={setPreviewViewport}
-          />
-        </aside>
-      </div>
+      </PreviewPlaybackProvider>
+      <ConfirmDialog
+        open={leaveGuard.blocked}
+        title={t('composer.leaveTitle')}
+        description={t('composer.leaveDescription')}
+        confirmLabel={t('composer.leave')}
+        cancelLabel={t('composer.stay')}
+        onConfirm={leaveGuard.leave}
+        onClose={leaveGuard.stay}
+      />
     </div>
   )
+}
+
+/** What the user can change in a draft; a picked file counts by its name, size and date. */
+/** A caption (shared or for one Page), a link, a file or a cover. */
+function hasPostContent(draft: PlanningComposerDraft): boolean {
+  return (
+    draft.caption.trim() !== '' ||
+    Object.values(draft.captionOverrides).some((caption) => caption.trim() !== '') ||
+    draft.link.trim() !== '' ||
+    draft.media.length > 0 ||
+    draft.thumbnail !== null
+  )
+}
+
+function draftSignature(draft: PlanningComposerDraft): string {
+  return JSON.stringify({
+    ...draft,
+    media: draft.media.map(({ id, url, file }) =>
+      file ? [file.name, file.size, file.lastModified] : [id, url],
+    ),
+    thumbnail: draft.thumbnail ? [draft.thumbnail.id, draft.thumbnail.time] : null,
+  })
 }
 
 function getRequestedDate(value: string | null): string | null {
@@ -628,7 +799,8 @@ function PublishingActionBar({
   onDraftChange: Dispatch<SetStateAction<PlanningComposerDraft>>
   onSubmit: () => void
 }) {
-  const { t } = useTranslation('planning')
+  const { t, i18n } = useTranslation('planning')
+  const [confirming, setConfirming] = useState(false)
   const selectedAccounts = accounts.filter((account) => draft.targetIds.includes(account.id))
   const byAccount = isScheduleIntent(intent) && draft.scheduleMode === 'by_account'
   const selectedActionKey = byAccount ? `${intent}_by_account` : intent
@@ -651,6 +823,39 @@ function PublishingActionBar({
   const usesSharedSchedule = isScheduleIntent(intent) && draft.scheduleMode === 'same_time'
   const usesAccountSchedule = byAccount
   const hasNoScheduledAccounts = usesAccountSchedule && selectedAccounts.length === 0
+
+  // Anything that goes to Facebook or to an approver is confirmed first; a draft just saves.
+  const confirmText = (): { title: string; description: string } => {
+    const pages = selectedAccounts.map((account) => account.name).join(', ')
+    const count = selectedAccounts.length
+    const time = formatDateTime(draft.scheduledAt, i18n.resolvedLanguage as AppLocale)
+    if (intent === 'publish_now')
+      return {
+        title: t('composer.confirm.publishTitle'),
+        description: t('composer.confirm.publish', { pages }),
+      }
+    if (intent === 'schedule')
+      return {
+        title: t('composer.confirm.scheduleTitle'),
+        description: byAccount
+          ? t('composer.confirm.scheduleByAccount', { count })
+          : t('composer.confirm.schedule', { pages, time }),
+      }
+    return {
+      title: t('composer.confirm.approvalTitle'),
+      description:
+        intent === 'approval_publish_now'
+          ? t('composer.confirm.approvalNow', { pages })
+          : byAccount
+            ? t('composer.confirm.approvalByAccount', { count })
+            : t('composer.confirm.approvalSchedule', { pages, time }),
+    }
+  }
+  const onPrimaryClick = () => {
+    if (intent === 'draft') onSubmit()
+    else setConfirming(true)
+  }
+  const confirm = confirming ? confirmText() : null
 
   const selectAction = (key: string) => {
     const action = PUBLISH_ACTIONS.find((item) => item.key === key)
@@ -728,7 +933,7 @@ function PublishingActionBar({
             loading={loading}
             disabled={!canSubmit}
             className="rounded-e-none border-[2px] border-e-bg-surface"
-            onClick={onSubmit}
+            onClick={onPrimaryClick}
           >
             {buttonLabel}
           </Button>
@@ -758,6 +963,33 @@ function PublishingActionBar({
           }
         </div>
       </div>
+      <ConfirmDialog
+        open={confirming}
+        tone="primary"
+        icon={
+          isScheduleIntent(intent) ? (
+            <IconCalendar aria-hidden className="text-brand-700" />
+          ) : (
+            <IconSendLine aria-hidden className="text-brand-700" />
+          )
+        }
+        title={confirm?.title}
+        description={confirm?.description}
+        confirmLabel={
+          isEditing && intent === initialIntent
+            ? t('composer.actions.saveChanges')
+            : intent === 'publish_now'
+              ? t('composer.actions.publish')
+              : intent === 'schedule'
+                ? t('composer.actions.schedule')
+                : t('composer.confirm.sendForApproval')
+        }
+        onConfirm={() => {
+          setConfirming(false)
+          onSubmit()
+        }}
+        onClose={() => setConfirming(false)}
+      />
     </div>
   )
 }

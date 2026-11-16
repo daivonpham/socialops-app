@@ -81,6 +81,26 @@ describe('DataTable column settings', () => {
     expect(screen.getAllByRole('cell').map((cell) => cell.textContent)).toEqual(['A', 'B'])
   })
 
+  it('sorts a server-sorted column that only renders its value', async () => {
+    const user = userEvent.setup()
+    const changes: unknown[] = []
+    render(
+      <DataTable
+        data={rows}
+        columns={[
+          { key: 'name', title: 'Name', sortable: true, render: (_, row: Row) => row.name },
+        ]}
+        getRowId={(row) => row.id}
+        manualSorting
+        sorting={[]}
+        onSortingChange={(value) => changes.push(value)}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /Name/ }))
+    await user.click((await screen.findAllByRole('menuitem'))[1]!)
+    expect(changes).toEqual([[{ columnKey: 'name', direction: 'desc' }]])
+  })
+
   it('shows the shared empty state when there are no rows', () => {
     const { container } = render(
       <DataTable data={[]} columns={columns} getRowId={(row: Row) => row.id} />,

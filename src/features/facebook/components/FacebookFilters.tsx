@@ -29,14 +29,14 @@ export function FacebookFilters({
   const { t } = useTranslation('facebook')
   const [draftCompare, setDraftCompare] = useState(compare)
   const [draftContentType, setDraftContentType] = useState(contentType ?? 'all')
-  const today = dayjs().startOf('day')
+  // "Last N days" are the N whole days before today, as Facebook counts them: today is not over.
+  const yesterday = dayjs().startOf('day').subtract(1, 'day')
+  const lastDays = (days: number): DateRangeValue => [
+    yesterday.subtract(days - 1, 'day').format('YYYY-MM-DD'),
+    yesterday.format('YYYY-MM-DD'),
+  ]
   const value: DateRangeValue =
-    since && until
-      ? [since, until]
-      : [
-          today.subtract(Number(range.slice(0, -1)) - 1, 'day').format('YYYY-MM-DD'),
-          today.format('YYYY-MM-DD'),
-        ]
+    since && until ? [since, until] : lastDays(Number(range.slice(0, -1)))
   const quickRanges = ['7d', '28d', '90d'] as const
   const quickRange = since && until ? undefined : quickRanges.find((item) => item === range)
   const presetOptions = [
@@ -48,10 +48,7 @@ export function FacebookFilters({
   ]
   const presets = presetOptions.map(({ days, label }) => ({
     label,
-    value: [
-      today.subtract(days - 1, 'day').format('YYYY-MM-DD'),
-      today.format('YYYY-MM-DD'),
-    ] as DateRangeValue,
+    value: lastDays(days),
   }))
 
   return (
@@ -70,6 +67,8 @@ export function FacebookFilters({
         className="min-w-64"
         value={value}
         presets={presets}
+        // A day that has not begun has no data yet.
+        maxDate={dayjs().format('YYYY-MM-DD')}
         onChange={(dates) => {
           if (!dates) return
           const days = dayjs(dates[1]).diff(dayjs(dates[0]), 'day') + 1

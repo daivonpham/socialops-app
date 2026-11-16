@@ -17,7 +17,7 @@ import {
   Popover,
   Image,
   ImagePreviewGroup,
-  Spin,
+  MarkdownText,
   Tabs,
   useToast,
 } from '@/shared/ui'
@@ -350,7 +350,7 @@ function SuggestionCard({
         ) : ids.length ? (
           <span className="text-label-sm text-text-tertiary">{pageTag(pageId)}</span>
         ) : null}
-        <p className="text-body-sm whitespace-pre-wrap text-text-primary">{caption}</p>
+        <MarkdownText className="text-body-sm text-text-primary">{caption}</MarkdownText>
         {suggestion.images.length ? (
           <ImagePreviewGroup>
             <ul className="flex flex-wrap gap-2" aria-label={t('chat.images')}>
@@ -445,10 +445,10 @@ function SuggestionCard({
   )
 }
 
-/** The images ready so far, and a tile for each one still being made. */
+/** The images ready so far. Those still being made show only in the step line. */
 function PartialImages({ partial }: { partial: AiPartialSuggestion }) {
   const { t } = useTranslation('aiContent')
-  if (!partial.images.length && !partial.pendingImages) return null
+  if (!partial.images.length) return null
   return (
     <ul className="flex flex-wrap gap-2" aria-label={t('chat.images')}>
       {partial.images.map((image) => (
@@ -459,14 +459,6 @@ function PartialImages({ partial }: { partial: AiPartialSuggestion }) {
             wrapperClassName="!block size-[120px] overflow-hidden rounded-lg border border-border-subtle"
             className="!size-full cursor-pointer object-cover"
           />
-        </li>
-      ))}
-      {Array.from({ length: partial.pendingImages }, (_, index) => (
-        <li
-          key={index}
-          className="flex size-[120px] items-center justify-center rounded-lg border border-ai-100 bg-ai-50"
-        >
-          <Spin size="sm" tone="ai" indicator="ring" />
         </li>
       ))}
     </ul>
@@ -498,13 +490,15 @@ function PartialSuggestion({
           {ids.length > 1 ? (
             <span className="text-label-sm text-text-tertiary">{nameOf(id)}</span>
           ) : null}
-          <p className="text-body-sm whitespace-pre-wrap text-text-primary">{captions[id] ?? ''}</p>
+          <MarkdownText className="text-body-sm text-text-primary">
+            {captions[id] ?? ''}
+          </MarkdownText>
         </div>
       ))}
       <PartialImages partial={partial} />
-      <p aria-live="polite" className="text-body-sm text-text-secondary">
-        {t(partial.pendingImages ? 'chat.imagesPending' : 'chat.finishing')}
-      </p>
+      <AiWorking
+        label={t(partial.pendingImages ? 'progress.running.image' : 'progress.running.finishing')}
+      />
     </div>
   )
 }
@@ -523,18 +517,11 @@ function LiveText({
   pages: AiAvailability['pages']
 }) {
   const { t } = useTranslation('aiContent')
-  const caret = (
-    <span
-      aria-hidden
-      className="ms-[2px] inline-block h-[1em] w-[2px] animate-pulse bg-ai-500 align-text-bottom"
-    />
-  )
   if (live.kind === 'reply')
     return (
-      <p className="text-body-sm whitespace-pre-wrap text-text-primary">
+      <MarkdownText streaming className="text-body-sm text-text-primary">
         {live.text}
-        {caret}
-      </p>
+      </MarkdownText>
     )
   const ids = Object.keys(live.captions)
   const nameOf = (id: string) => pages.find((page) => page.id === id)?.name ?? t('chat.unknownPage')
@@ -546,10 +533,12 @@ function LiveText({
           {ids.length > 1 ? (
             <span className="text-label-sm text-text-tertiary">{nameOf(id)}</span>
           ) : null}
-          <p className="text-body-sm whitespace-pre-wrap text-text-primary">
-            {live.captions[id]}
-            {index === ids.length - 1 ? caret : null}
-          </p>
+          <MarkdownText
+            streaming={index === ids.length - 1}
+            className="text-body-sm text-text-primary"
+          >
+            {live.captions[id] ?? ''}
+          </MarkdownText>
         </div>
       ))}
       {turn.partial ? <PartialImages partial={turn.partial} /> : null}
@@ -614,7 +603,7 @@ function AssistantMessage({
       </div>
     )
   else if (turn.reply)
-    body = <p className="text-body-sm whitespace-pre-wrap text-text-primary">{turn.reply}</p>
+    body = <MarkdownText className="text-body-sm text-text-primary">{turn.reply}</MarkdownText>
   else if (turn.autoSubmit && turn.contentId) {
     const contentId = turn.contentId
     body = (

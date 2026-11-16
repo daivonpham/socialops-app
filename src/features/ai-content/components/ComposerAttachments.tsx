@@ -48,6 +48,36 @@ export type Attachment = {
   uploaded?: AiAttachment
 }
 
+const EXTENSION_BY_MIME: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+}
+
+/**
+ * Files pasted into the composer, e.g. a screenshot. A pasted picture often comes without a usable
+ * name, so it gets one from its type and the time; files copied from a folder keep theirs.
+ */
+export function filesFromClipboard(data: DataTransfer | null): File[] {
+  if (!data) return []
+  const files = Array.from(data.files).length
+    ? Array.from(data.files)
+    : Array.from(data.items)
+        .filter((item) => item.kind === 'file')
+        .flatMap((item) => item.getAsFile() ?? [])
+  return files.map((file, index) => {
+    if (MIME_BY_EXTENSION[fileExtensionOf(file.name)]) return file
+    const extension = EXTENSION_BY_MIME[file.type]
+    if (!extension) return file
+    const stamp = new Date().toISOString().replace(/\D/g, '').slice(0, 14)
+    const suffix = files.length > 1 ? `-${index + 1}` : ''
+    return new File([file], `pasted-${stamp}${suffix}.${extension}`, {
+      type: file.type,
+      lastModified: Date.now(),
+    })
+  })
+}
+
 const sameFile = (a: File, b: File): boolean =>
   a.name === b.name && a.size === b.size && a.lastModified === b.lastModified
 

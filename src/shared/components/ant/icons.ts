@@ -88,6 +88,7 @@ export {
   FiThumbsUp as IconThumbsUp,
   FiSlash as IconBlocked,
   FiCheckCircle as IconCheckCircle,
+  FiXCircle as IconXCircle,
   FiPaperclip as IconAttach,
   FiImage as IconImageLine,
   FiSend as IconSendLine,

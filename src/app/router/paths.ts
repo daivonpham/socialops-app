@@ -1,4 +1,5 @@
 import { AUTH_ROUTES } from '@/features/auth/config/auth.routes'
+import { FACEBOOK_ROUTES } from '@/features/facebook/config/facebook.routes'
 
 /** Single source of route paths — never hard-code path strings elsewhere. */
 export const ROUTES = {
@@ -26,7 +27,8 @@ export const ROUTES = {
   PLATFORM_PLANNING: '/platforms/:platform/planning',
   PLATFORM_PLANNING_CREATE: '/platforms/:platform/planning/create',
   PLATFORM_PLANNING_EDIT: '/platforms/:platform/planning/:contentId/edit',
-  FACEBOOK_OVERVIEW: '/platforms/facebook/overview',
+  FACEBOOK_OVERVIEW: FACEBOOK_ROUTES.OVERVIEW,
+  FACEBOOK_POST_DETAIL: FACEBOOK_ROUTES.POST_DETAIL,
   TIKTOK_OVERVIEW: '/platforms/tiktok/overview',
   REPORTS: '/reports',
   REPORTS_NEW: '/reports/new',

@@ -463,7 +463,7 @@ function TopContent({ posts }: { posts: FacebookPostDto[] }) {
   )
 }
 
-/** Mirrors the analytics endpoints: presets are the last N UTC days including today. */
+/** Mirrors the analytics endpoints: presets are the last N whole days, ending yesterday. */
 function resolvePeriod(
   range: DateRange,
   since: string,
@@ -471,7 +471,7 @@ function resolvePeriod(
 ): { since: string; until: string } {
   if (since && until) return { since, until }
   const days = Number(range.slice(0, -1))
-  const end = new Date()
+  const end = new Date(Date.now() - 86_400_000)
   const start = new Date(end.getTime() - (days - 1) * 86_400_000)
   return { since: start.toISOString().slice(0, 10), until: end.toISOString().slice(0, 10) }
 }

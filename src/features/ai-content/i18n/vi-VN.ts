@@ -122,8 +122,6 @@ export const aiContentViVN = {
     unreadable: 'Không đọc được file {{names}}, nên AI chưa dùng nội dung của file này.',
     imageMissing: 'Chưa tạo được hình. Bạn có thể thêm hình trong màn soạn bài.',
     imagesMissing: 'Còn {{count}} hình chưa tạo được. Bạn có thể thêm hình trong màn soạn bài.',
-    imagesPending: 'Đang tạo hình. Các nút sẽ hiện khi xong.',
-    finishing: 'Đang hoàn thiện bài viết.',
     use: 'Sử dụng',
     publishNow: 'Đăng ngay',
     submit: 'Gửi duyệt',

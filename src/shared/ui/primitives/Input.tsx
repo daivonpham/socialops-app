@@ -10,6 +10,8 @@ export type InputProps = {
   placeholder?: string
   /** Leading visual inside the control, e.g. an email icon. */
   prefix?: ReactNode
+  /** Trailing visual inside the control, e.g. a unit such as "Credits". */
+  suffix?: ReactNode
   className?: string
   id?: string
   label?: string

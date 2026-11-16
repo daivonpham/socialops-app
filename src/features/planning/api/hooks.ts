@@ -165,6 +165,8 @@ export function usePlanningContent(brandId: string | null, contentId: string | n
     staleTime: 0,
     gcTime: 0,
     refetchOnMount: 'always',
+    // Back on this tab, pick up changes made elsewhere (e.g. the post was deleted in another tab).
+    refetchOnWindowFocus: true,
     select: (response) => response.data,
     refetchInterval: (current) => {
       const content = current.state.data?.data

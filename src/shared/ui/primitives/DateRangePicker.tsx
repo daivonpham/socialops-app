@@ -12,6 +12,8 @@ export type DateRangePickerProps = {
   className?: string
   disabled?: boolean
   placeholder?: [string, string]
+  /** The last day that can be picked, as `YYYY-MM-DD`; later days are greyed out. */
+  maxDate?: string
   'aria-label'?: string
 }
 

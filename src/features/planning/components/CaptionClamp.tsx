@@ -1,8 +1,10 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toPlainCaption } from '@/shared/lib/plainCaption'
 
+/** The caption as the Page shows it: Markdown marks off, line breaks kept. */
 export function CaptionClamp({
-  caption,
+  caption: written,
   inverse = false,
   lines = 2,
   renderText,
@@ -13,6 +15,7 @@ export function CaptionClamp({
   renderText?: (text: string) => ReactNode
 }) {
   const { t } = useTranslation('planning')
+  const caption = useMemo(() => toPlainCaption(written), [written])
   const showMore = t('detail.showMoreCaption')
   const containerRef = useRef<HTMLSpanElement>(null)
   const measureRef = useRef<HTMLSpanElement>(null)

@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import { IconFacebook, IconTikTok, Tooltip } from '@/shared/ui'
+import { toPlainCaption } from '@/shared/lib/plainCaption'
+import { IconFacebook, IconTikTok, MarkdownText, Tooltip } from '@/shared/ui'
 import type { PlanningContent } from '../api'
 import { pendingApprovalIntent } from '../model/approval'
 import { planningStatusGroup, type PlanningSummaryStatus } from '../model/planning-status-group'
@@ -32,7 +33,7 @@ export function PlanningCalendarEvent({
   const label = t('calendar.eventLabel', {
     time: timeText,
     platform: t(`platform.${content.platform}`),
-    caption: content.title ?? content.caption,
+    caption: content.title ?? toPlainCaption(content.caption),
     status: statusLabel,
     count: content.targets.length,
   })
@@ -45,7 +46,7 @@ export function PlanningCalendarEvent({
       <div className="planning-calendar-event__primary flex min-w-0 items-center gap-2">
         <PlanningMediaThumbnail content={content} className="h-5 w-5 shrink-0 rounded-sm" />
         <strong className="min-w-0 flex-1 truncate text-caption font-medium text-text-primary">
-          {content.title ?? content.caption}
+          {content.title ?? toPlainCaption(content.caption)}
         </strong>
         <span className="shrink-0 text-caption tabular-nums text-text-secondary">{timeText}</span>
       </div>
@@ -72,7 +73,11 @@ export function PlanningCalendarEvent({
   )
 
   return tooltip ? (
-    <Tooltip title={content.caption} placement="top">
+    <Tooltip
+      // A preview only: the full caption is one click away, in the post details.
+      title={<MarkdownText className="line-clamp-3">{content.caption}</MarkdownText>}
+      placement="top"
+    >
       {card}
     </Tooltip>
   ) : (

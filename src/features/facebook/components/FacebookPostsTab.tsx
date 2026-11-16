@@ -1,35 +1,52 @@
 import { useEffect, useMemo, useState } from 'react'
 import { FaArrowUpRightFromSquare, FaPlay } from 'react-icons/fa6'
 import { useTranslation } from 'react-i18next'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { formatDateTime, formatNumber, type AppLocale } from '@/shared/i18n'
 import {
   Avatar,
   Button,
   DataTable,
   EmptyState,
+  IconInfo,
   Image,
   Input,
   Pagination,
   SectionError,
   SectionSkeleton,
+  Tooltip,
   type DataTableColumn,
   type DataTableSorting,
 } from '@/shared/ui'
 import {
   useFacebookRecentPosts,
   type FacebookPostContentType,
+  type FacebookPostSort,
   type FacebookQuery,
   type FacebookRecentPostDto,
 } from '../api'
+import { facebookPostDetailPath } from '../config/facebook.routes'
+import { useFormatDuration } from '../model/duration'
 
-const numericKeys = [
-  'mediaViews',
-  'reactions',
-  'comments',
-  'shares',
-  'contentInteractions',
-] as const
-type SortKey = (typeof numericKeys)[number] | 'publishedAt'
+/** The figure columns: the sort key, and the post field it shows. */
+const METRIC_COLUMNS = [
+  { key: 'mediaViews', field: 'mediaViews' },
+  { key: 'viewers', field: 'viewers' },
+  { key: 'contentInteractions', field: 'contentInteractions' },
+  { key: 'reactions', field: 'reactions' },
+  { key: 'comments', field: 'comments' },
+  { key: 'shares', field: 'shares' },
+  { key: 'clicks', field: 'clicks' },
+  { key: 'linkClicks', field: 'linkClicks' },
+  { key: 'newFollowers', field: 'newFollowers' },
+  { key: 'videoViews', field: 'videoViews' },
+  { key: 'videoViewTime', field: 'videoViewTimeMs', duration: true },
+  { key: 'videoAvgTime', field: 'videoAvgTimeMs', duration: true },
+] as const satisfies ReadonlyArray<{
+  key: FacebookPostSort
+  field: keyof FacebookRecentPostDto
+  duration?: boolean
+}>
 
 const DEFAULT_LIMIT = 20
 
@@ -47,6 +64,9 @@ export function FacebookPostsTab({
 }) {
   const { t, i18n } = useTranslation('facebook')
   const locale = i18n.resolvedLanguage as AppLocale
+  const navigate = useNavigate()
+  const formatDuration = useFormatDuration()
+  const location = useLocation()
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [limit, setLimit] = useState(DEFAULT_LIMIT)
@@ -67,7 +87,7 @@ export function FacebookPostsTab({
     limit,
     search: debouncedSearch,
     contentType,
-    sortBy: (sorting[0]?.columnKey as SortKey) ?? 'publishedAt',
+    sortBy: (sorting[0]?.columnKey as FacebookPostSort) ?? 'publishedAt',
     sortOrder: sorting[0]?.direction ?? 'desc',
   })
   const columns = useMemo<DataTableColumn<FacebookRecentPostDto>[]>(
@@ -135,20 +155,44 @@ export function FacebookPostsTab({
           </span>
         ),
       },
-      ...numericKeys.map((key): DataTableColumn<FacebookRecentPostDto> => ({
-        key,
-        title: t(`overview.${key}`),
-        width: 'compact',
-        size: 112,
-        minSize: 100,
-        align: 'end',
-        sortable: true,
-        render: (_, post) => (
-          <span className="tabular-nums">
-            {post[key] == null ? '—' : formatNumber(post[key], locale)}
-          </span>
-        ),
-      })),
+      ...METRIC_COLUMNS.map(({ key, field, ...column }): DataTableColumn<FacebookRecentPostDto> => {
+        const duration = 'duration' in column && column.duration
+        return {
+          key,
+          label: t(`postColumns.${key}`),
+          title: (
+            <span className="inline-flex items-center gap-1">
+              {t(`postColumns.${key}`)}
+              <Tooltip title={t(`postColumns.${key}Hint`)}>
+                <span
+                  className="inline-flex text-text-tertiary"
+                  // The hint must not sort the column it sits in.
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <IconInfo aria-hidden />
+                </span>
+              </Tooltip>
+            </span>
+          ),
+          width: 'compact',
+          size: duration ? 136 : 124,
+          minSize: 100,
+          align: 'end',
+          sortable: true,
+          render: (_, post) => {
+            const value = post[field]
+            return (
+              <span className="whitespace-nowrap tabular-nums">
+                {value == null
+                  ? '—'
+                  : duration
+                    ? formatDuration(value)
+                    : formatNumber(value, locale)}
+              </span>
+            )
+          },
+        }
+      }),
       {
         key: 'link',
         title: '',
@@ -173,7 +217,7 @@ export function FacebookPostsTab({
           ),
       },
     ],
-    [locale, t],
+    [formatDuration, locale, t],
   )
 
   return (
@@ -221,8 +265,12 @@ export function FacebookPostsTab({
               />
             }
             getRowId={(post) => `${post.pageId}:${post.id}`}
+            // The details screen goes back to this list with the same filters.
+            onRowClick={(post) =>
+              navigate(facebookPostDetailPath(post.id), { state: { from: location.search } })
+            }
             showColumnSettings
-            columnPersistenceKey={`facebook-recent-posts:${brandId}:v2`}
+            columnPersistenceKey={`facebook-recent-posts:${brandId}:v3`}
             manualSorting
             sorting={sorting}
             onSortingChange={(value) => setSorting(value.slice(0, 1))}

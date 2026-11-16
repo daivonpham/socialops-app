@@ -7,6 +7,17 @@ export const commonEnUS = {
   dropdown: {
     noMatches: 'No matches.',
   },
+  fileUpload: {
+    progress: '{{loaded}} of {{total}}',
+    uploading: 'Uploading…',
+    complete: 'Complete',
+    failed: 'Failed',
+    retry: 'Try again',
+    remove: 'Remove {{name}}',
+    percent: '{{percent}}% of {{name}} uploaded',
+    play: 'Play {{name}} in the preview',
+    pause: 'Pause {{name}} in the preview',
+  },
   filters: {
     trigger: 'Filters',
     reset: 'Reset',

@@ -61,6 +61,12 @@ const layoutChildren: RouteObject[] = [
     }),
   },
   {
+    path: ROUTES.FACEBOOK_POST_DETAIL,
+    lazy: async () => ({
+      Component: (await import('@/features/facebook/pages/FacebookPostDetailPage')).default,
+    }),
+  },
+  {
     path: ROUTES.TIKTOK_OVERVIEW,
     lazy: async () => ({ Component: (await import('@/features/tiktok/pages/TikTokPage')).default }),
   },

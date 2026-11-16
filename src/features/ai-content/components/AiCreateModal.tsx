@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState, type ReactNode, type KeyboardEvent } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ClipboardEvent,
+  type ReactNode,
+  type KeyboardEvent,
+} from 'react'
 import { useTranslation } from 'react-i18next'
 import { isApiErrorCode } from '@/shared/api/errors'
 import { useAuth } from '@/shared/auth'
@@ -47,7 +54,12 @@ import assistantRobot from '@/assets/ai/assistant-robot.svg'
 import { AiCreditsEmpty } from './AiCreditsEmpty'
 import { AiOnboarding } from './AiOnboarding'
 import { BrandAiProfileModal } from './BrandAiProfileModal'
-import { AttachButton, AttachmentList, useAttachments } from './ComposerAttachments'
+import {
+  AttachButton,
+  AttachmentList,
+  filesFromClipboard,
+  useAttachments,
+} from './ComposerAttachments'
 
 const FREEFORM = ''
 /** The request typed in the composer; templates add their own fields beside it. */
@@ -272,6 +284,16 @@ export function AiCreateModal({
     if (event.nativeEvent.isComposing || event.keyCode === 229) return
     event.preventDefault()
     form.submit()
+  }
+
+  // A pasted file or screenshot is attached like a picked one; pasted text stays plain text.
+  // While editing a sent message there is nothing to attach to, so the paste is left alone.
+  const attachOnPaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
+    if (editing !== null) return
+    const files = filesFromClipboard(event.clipboardData)
+    if (!files.length) return
+    event.preventDefault()
+    attachments.add(files)
   }
 
   const resetErrors = () => {
@@ -533,6 +555,7 @@ export function AiCreateModal({
                         autoSize={{ minRows: 2, maxRows: 6 }}
                         maxLength={2000}
                         onKeyDown={sendOnEnter}
+                        onPaste={attachOnPaste}
                         aria-label={t(editing ? 'chat.editLabel' : 'form.topic')}
                         placeholder={
                           editing

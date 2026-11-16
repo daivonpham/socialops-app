@@ -106,6 +106,7 @@ export function PagePerformanceCard({
   return (
     <DashboardCard
       title={t('dashboard.pages.title')}
+      hint={t('dashboard.engagementRateFormula')}
       description={t('dashboard.pages.description')}
     >
       <div className="-mx-5 -mb-5">

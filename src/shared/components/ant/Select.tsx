@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Select as AntSelect } from 'antd'
+import { matchesSearch } from '@/shared/lib/search'
 import type { SelectProps } from '@/shared/ui/primitives/Select'
 
 export function Select({
@@ -22,7 +23,8 @@ export function Select({
           option.searchText ?? (typeof option.label === 'string' ? option.label : option.value),
       }))}
       showSearch={showSearch}
-      optionFilterProp="searchText"
+      // Matches with or without Vietnamese marks: "ha noi" finds "Hà Nội".
+      filterOption={(input, option) => matchesSearch(String(option?.searchText ?? ''), input)}
       popupMatchSelectWidth={false}
       onChange={(value) => onChange?.({ target: { value } })}
       {...(footerAction

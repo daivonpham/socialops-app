@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Link, useBlocker, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useFacebookIntegration } from '@/features/facebook'
 import {
@@ -58,7 +58,7 @@ import {
 } from '../model/report-config'
 import { periodDates, reportDatePresets } from '../model/report-period'
 import { CodedError } from '@/shared/api/errors'
-import { useApiErrorMessage } from '@/shared/hooks'
+import { useApiErrorMessage, useLeaveGuard } from '@/shared/hooks'
 
 type Step = 1 | 2 | 3
 const TOTAL_STEPS = 3
@@ -94,7 +94,6 @@ export default function ReportBuilderPage() {
   const [refresh, setRefresh] = useState<ReportRefresh | null>(null)
   const [postsPage, setPostsPage] = useState(1)
   const [loadedId, setLoadedId] = useState<string | null>(null)
-  const allowLeave = useRef(false)
 
   const saved = useReport(brandId, reportId ?? null)
   const facebook = useFacebookIntegration(brandId)
@@ -156,16 +155,7 @@ export default function ReportBuilderPage() {
     ? name !== saved.data.name ||
       JSON.stringify(config) !== JSON.stringify(hydrateReportConfig(saved.data.config))
     : !reportId && (name.trim() !== '' || JSON.stringify(config) !== JSON.stringify(initialConfig))
-  const blocker = useBlocker(
-    ({ currentLocation, nextLocation }) =>
-      dirty && !allowLeave.current && currentLocation.pathname !== nextLocation.pathname,
-  )
-  useEffect(() => {
-    if (!dirty) return
-    const warn = (event: BeforeUnloadEvent) => event.preventDefault()
-    window.addEventListener('beforeunload', warn)
-    return () => window.removeEventListener('beforeunload', warn)
-  }, [dirty])
+  const leaveGuard = useLeaveGuard(dirty)
 
   const patch = (value: Partial<ReportConfig>) => {
     setConfig((current) => ({ ...current, ...value }))
@@ -231,7 +221,7 @@ export default function ReportBuilderPage() {
         queryClient.setQueryData(['reports', brandId, reportId], updated)
       } else {
         const created = await createReport(brandId, { name: name.trim(), config })
-        allowLeave.current = true
+        leaveGuard.allowLeave()
         navigate(`/reports/${created.id}`, { replace: true })
       }
       void queryClient.invalidateQueries({ queryKey: ['reports', brandId] })
@@ -655,12 +645,12 @@ export default function ReportBuilderPage() {
       </main>
 
       <ConfirmDialog
-        open={blocker.state === 'blocked'}
+        open={leaveGuard.blocked}
         title={t('preview.leaveTitle')}
         description={t('preview.leaveDescription')}
         confirmLabel={t('preview.leave')}
-        onConfirm={() => blocker.proceed?.()}
-        onClose={() => blocker.reset?.()}
+        onConfirm={leaveGuard.leave}
+        onClose={leaveGuard.stay}
       />
     </div>
   )

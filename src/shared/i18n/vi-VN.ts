@@ -10,6 +10,17 @@ export const commonViVN = {
   dropdown: {
     noMatches: 'Không có kết quả.',
   },
+  fileUpload: {
+    progress: '{{loaded}} / {{total}}',
+    uploading: 'Đang tải lên…',
+    complete: 'Hoàn tất',
+    failed: 'Lỗi',
+    retry: 'Thử lại',
+    remove: 'Xoá {{name}}',
+    percent: 'Đã tải {{percent}}% {{name}}',
+    play: 'Phát {{name}} trong bản xem trước',
+    pause: 'Dừng {{name}} trong bản xem trước',
+  },
   filters: {
     trigger: 'Bộ lọc',
     reset: 'Đặt lại',

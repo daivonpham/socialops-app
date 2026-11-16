@@ -87,11 +87,7 @@ export function uses12HourTime(locale?: string | null): boolean {
   return resolveLocale(locale) === 'en-US'
 }
 
-export function formatDate(
-  value: DateInput,
-  locale?: string | null,
-  timeZone?: string,
-): string {
+export function formatDate(value: DateInput, locale?: string | null, timeZone?: string): string {
   const date = toDate(value)
   if (!date) return ''
 
@@ -108,11 +104,7 @@ export function formatDate(
   return resolvedLocale === 'vi-VN' ? `${day}/${month}/${year}` : `${month}/${day}/${year}`
 }
 
-export function formatTime(
-  value: DateInput,
-  locale?: string | null,
-  timeZone?: string,
-): string {
+export function formatTime(value: DateInput, locale?: string | null, timeZone?: string): string {
   const date = toDate(value)
   if (!date) return ''
 
