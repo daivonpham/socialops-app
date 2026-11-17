@@ -332,6 +332,33 @@ export function AiCreateModal({
       setRequestKey(newKey())
       form.setFieldValue(['brief', TOPIC_KEY], '')
     },
+    // Like a new request typed in the composer, with the Pages and options chosen now, but with
+    // the request's own template, other fields and files.
+    onResend: async (turn, text, key) => {
+      if (sending || working) return false
+      resetErrors()
+      const values = form.getFieldsValue(true) as Values
+      try {
+        const started = await start.mutateAsync({
+          brandId,
+          idempotencyKey: key,
+          socialAccountIds: values.pageIds,
+          ...(turn.templateKey ? { templateKey: turn.templateKey } : {}),
+          brief: { ...turn.brief, [TOPIC_KEY]: text },
+          autoSubmit: values.autoSubmit,
+          ...(conversationId ? { conversationId } : {}),
+          ...(turn.attachments.length
+            ? { attachmentIds: turn.attachments.map((file) => file.id) }
+            : {}),
+        })
+        setConversationId(started.conversationId)
+        refreshCredits()
+        return true
+      } catch {
+        // The error shows above the composer; the same key keeps a retry from sending it twice.
+        return false
+      }
+    },
     onOpenContent,
   }
 
@@ -487,6 +514,11 @@ export function AiCreateModal({
                   setConversationId(id)
                 }}
                 onNew={() => {
+                  setEditing(null)
+                  setConversationId(null)
+                }}
+                onDeleted={(id) => {
+                  if (id !== conversationId) return
                   setEditing(null)
                   setConversationId(null)
                 }}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CodedError } from '@/shared/api/errors'
 import { useApiErrorMessage } from '@/shared/hooks'
@@ -6,6 +6,7 @@ import { openFile } from '@/shared/lib/openFile'
 import {
   Alert,
   Avatar,
+  Button,
   IconCheck,
   IconCheckSolid,
   IconCopy,
@@ -19,6 +20,7 @@ import {
   ImagePreviewGroup,
   MarkdownText,
   Tabs,
+  Textarea,
   useToast,
 } from '@/shared/ui'
 import {
@@ -42,6 +44,11 @@ export type AiTurnActions = {
   onPost: (turn: AiGeneration, intent: AiPostIntent, pageIds: string[]) => void
   onAnotherIdea: (turn: AiGeneration) => void
   onEdit: (turn: AiGeneration) => void
+  /**
+   * The request sent again as a new one, with new words and the same files. `key` stays the same
+   * for a retry of the same edit. Resolves true once it is sent.
+   */
+  onResend: (turn: AiGeneration, text: string, key: string) => Promise<boolean>
   onOpenContent: (contentId: string) => void
 }
 
@@ -62,17 +69,131 @@ function requestText(
     .join('\n')
 }
 
+/** How long the copy icon shows its check. */
+const COPIED_MS = 1500
+
+/** A copy button whose icon turns to a check for a moment once the text is copied. */
+function useCopy(errorKey: 'chat.copyError' | 'chat.copyRequestError') {
+  const { t } = useTranslation('aiContent')
+  const toast = useToast()
+  const [copied, setCopied] = useState(false)
+  const timer = useRef<number | undefined>(undefined)
+  useEffect(() => () => window.clearTimeout(timer.current), [])
+  const copy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch {
+      toast.error({ title: t(errorKey) })
+      return
+    }
+    setCopied(true)
+    window.clearTimeout(timer.current)
+    timer.current = window.setTimeout(() => setCopied(false), COPIED_MS)
+  }
+  return { copied, copy }
+}
+
+/**
+ * The words of a request changed in place. Sending asks again as a new request, with the same
+ * files; Escape or "Cancel" leaves it as it was.
+ */
+function RequestEditor({
+  initial,
+  busy,
+  onCancel,
+  onSend,
+}: {
+  initial: string
+  busy: boolean
+  onCancel: () => void
+  onSend: (text: string) => Promise<void>
+}) {
+  const { t } = useTranslation('aiContent')
+  const [text, setText] = useState(initial)
+  const [sending, setSending] = useState(false)
+  const box = useRef<HTMLDivElement>(null)
+  useEffect(() => box.current?.querySelector('textarea')?.focus(), [])
+  const ready = Boolean(text.trim()) && !busy && !sending
+
+  const send = async () => {
+    if (!ready) return
+    setSending(true)
+    try {
+      await onSend(text.trim())
+    } finally {
+      setSending(false)
+    }
+  }
+
+  // Enter sends and Shift+Enter starts a new line, as in the composer.
+  const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      event.stopPropagation()
+      onCancel()
+      return
+    }
+    if (event.key !== 'Enter' || event.shiftKey) return
+    if (event.nativeEvent.isComposing || event.keyCode === 229) return
+    event.preventDefault()
+    void send()
+  }
+
+  return (
+    <div ref={box} className="w-full rounded-xl border border-ai-300 bg-bg-surface px-4 pt-3 pb-3 shadow-xs">
+      <Textarea
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        onKeyDown={onKeyDown}
+        onFocus={(event) => {
+          const end = event.currentTarget.value.length
+          event.currentTarget.setSelectionRange(end, end)
+        }}
+        autoSize={{ minRows: 1, maxRows: 8 }}
+        maxLength={2000}
+        aria-label={t('chat.editRequestLabel')}
+        className="app-scrollbar !resize-none !border-0 !p-0 !shadow-none"
+      />
+      <div className="mt-3 flex justify-end gap-2">
+        <Button size="sm" disabled={sending} onClick={onCancel}>
+          {t('modal.cancel')}
+        </Button>
+        <Button
+          size="sm"
+          variant="primary"
+          loading={sending}
+          disabled={!ready}
+          onClick={() => void send()}
+        >
+          {t('chat.resend')}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 function UserMessage({
   turn,
   templates,
+  busy,
+  onResend,
 }: {
   turn: AiGeneration
   templates: AiTemplateOption[] | undefined
+  busy: boolean
+  onResend: AiTurnActions['onResend']
 }) {
   const { t } = useTranslation('aiContent')
   const template = templates?.find((item) => item.key === turn.templateKey)
+  const text = requestText(turn, templates, t('chat.anotherIdea'))
+  const { copied, copy } = useCopy('chat.copyRequestError')
+  // Set while the words are being changed; one key per edit, so a retry cannot send it twice.
+  const [editKey, setEditKey] = useState<string | null>(null)
+  // "Try another idea" and "Edit again" ask about an answer, so only a fresh request is asked again.
+  const editable = turn.kind === 'new'
+
   return (
-    <div className="flex flex-col items-end gap-2">
+    <div className="group flex flex-col items-end gap-2">
       {turn.attachments.length ? (
         <ImagePreviewGroup>
           <ul className="flex flex-wrap justify-end gap-2" aria-label={t('attach.list')}>
@@ -102,12 +223,43 @@ function UserMessage({
           </ul>
         </ImagePreviewGroup>
       ) : null}
-      <div className="max-w-[80%] rounded-xl rounded-ee-sm bg-ai-100 px-4 py-3 text-body-sm whitespace-pre-wrap text-text-primary">
-        {template ? (
-          <span className="mb-1 block text-label-sm text-ai-700">{template.name}</span>
-        ) : null}
-        {requestText(turn, templates, t('chat.anotherIdea'))}
-      </div>
+      {editKey ? (
+        <RequestEditor
+          initial={turn.brief.topic ?? ''}
+          busy={busy}
+          onCancel={() => setEditKey(null)}
+          onSend={async (next) => {
+            if (await onResend(turn, next, editKey)) setEditKey(null)
+          }}
+        />
+      ) : (
+        <>
+          <div className="max-w-[80%] rounded-xl rounded-ee-sm bg-ai-100 px-4 py-3 text-body-sm whitespace-pre-wrap text-text-primary">
+            {template ? (
+              <span className="mb-1 block text-label-sm text-ai-700">{template.name}</span>
+            ) : null}
+            {text}
+          </div>
+          {/* Shown on hover; always there for keyboards and touch screens. */}
+          <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100">
+            <IconAction
+              label={t(copied ? 'chat.copied' : 'chat.copyRequest')}
+              onClick={() => void copy(text)}
+            >
+              {copied ? <IconCheckSolid /> : <IconCopy />}
+            </IconAction>
+            {editable ? (
+              <IconAction
+                label={t('chat.editRequest')}
+                disabled={busy}
+                onClick={() => setEditKey(crypto.randomUUID())}
+              >
+                <IconEdit />
+              </IconAction>
+            ) : null}
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -146,9 +298,6 @@ function ActionButton({
   )
 }
 
-/** How long the copy icon shows its check. */
-const COPIED_MS = 1500
-
 /** A small icon button, named for screen readers. */
 function IconAction({
   label,
@@ -167,7 +316,7 @@ function IconAction({
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      className="flex size-6 items-center justify-center rounded-md text-icon-sm text-text-primary transition-colors hover:bg-ai-50 hover:text-ai-700 focus-visible:focus-ring disabled:cursor-not-allowed disabled:opacity-50"
+      className="flex size-6 items-center justify-center rounded-md text-icon-sm text-text-tertiary transition-colors hover:bg-bg-surface-muted hover:text-text-secondary focus-visible:focus-ring disabled:cursor-not-allowed disabled:opacity-50"
     >
       {children}
     </button>
@@ -300,10 +449,7 @@ function SuggestionCard({
   actions: AiTurnActions
 }) {
   const { t } = useTranslation('aiContent')
-  const toast = useToast()
-  const [copied, setCopied] = useState(false)
-  const copiedTimer = useRef<number | undefined>(undefined)
-  useEffect(() => () => window.clearTimeout(copiedTimer.current), [])
+  const { copied, copy } = useCopy('chat.copyError')
   const suggestion = turn.suggestion!
   const ids = turn.socialAccountIds
   const [pageId, setPageId] = useState(ids[0] ?? AI_GENERAL_CAPTION_KEY)
@@ -323,18 +469,6 @@ function SuggestionCard({
   )
   const used = turn.contentId
   const caption = suggestion.captions[pageId] ?? ''
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(caption)
-    } catch {
-      toast.error({ title: t('chat.copyError') })
-      return
-    }
-    setCopied(true)
-    window.clearTimeout(copiedTimer.current)
-    copiedTimer.current = window.setTimeout(() => setCopied(false), COPIED_MS)
-  }
 
   return (
     <div className="grid gap-4">
@@ -424,7 +558,7 @@ function SuggestionCard({
           </>
         )}
         <div className="ms-auto flex items-center gap-2">
-          <IconAction label={t(copied ? 'chat.copied' : 'chat.copy')} onClick={() => void copy()}>
+          <IconAction label={t(copied ? 'chat.copied' : 'chat.copy')} onClick={() => void copy(caption)}>
             {copied ? <IconCheckSolid /> : <IconCopy />}
           </IconAction>
           {used ? null : (
@@ -677,7 +811,12 @@ export function AiChatTurn({
 }) {
   return (
     <li className="grid gap-8">
-      <UserMessage turn={turn} templates={templates} />
+      <UserMessage
+        turn={turn}
+        templates={templates}
+        busy={busy}
+        onResend={actions.onResend}
+      />
       <AssistantMessage
         brandId={brandId}
         turn={turn}

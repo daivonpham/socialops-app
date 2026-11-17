@@ -48,6 +48,10 @@ export type DropdownProps = {
   emptyText?: ReactNode
   /** Optional action row under the list, e.g. "Create workspace". */
   footer?: DropdownFooter
+  /** The small arrow pointing at the trigger. On by default. */
+  caret?: boolean
+  /** Outlines the trigger while the panel is open, as for a field. On by default. */
+  highlightTrigger?: boolean
   /** Trigger element. */
   children: ReactElement
 }

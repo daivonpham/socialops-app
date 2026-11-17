@@ -163,7 +163,13 @@ export type AiGeneration = {
   missingImages: number
 }
 
-export type AiConversationSummary = { id: string; title: string; lastActivityAt: string }
+export type AiConversationSummary = {
+  id: string
+  title: string
+  lastActivityAt: string
+  /** A turn is still being made; such a chat cannot be deleted yet. */
+  pending: boolean
+}
 export type AiConversation = AiConversationSummary & { turns: AiGeneration[] }
 
 export type AiPostIntent = 'publish_now' | 'approval_publish_now'

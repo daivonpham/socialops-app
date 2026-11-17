@@ -35,6 +35,7 @@ export const errorsViVN = {
     AI_SUGGESTION_USED: 'Gợi ý này đã được dùng rồi.',
     AI_ONBOARDING_BUSY: 'AI đang đọc bài của bạn, vui lòng đợi một lát.',
     AI_ONBOARDING_DONE: 'Brand này đã nhận gợi ý mẫu rồi.',
+    AI_CONVERSATION_BUSY: 'AI đang trả lời trong cuộc trò chuyện này. Hãy xóa sau khi xong.',
     AI_DISABLED: 'Tính năng tạo bài bằng AI hiện đang tắt.',
     AI_INVALID_OUTPUT: 'AI chưa tạo được kết quả dùng được. Vui lòng thử lại.',
     AI_GENERATION_ABANDONED: 'Lần tạo này không hoàn tất được. Vui lòng thử lại.',

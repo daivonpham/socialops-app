@@ -141,6 +141,35 @@ export async function getAiConversations(brandId: string) {
   ).data.data
 }
 
+/** A new name for one chat; returns the chat as the list shows it. */
+export async function renameAiConversation({
+  brandId,
+  conversationId,
+  title,
+}: {
+  brandId: string
+  conversationId: string
+  title: string
+}) {
+  return (
+    await apiClient.patch<CommonApiResponse<AiConversationSummary>>(
+      `${base(brandId)}/conversations/${conversationId}`,
+      { title },
+    )
+  ).data.data
+}
+
+/** Hides the chat from its owner; `AI_CONVERSATION_BUSY` while a turn is being made. */
+export async function deleteAiConversation({
+  brandId,
+  conversationId,
+}: {
+  brandId: string
+  conversationId: string
+}) {
+  await apiClient.delete(`${base(brandId)}/conversations/${conversationId}`)
+}
+
 export async function getAiConversation(brandId: string, conversationId: string) {
   return (
     await apiClient.get<CommonApiResponse<AiConversation>>(

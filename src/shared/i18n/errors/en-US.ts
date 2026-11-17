@@ -37,6 +37,7 @@ export const errorsEnUS = {
     AI_SUGGESTION_USED: 'This suggestion has already been used.',
     AI_ONBOARDING_BUSY: 'AI is already reading your posts. Please wait a moment.',
     AI_ONBOARDING_DONE: 'This Brand has already had its sample suggestions.',
+    AI_CONVERSATION_BUSY: 'The AI is still answering in this chat. Delete it once it is done.',
     AI_DISABLED: 'AI generation is turned off right now.',
     AI_INVALID_OUTPUT: 'The AI could not produce a usable result. Try again.',
     AI_GENERATION_ABANDONED: 'This generation could not finish. Try again.',

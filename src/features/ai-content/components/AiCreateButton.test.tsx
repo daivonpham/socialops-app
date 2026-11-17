@@ -73,6 +73,7 @@ const chat = (turns: AiGeneration[]): AiConversation => ({
   id: 'conv-1',
   title: 'New cold brew',
   lastActivityAt: '2026-11-07T08:00:00.000Z',
+  pending: false,
   turns,
 })
 
@@ -85,7 +86,12 @@ function mockApi(availability: Partial<AiAvailability> = {}, conversation?: () =
     http.get('*/brands/brand-1/ai/conversations', () =>
       HttpResponse.json({
         data: [
-          { id: 'conv-1', title: 'New cold brew', lastActivityAt: '2026-11-07T08:00:00.000Z' },
+          {
+            id: 'conv-1',
+            title: 'New cold brew',
+            lastActivityAt: '2026-11-07T08:00:00.000Z',
+            pending: false,
+          },
         ],
       }),
     ),
@@ -233,6 +239,96 @@ describe('AiCreateButton', () => {
     expect(dialog).toBeInTheDocument()
     await user.click(within(dialog).getByRole('button', { name: 'New cold brew' }))
     expect(await within(dialog).findByText('Cold brew is here')).toBeInTheDocument()
+  })
+
+  it('deletes a chat after a confirmation and leaves the open one for a new chat', async () => {
+    window.localStorage.setItem(CHAT_KEY, 'conv-1')
+    mockApi({}, () => chat([turn()]))
+    let deleted: string | null = null
+    server.use(
+      http.delete('*/brands/brand-1/ai/conversations/:id', ({ params }) => {
+        deleted = String(params.id)
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+    const { user } = renderButton()
+    const dialog = await openDialog(user)
+    expect(await within(dialog).findByText('Cold brew is here')).toBeInTheDocument()
+
+    await user.click(within(dialog).getByRole('button', { name: 'Options for New cold brew' }))
+    await user.click(await screen.findByRole('menuitem', { name: /Delete/ }))
+    const confirm = (await screen.findByText('Delete this chat?')).closest<HTMLElement>(
+      '[role="dialog"]',
+    )!
+    await user.click(within(confirm).getByRole('button', { name: 'Delete' }))
+
+    await waitFor(() => expect(deleted).toBe('conv-1'))
+    expect(await within(dialog).findByText('Hello! 👋')).toBeInTheDocument()
+  })
+
+  it('renames a chat in place: Enter saves, Escape keeps the old name', async () => {
+    mockApi()
+    let renamed: unknown
+    server.use(
+      http.patch('*/brands/brand-1/ai/conversations/:id', async ({ request }) => {
+        renamed = await request.json()
+        return HttpResponse.json({
+          data: {
+            id: 'conv-1',
+            title: 'Cold brew launch',
+            lastActivityAt: '2026-11-07T08:00:00.000Z',
+            pending: false,
+          },
+        })
+      }),
+    )
+    const { user } = renderButton()
+    const dialog = await openDialog(user)
+    const openMenu = async () => {
+      await user.click(
+        await within(dialog).findByRole('button', { name: 'Options for New cold brew' }),
+      )
+      await user.click(await screen.findByRole('menuitem', { name: 'Rename' }))
+      return within(dialog).getByRole('textbox', { name: 'Chat name' })
+    }
+
+    let field = await openMenu()
+    await user.clear(field)
+    await user.type(field, 'Something else{Escape}')
+    expect(renamed).toBeUndefined()
+    expect(dialog).toBeInTheDocument()
+
+    field = await openMenu()
+    expect(field).toHaveValue('New cold brew')
+    await user.clear(field)
+    await user.type(field, '  Cold brew   launch {Enter}')
+    await waitFor(() => expect(renamed).toEqual({ title: 'Cold brew launch' }))
+  })
+
+  it('shows hopping dots instead of the menu while the AI answers a chat', async () => {
+    mockApi()
+    server.use(
+      http.get('*/brands/brand-1/ai/conversations', () =>
+        HttpResponse.json({
+          data: [
+            {
+              id: 'conv-1',
+              title: 'New cold brew',
+              lastActivityAt: '2026-11-07T08:00:00.000Z',
+              pending: true,
+            },
+          ],
+        }),
+      ),
+    )
+    const { user } = renderButton()
+    const dialog = await openDialog(user)
+    expect(
+      await within(dialog).findByRole('status', { name: 'The AI is answering' }),
+    ).toBeInTheDocument()
+    expect(
+      within(dialog).queryByRole('button', { name: 'Options for New cold brew' }),
+    ).not.toBeInTheDocument()
   })
 
   it('keeps the Pages chosen for the next time, without ones no longer usable', async () => {
@@ -1103,9 +1199,7 @@ describe('AiCreateButton', () => {
     expect(created[0]).toMatchObject({ mimeType: 'image/png' })
     expect(created[0]!.name).toMatch(/^pasted-\d{14}\.png$/)
     expect(
-      within(within(dialog).getByRole('list', { name: 'Attached files' })).getAllByRole(
-        'listitem',
-      ),
+      within(within(dialog).getByRole('list', { name: 'Attached files' })).getAllByRole('listitem'),
     ).toHaveLength(1)
     Reflect.deleteProperty(URL, 'createObjectURL')
     Reflect.deleteProperty(URL, 'revokeObjectURL')

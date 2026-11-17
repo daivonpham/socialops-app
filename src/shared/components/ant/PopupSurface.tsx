@@ -4,9 +4,7 @@ export type PopupPlacement =
   'top' | 'topLeft' | 'topRight' | 'bottom' | 'bottomLeft' | 'bottomRight'
 
 function caretPosition(placement: PopupPlacement): string {
-  return placement.startsWith('top')
-    ? 'popup-surface__caret--top'
-    : 'popup-surface__caret--bottom'
+  return placement.startsWith('top') ? 'popup-surface__caret--top' : 'popup-surface__caret--bottom'
 }
 
 function PopupCaret({ placement }: { placement: PopupPlacement }) {
@@ -25,12 +23,15 @@ function PopupCaret({ placement }: { placement: PopupPlacement }) {
 export function PopupSurface({
   placement,
   className = '',
+  caret = true,
   onMouseEnter,
   onMouseLeave,
   children,
 }: {
   placement: PopupPlacement
   className?: string
+  /** The arrow pointing at what opened it. */
+  caret?: boolean
   onMouseEnter?: () => void
   onMouseLeave?: () => void
   children: ReactNode
@@ -44,7 +45,7 @@ export function PopupSurface({
       <div
         className={`${className} popup-surface__panel relative rounded-lg border border-border-subtle bg-bg-surface shadow-lg`}
       >
-        <PopupCaret placement={placement} />
+        {caret ? <PopupCaret placement={placement} /> : null}
         {children}
       </div>
     </div>

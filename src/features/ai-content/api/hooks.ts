@@ -4,6 +4,8 @@ import {
   confirmAiOnboarding,
   followUpAiGeneration,
   getAiAvailability,
+  deleteAiConversation,
+  renameAiConversation,
   getAiConversation,
   getAiConversations,
   getAiOnboarding,
@@ -16,7 +18,7 @@ import {
   streamAiGeneration,
   updateBrandAiProfile,
 } from './service'
-import type { AiConversation, AiLiveText } from './types'
+import type { AiConversation, AiConversationSummary, AiLiveText } from './types'
 
 const POLL_MS = 2000
 /** A stream that drops is opened again after this, while the turn still runs, so many times. */
@@ -138,11 +140,58 @@ export function usePostAiSuggestion() {
   })
 }
 
+/** The chats; asked again every two seconds while one of them is waiting for the AI. */
 export function useAiConversations(brandId: string | null, enabled = true) {
   return useQuery({
     queryKey: AI_CONTENT_QUERY_KEYS.conversations(brandId),
     queryFn: () => getAiConversations(brandId!),
     enabled: brandId !== null && enabled,
+    refetchInterval: (query) =>
+      query.state.data?.some((conversation) => conversation.pending) ? POLL_MS : false,
+  })
+}
+
+/** Shows the new name at once; the old one comes back if the API refuses it. */
+export function useRenameAiConversation() {
+  const queryClient = useQueryClient()
+  type Context = { listKey: readonly unknown[]; previous?: AiConversationSummary[] }
+  return useMutation<
+    AiConversationSummary,
+    Error,
+    { brandId: string; conversationId: string; title: string },
+    Context
+  >({
+    mutationFn: renameAiConversation,
+    onMutate: async ({ brandId, conversationId, title }) => {
+      const listKey = AI_CONTENT_QUERY_KEYS.conversations(brandId)
+      await queryClient.cancelQueries({ queryKey: listKey, exact: true })
+      const previous = queryClient.getQueryData<AiConversationSummary[]>(listKey)
+      queryClient.setQueryData<AiConversationSummary[]>(listKey, (list) =>
+        list?.map((item) => (item.id === conversationId ? { ...item, title } : item)),
+      )
+      return { listKey, previous }
+    },
+    onError: (_, __, context) => {
+      if (context?.previous) queryClient.setQueryData(context.listKey, context.previous)
+    },
+    onSettled: (_, __, { brandId }) =>
+      queryClient.invalidateQueries({ queryKey: AI_CONTENT_QUERY_KEYS.conversations(brandId) }),
+  })
+}
+
+export function useDeleteAiConversation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: deleteAiConversation,
+    onSuccess: (_, { brandId, conversationId }) => {
+      queryClient.removeQueries({
+        queryKey: AI_CONTENT_QUERY_KEYS.conversation(brandId, conversationId),
+      })
+      return queryClient.invalidateQueries({
+        queryKey: AI_CONTENT_QUERY_KEYS.conversations(brandId),
+        exact: true,
+      })
+    },
   })
 }
 

@@ -74,6 +74,8 @@ export function Dropdown({
   searchPlaceholder,
   emptyText,
   footer,
+  caret = true,
+  highlightTrigger = true,
   children,
 }: DropdownProps) {
   const [internalOpen, setInternalOpen] = useState(false)
@@ -102,7 +104,8 @@ export function Dropdown({
   const close = () => setOpen(false)
   const triggerElement = children as ReactElement<{ className?: string }>
   const trigger = cloneElement(triggerElement, {
-    className: `${triggerElement.props.className ?? ''} ${open ? 'control-active' : ''}`.trim(),
+    className:
+      `${triggerElement.props.className ?? ''} ${open && highlightTrigger ? 'control-active' : ''}`.trim(),
   })
 
   return (
@@ -129,6 +132,7 @@ export function Dropdown({
       popupRender={(menu) => (
         <PopupSurface
           placement={placement}
+          caret={caret}
           onMouseEnter={onPopupMouseEnter}
           onMouseLeave={onPopupMouseLeave}
         >

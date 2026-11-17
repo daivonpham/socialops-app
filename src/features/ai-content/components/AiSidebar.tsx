@@ -3,27 +3,40 @@ import { useTranslation } from 'react-i18next'
 import {
   Avatar,
   Button,
+  ConfirmDialog,
+  Dropdown,
   Form,
   IconChat,
   IconCheck,
   IconChevronDown,
   IconChevronRight,
   IconCompose,
+  IconEllipsis,
   IconInfo,
   IconLayers,
   IconPanelLeftClose,
   IconPanelLeftOpen,
+  IconPencil,
   IconPlus,
   IconSearch,
   IconSendLine,
   IconSliders,
+  IconTrash,
   Input,
   Spin,
   Switch,
   Tooltip,
+  useToast,
 } from '@/shared/ui'
+import { useApiErrorMessage } from '@/shared/hooks'
 import { matchesSearch } from '@/shared/lib/search'
-import { useAiConversations, type AiAvailability, type AiConversationSummary } from '../api'
+import {
+  useAiConversations,
+  useDeleteAiConversation,
+  useRenameAiConversation,
+  type AiAvailability,
+  type AiConversationSummary,
+} from '../api'
 import { AiCreditsMeter, AiCreditsRail } from './AiCreditsMeter'
 import { AiMark } from './AiMark'
 import { PageCheckList } from './PageCheckList'
@@ -477,21 +490,225 @@ function HistoryTools({
   )
 }
 
+/** Three hopping dots: the AI is still answering in this chat. */
+function PendingDots() {
+  const { t } = useTranslation('aiContent')
+  return (
+    <span
+      role="status"
+      aria-label={t('history.pending')}
+      title={t('history.pending')}
+      className="flex h-[28px] items-center gap-[3px] px-2"
+    >
+      <span aria-hidden className="ai-typing-dot" />
+      <span aria-hidden className="ai-typing-dot" />
+      <span aria-hidden className="ai-typing-dot" />
+    </span>
+  )
+}
+
+/**
+ * A long name is cut and fades out at the end; it fades sooner where the row's button sits,
+ * which on a computer shows on hover or focus only. Written out whole for Tailwind to find.
+ */
+const TITLE_FADE_BEFORE_BUTTON =
+  '[mask-image:linear-gradient(to_right,black_calc(100%-52px),transparent_calc(100%-28px))]'
+const TITLE_FADE_ON_HOVER =
+  '[mask-image:linear-gradient(to_right,black_calc(100%-52px),transparent_calc(100%-28px))] md:[mask-image:linear-gradient(to_right,black_calc(100%-24px),transparent)] md:group-hover:[mask-image:linear-gradient(to_right,black_calc(100%-52px),transparent_calc(100%-28px))] md:group-focus-within:[mask-image:linear-gradient(to_right,black_calc(100%-52px),transparent_calc(100%-28px))]'
+const menuItem =
+  'flex h-[32px] w-full items-center gap-2 rounded-md px-2 text-start text-body-sm outline-none transition-colors focus-visible:focus-ring'
+
+/**
+ * One chat in the list. Its name runs the full width and is cut, not shortened with "...". On
+ * hover a bare "..." opens Rename and Delete; while the AI answers, hopping dots take its place.
+ * Rename turns the name into a field: Enter or leaving it saves, Escape keeps the old name.
+ */
+function ChatRow({
+  item,
+  current,
+  renaming,
+  menuOpen,
+  onPick,
+  onMenuOpenChange,
+  onStartRename,
+  onRename,
+  onDelete,
+}: {
+  item: AiConversationSummary
+  current: boolean
+  renaming: boolean
+  menuOpen: boolean
+  onPick: () => void
+  onMenuOpenChange: (open: boolean) => void
+  onStartRename: () => void
+  onRename: (title: string) => void
+  onDelete: () => void
+}) {
+  const { t } = useTranslation('aiContent')
+  const title = item.title || t('history.untitled')
+
+  if (renaming)
+    return (
+      <li>
+        <RenameField title={item.title} onDone={onRename} />
+      </li>
+    )
+
+  const actionsShown = menuOpen || item.pending
+  return (
+    <li className="group relative">
+      <button
+        type="button"
+        aria-current={current ? 'true' : undefined}
+        title={title}
+        onClick={onPick}
+        className={
+          'block w-full rounded-lg px-3 py-2 text-start text-body-sm transition-colors focus-visible:focus-ring ' +
+          (current
+            ? 'bg-ai-100 font-semibold text-text-primary'
+            : 'text-text-secondary group-hover:bg-bg-surface/70 group-hover:text-text-primary')
+        }
+      >
+        <span
+          className={
+            'block overflow-hidden whitespace-nowrap ' +
+            (actionsShown ? TITLE_FADE_BEFORE_BUTTON : TITLE_FADE_ON_HOVER)
+          }
+        >
+          {title}
+        </span>
+      </button>
+      <span className="absolute inset-y-0 end-2 flex items-center">
+        {item.pending ? (
+          <PendingDots />
+        ) : (
+          <Dropdown
+            placement="bottomRight"
+            caret={false}
+            highlightTrigger={false}
+            open={menuOpen}
+            onOpenChange={onMenuOpenChange}
+            content={
+              <div role="menu" className="grid min-w-[140px] gap-[2px] p-1">
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={onStartRename}
+                  className={`${menuItem} text-text-primary hover:bg-bg-surface-muted`}
+                >
+                  <IconPencil aria-hidden className="shrink-0 text-icon-sm" />
+                  {t('history.rename')}
+                </button>
+                <div aria-hidden className="mx-1 my-1 h-px bg-border-subtle" />
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={onDelete}
+                  className={`${menuItem} text-error-600 hover:bg-error-50`}
+                >
+                  <IconTrash aria-hidden className="shrink-0 text-icon-sm" />
+                  {t('history.delete')}
+                </button>
+              </div>
+            }
+          >
+            {/* Just the icon, no background: shown on hover, focus or while the menu is open;
+                always on touch screens. */}
+            <button
+              type="button"
+              aria-label={t('history.more', { title })}
+              className={
+                'flex size-[24px] items-center justify-center text-icon-md text-text-tertiary outline-none transition-opacity hover:text-text-primary focus-visible:opacity-100 focus-visible:focus-ring ' +
+                (menuOpen
+                  ? 'text-text-primary opacity-100'
+                  : 'md:opacity-0 md:group-hover:opacity-100')
+              }
+            >
+              <IconEllipsis aria-hidden />
+            </button>
+          </Dropdown>
+        )}
+      </span>
+    </li>
+  )
+}
+
+/** The name being changed; starts from the current name each time it opens. */
+function RenameField({ title, onDone }: { title: string; onDone: (title: string) => void }) {
+  const { t } = useTranslation('aiContent')
+  const [draft, setDraft] = useState(title)
+  return (
+    <Input
+      autoFocus
+      size="sm"
+      value={draft}
+      maxLength={120}
+      aria-label={t('history.renameLabel')}
+      onChange={(event) => setDraft(event.target.value)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') onDone(draft)
+        if (event.key !== 'Escape') return
+        // Escape leaves the field here, not the dialog around it.
+        event.stopPropagation()
+        onDone(title)
+      }}
+      onBlur={() => onDone(draft)}
+      className="h-[36px] rounded-lg text-body-sm"
+    />
+  )
+}
+
 /** Chats split into "Recent" and "Earlier", filtered by the search. */
 function ChatList({
+  brandId,
   conversations,
   currentId,
   historyDays,
   onPick,
   onNew,
+  onDeleted,
 }: {
+  brandId: string
   conversations: AiConversationSummary[]
   currentId: string | null
   historyDays: number
   onPick: (id: string) => void
   onNew: () => void
+  onDeleted: (id: string) => void
 }) {
   const { t } = useTranslation('aiContent')
+  const toast = useToast()
+  const errorMessage = useApiErrorMessage('aiContent')
+  const removeChat = useDeleteAiConversation()
+  const renameChat = useRenameAiConversation()
+  // The row whose menu is open keeps its button shown; the chat waiting for a "yes" to delete.
+  const [menuFor, setMenuFor] = useState<string | null>(null)
+  const [renamingId, setRenamingId] = useState<string | null>(null)
+  // An empty or unchanged name keeps the old one.
+  const rename = (item: AiConversationSummary, title: string) => {
+    setRenamingId(null)
+    const next = title.replace(/\s+/g, ' ').trim()
+    if (!next || next === item.title) return
+    renameChat.mutate(
+      { brandId, conversationId: item.id, title: next },
+      { onError: (error) => toast.error({ title: errorMessage(error, t('history.renameError')) }) },
+    )
+  }
+  const [toDelete, setToDelete] = useState<AiConversationSummary | null>(null)
+  const confirmDelete = () => {
+    if (!toDelete) return
+    removeChat.mutate(
+      { brandId, conversationId: toDelete.id },
+      {
+        onSuccess: () => {
+          onDeleted(toDelete.id)
+          setToDelete(null)
+          toast.success({ title: t('history.deleted') })
+        },
+        onError: (error) => toast.error({ title: errorMessage(error, t('history.deleteError')) }),
+      },
+    )
+  }
   const [query, setQuery] = useState('')
   // The search box shows only once its icon is clicked, and folds away again when left empty.
   const [searching, setSearching] = useState(false)
@@ -516,8 +733,27 @@ function ChatList({
   }, [conversations, query])
   const kept = t('history.kept', { count: historyDays })
 
+  // The first group's heading, with the search and new-chat buttons, stays put above the list.
+  const firstGroup = groups[0]?.key ?? 'recent'
+
   return (
-    <div className="flex min-h-[200px] flex-1 flex-col gap-4">
+    <div className="flex min-h-[200px] flex-1 flex-col gap-2">
+      <div className="flex shrink-0 items-center gap-2 ps-2">
+        <h4 className="flex flex-1 items-center gap-1 text-label-sm tracking-[0.04em] text-text-tertiary uppercase">
+          {t(`history.${firstGroup}`)}
+          <Tooltip title={kept}>
+            <span
+              role="img"
+              tabIndex={0}
+              aria-label={kept}
+              className="flex normal-case focus-visible:focus-ring"
+            >
+              <IconInfo aria-hidden />
+            </span>
+          </Tooltip>
+        </h4>
+        {tools}
+      </div>
       {searching ? (
         <Input
           autoFocus
@@ -541,62 +777,61 @@ function ChatList({
       ) : null}
       <div className="app-scrollbar -me-2 min-h-0 flex-1 overflow-x-hidden overflow-y-auto pe-2">
         {groups.length === 0 ? (
-          <>
-            {/* No heading to sit beside, so the buttons keep their own row. */}
-            <div className="flex justify-end">{tools}</div>
-            <p className="py-6 text-center text-body-sm text-text-tertiary">
-              {t(query.trim() ? 'history.noMatch' : 'history.empty')}
-            </p>
-          </>
+          <p className="py-6 text-center text-body-sm text-text-tertiary">
+            {t(query.trim() ? 'history.noMatch' : 'history.empty')}
+          </p>
         ) : (
           groups.map((group, index) => (
             <section key={group.key} className="mb-4" aria-label={t(`history.${group.key}`)}>
-              <div className="mb-2 flex items-center gap-2 ps-2">
-                <h4 className="flex flex-1 items-center gap-1 text-label-sm tracking-[0.04em] text-text-tertiary uppercase">
+              {/* The first heading sits in the row above the list. */}
+              {index > 0 ? (
+                <h4 className="mb-2 ps-2 text-label-sm tracking-[0.04em] text-text-tertiary uppercase">
                   {t(`history.${group.key}`)}
-                  {index === 0 ? (
-                    <Tooltip title={kept}>
-                      <span
-                        role="img"
-                        tabIndex={0}
-                        aria-label={kept}
-                        className="flex normal-case focus-visible:focus-ring"
-                      >
-                        <IconInfo aria-hidden />
-                      </span>
-                    </Tooltip>
-                  ) : null}
                 </h4>
-                {index === 0 ? tools : null}
-              </div>
+              ) : null}
               {/* The column must not grow to the longest title, or nothing is cut with "...". */}
               <ul className="grid grid-cols-[minmax(0,1fr)] gap-1">
-                {group.items.map((item) => {
-                  const current = item.id === currentId
-                  return (
-                    <li key={item.id}>
-                      <button
-                        type="button"
-                        aria-current={current ? 'true' : undefined}
-                        title={item.title || t('history.untitled')}
-                        onClick={() => onPick(item.id)}
-                        className={
-                          'block w-full truncate rounded-lg px-3 py-2 text-start text-body-sm transition-colors focus-visible:focus-ring ' +
-                          (current
-                            ? 'bg-ai-100 font-semibold text-text-primary'
-                            : 'text-text-secondary hover:bg-bg-surface/70 hover:text-text-primary')
-                        }
-                      >
-                        {item.title || t('history.untitled')}
-                      </button>
-                    </li>
-                  )
-                })}
+                {group.items.map((item) => (
+                  <ChatRow
+                    key={item.id}
+                    item={item}
+                    current={item.id === currentId}
+                    renaming={renamingId === item.id}
+                    menuOpen={menuFor === item.id}
+                    onPick={() => onPick(item.id)}
+                    onMenuOpenChange={(open) => setMenuFor(open ? item.id : null)}
+                    onStartRename={() => {
+                      setMenuFor(null)
+                      setRenamingId(item.id)
+                    }}
+                    onRename={(title) => rename(item, title)}
+                    onDelete={() => {
+                      setMenuFor(null)
+                      setToDelete(item)
+                    }}
+                  />
+                ))}
               </ul>
             </section>
           ))
         )}
       </div>
+      <ConfirmDialog
+        open={toDelete !== null}
+        tone="destructive"
+        icon={<IconTrash aria-hidden className="text-error-600" />}
+        title={t('history.deleteTitle')}
+        description={t('history.deleteDescription', {
+          title: toDelete?.title || t('history.untitled'),
+        })}
+        confirmLabel={t('history.deleteConfirm')}
+        cancelLabel={t('history.cancel')}
+        loading={removeChat.isPending}
+        onConfirm={confirmDelete}
+        onClose={() => {
+          if (!removeChat.isPending) setToDelete(null)
+        }}
+      />
     </div>
   )
 }
@@ -617,6 +852,7 @@ export function AiSidebar({
   onToggle,
   onPick,
   onNew,
+  onDeleted,
   onOpenProfile,
   onStartTyping,
 }: {
@@ -631,6 +867,8 @@ export function AiSidebar({
   onToggle: () => void
   onPick: (id: string) => void
   onNew: () => void
+  /** A chat was deleted; the open one is left for a new chat. */
+  onDeleted: (id: string) => void
   onOpenProfile: () => void
   /** Puts the cursor in the composer. */
   onStartTyping: () => void
@@ -760,11 +998,13 @@ export function AiSidebar({
         />
       ) : (
         <ChatList
+          brandId={brandId}
           conversations={conversations.data}
           currentId={currentId}
           historyDays={historyDays}
           onPick={onPick}
           onNew={onNew}
+          onDeleted={onDeleted}
         />
       )}
 

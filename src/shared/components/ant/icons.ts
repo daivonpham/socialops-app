@@ -62,6 +62,7 @@ export {
   HiOutlineSparkles as IconSparkles,
 } from 'react-icons/hi'
 export { FaPlay as IconPlaySolid } from 'react-icons/fa'
+export { AiOutlineEllipsis as IconEllipsis } from 'react-icons/ai'
 export { FaEarthAsia as IconPublic } from 'react-icons/fa6'
 export { BsDot as IconDot } from 'react-icons/bs'
 export { IoIosPause as IconPauseStory } from 'react-icons/io'
