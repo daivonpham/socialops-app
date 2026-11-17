@@ -135,6 +135,19 @@ export const facebookViVN = {
     permission_missing: 'Thiếu quyền',
     disconnected: 'Đã ngắt kết nối',
   },
+  grant: {
+    noticeTitle: 'Tick lại các Trang đang dùng',
+    noticeDescription:
+      'Nếu dùng cùng tài khoản Facebook, hãy tick cả các Trang dưới đây ở bước chọn Trang, nếu không chúng sẽ ngừng hoạt động.',
+    usedIn: 'Đang dùng ở {{brands}}',
+    continue: 'Tiếp tục với Facebook',
+    lostTitle_one: 'Facebook vừa thu hồi quyền của {{count}} Trang',
+    lostTitle_other: 'Facebook vừa thu hồi quyền của {{count}} Trang',
+    lostDescription:
+      'Các Trang này không được tick khi cấp quyền Facebook nên đã ngừng đồng bộ và đăng bài ở mọi thương hiệu đang dùng. Kết nối lại và tick đủ các Trang để khôi phục.',
+    reconnect: 'Kết nối lại Facebook',
+    later: 'Để sau',
+  },
   tokenHealth: {
     pausedTitle_one: '{{count}} Trang cần kết nối lại Facebook',
     pausedTitle_other: '{{count}} Trang cần kết nối lại Facebook',

@@ -7,15 +7,17 @@ import {
   type SetStateAction,
 } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FaImages, FaLink } from 'react-icons/fa6'
+import { FaComment, FaImages, FaLink } from 'react-icons/fa6'
 import { SocialAccountLabel } from '@/features/social-accounts'
 import {
   Button,
   Checkbox,
   FileUploadCard,
   IconChevronDown,
+  IconComment,
   IconImage,
   IconMobile,
+  IconPenLine,
   IconPost,
   IconReel,
   IconSettings,
@@ -28,6 +30,7 @@ import {
   Textarea,
 } from '@/shared/ui'
 import {
+  hasComposerFirstComment,
   isComposerCaptionMissing,
   setComposerCaptionMode,
   supportsCaptionPerAccount,
@@ -57,6 +60,7 @@ export function PlanningPostEditor({
   accounts,
   setDraft,
   publishedMode = false,
+  showCaptionErrors = false,
   mediaUploads = {},
   onRetryUpload,
   onMediaAdded,
@@ -65,6 +69,8 @@ export function PlanningPostEditor({
   accounts: PlanningAccount[]
   setDraft: Dispatch<SetStateAction<PlanningComposerDraft>>
   publishedMode?: boolean
+  /** Set once the user tried to post: only then a missing caption is flagged. */
+  showCaptionErrors?: boolean
   mediaUploads?: Record<string, MediaUploadState>
   /** Sends the files that failed again. */
   onRetryUpload?: () => void
@@ -83,6 +89,15 @@ export function PlanningPostEditor({
   const selectedAccounts = accounts.filter((account) => draft.targetIds.includes(account.id))
   const perAccountCaption = usesCaptionPerAccount(draft)
   const published = publishedMode
+  const sharedCaptionMissing =
+    showCaptionErrors && !perAccountCaption && isComposerCaptionMissing(draft)
+  // A first comment can be added on Facebook feed posts and Reels, before the post goes out.
+  const commentable =
+    !published && draft.platform === 'facebook' && draft.postType !== 'facebook_story'
+  const hasFirstComment = hasComposerFirstComment(draft)
+  // Closed until asked for, unless the post already has one.
+  const [commentOpen, setCommentOpen] = useState(hasFirstComment)
+  const showComment = commentable && commentOpen
   const playback = usePreviewPlayback()
   // A Reel's video sits beside its cover, in one row.
   const reelCover =
@@ -252,7 +267,7 @@ export function PlanningPostEditor({
             />
           ) : (
             <div
-              className={`overflow-hidden rounded-xl border bg-bg-surface ${captionFocused ? 'border-border-focus ring-2 ring-brand-100' : 'border-border'}`}
+              className={`overflow-hidden rounded-xl border bg-bg-surface ${sharedCaptionMissing ? 'border-error-500' : captionFocused ? 'border-border-focus ring-2 ring-brand-100' : 'border-border'}`}
             >
               {perAccountCaption ? (
                 <p className="px-4 py-3 text-body-sm text-text-tertiary">
@@ -264,6 +279,7 @@ export function PlanningPostEditor({
                   rows={7}
                   maxLength={2200}
                   placeholder={t('composer.content.captionPlaceholder')}
+                  aria-invalid={sharedCaptionMissing || undefined}
                   className="border-0 shadow-none"
                   onFocus={() => setCaptionFocused(true)}
                   onBlur={() => setCaptionFocused(false)}
@@ -343,6 +359,24 @@ export function PlanningPostEditor({
                         />
                       </Popover>
                     ) : null}
+                    {commentable ? (
+                      <span className="relative inline-flex">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={<FaComment aria-hidden className="text-icon-md" />}
+                          aria-label={t('composer.firstComment.toggle')}
+                          aria-expanded={commentOpen}
+                          onClick={() => setCommentOpen((open) => !open)}
+                        />
+                        {hasFirstComment ? (
+                          <span
+                            aria-hidden
+                            className="pointer-events-none absolute end-1 top-1 size-2 rounded-full bg-success-500 ring-2 ring-bg-surface"
+                          />
+                        ) : null}
+                      </span>
+                    ) : null}
                   </>
                 ) : null}
                 <span className="flex-1" />
@@ -354,7 +388,27 @@ export function PlanningPostEditor({
               </div>
             </div>
           )}
+          {sharedCaptionMissing ? (
+            <span role="alert" className="text-caption text-error-700">
+              {t('composer.customization.captionRequired')}
+            </span>
+          ) : null}
         </FieldGroup>
+
+        {showComment && !perAccountCaption ? (
+          <FieldGroup label={t('composer.firstComment.title')} icon={<IconComment aria-hidden />}>
+            <Textarea
+              value={draft.firstComment}
+              autoSize={{ minRows: 2, maxRows: 6 }}
+              maxLength={8000}
+              aria-label={t('composer.firstComment.title')}
+              placeholder={t('composer.firstComment.placeholder')}
+              onChange={(event) =>
+                setDraft((current) => ({ ...current, firstComment: event.target.value }))
+              }
+            />
+          </FieldGroup>
+        ) : null}
 
         {!published && draft.media.length > 0 ? (
           <>
@@ -493,35 +547,74 @@ export function PlanningPostEditor({
                   const caption = draft.captionOverrides[account.id] ?? ''
                   const missing = published
                     ? !caption.trim()
-                    : isComposerCaptionMissing(draft, account.id)
+                    : showCaptionErrors && isComposerCaptionMissing(draft, account.id)
                   return (
-                    <div key={account.id} className="grid gap-2">
-                      <SocialAccountLabel name={account.name} avatarUrl={account.avatarUrl} />
-                      <Textarea
-                        value={caption}
-                        rows={4}
-                        maxLength={2200}
-                        aria-label={account.name}
-                        placeholder={t('composer.customization.accountCaptionPlaceholder')}
-                        onChange={(event) =>
-                          setDraft((current) => ({
-                            ...current,
-                            captionOverrides: {
-                              ...current.captionOverrides,
-                              [account.id]: event.target.value,
-                            },
-                          }))
-                        }
-                      />
-                      <div className="flex items-center gap-2 text-caption">
-                        {missing ? (
-                          <span className="text-error-700">
-                            {t('composer.customization.captionRequired')}
-                          </span>
+                    <div
+                      key={account.id}
+                      className="overflow-hidden rounded-xl border border-border-subtle bg-bg-surface"
+                    >
+                      <div className="border-b border-border-subtle bg-bg-surface-subtle px-4 py-3">
+                        <SocialAccountLabel name={account.name} avatarUrl={account.avatarUrl} />
+                      </div>
+                      <div className="grid gap-4 p-4">
+                        <div className="grid gap-2">
+                          <SectionLabel
+                            icon={<IconPenLine aria-hidden />}
+                            label={t('composer.content.caption')}
+                          />
+                          <Textarea
+                            value={caption}
+                            rows={4}
+                            maxLength={2200}
+                            aria-label={account.name}
+                            placeholder={t('composer.customization.accountCaptionPlaceholder')}
+                            onChange={(event) =>
+                              setDraft((current) => ({
+                                ...current,
+                                captionOverrides: {
+                                  ...current.captionOverrides,
+                                  [account.id]: event.target.value,
+                                },
+                              }))
+                            }
+                          />
+                          <div className="flex items-center gap-2 text-caption">
+                            {missing ? (
+                              <span className="text-error-700">
+                                {t('composer.customization.captionRequired')}
+                              </span>
+                            ) : null}
+                            <span className="ms-auto tabular-nums text-text-tertiary">
+                              {caption.length.toLocaleString()}/2,200
+                            </span>
+                          </div>
+                        </div>
+                        {showComment ? (
+                          <div className="grid gap-2 border-t border-border-subtle pt-4">
+                            <SectionLabel
+                              icon={<IconComment aria-hidden />}
+                              label={t('composer.firstComment.title')}
+                            />
+                            <Textarea
+                              value={draft.firstCommentOverrides[account.id] ?? ''}
+                              autoSize={{ minRows: 2, maxRows: 6 }}
+                              maxLength={8000}
+                              aria-label={t('composer.firstComment.accountLabel', {
+                                name: account.name,
+                              })}
+                              placeholder={t('composer.firstComment.placeholder')}
+                              onChange={(event) =>
+                                setDraft((current) => ({
+                                  ...current,
+                                  firstCommentOverrides: {
+                                    ...current.firstCommentOverrides,
+                                    [account.id]: event.target.value,
+                                  },
+                                }))
+                              }
+                            />
+                          </div>
                         ) : null}
-                        <span className="ms-auto tabular-nums text-text-tertiary">
-                          {caption.length.toLocaleString()}/2,200
-                        </span>
                       </div>
                     </div>
                   )
@@ -534,12 +627,32 @@ export function PlanningPostEditor({
   )
 }
 
-function FieldGroup({ label, children }: { label: string; children: ReactNode }) {
+function FieldGroup({
+  label,
+  icon,
+  children,
+}: {
+  label: string
+  icon?: ReactNode
+  children: ReactNode
+}) {
   return (
     <div className="grid min-w-0 gap-2">
-      <span className="text-label-md text-text-secondary">{label}</span>
+      <span className="flex items-center gap-2 text-label-md text-text-secondary">
+        {icon ? <span className="flex text-icon-sm text-text-tertiary">{icon}</span> : null}
+        {label}
+      </span>
       {children}
     </div>
+  )
+}
+
+function SectionLabel({ icon, label }: { icon: ReactNode; label: string }) {
+  return (
+    <span className="flex items-center gap-2 text-label-sm text-text-secondary">
+      <span className="flex text-icon-sm text-text-tertiary">{icon}</span>
+      {label}
+    </span>
   )
 }
 

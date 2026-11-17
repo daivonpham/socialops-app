@@ -174,6 +174,7 @@ export const errorsViVN = {
     FACEBOOK_RECONNECT_REQUIRED: 'Hãy kết nối lại Trang Facebook này.',
     FACEBOOK_CONNECTION_UNAVAILABLE: 'Kết nối Facebook cần được làm mới.',
     FACEBOOK_PERMISSION_MISSING: 'Thiếu quyền Facebook. Hãy cấp lại quyền.',
+    FACEBOOK_COMMENT_PERMISSION_MISSING: 'Trang chưa cấp quyền bình luận. Hãy kết nối lại Trang.',
     FACEBOOK_PUBLISH_PERMISSION_MISSING:
       'Bạn không có quyền đăng nội dung trên Trang Facebook này.',
     PAGE_DISCONNECTED: 'Trang Facebook đã ngắt kết nối. Hãy kết nối lại.',

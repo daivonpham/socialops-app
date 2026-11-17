@@ -33,6 +33,7 @@ import {
   FacebookOAuthResultModal,
   type FacebookOAuthResult,
 } from '../components/FacebookOAuthResultModal'
+import { FacebookGrantNoticeModal, FacebookLostPagesModal } from '../components/FacebookGrantModals'
 import { ManageFacebookPagesDrawer } from '../components/ManageFacebookPagesDrawer'
 import { FacebookPostsTab } from '../components/FacebookPostsTab'
 import { FacebookPageSwitcher } from '../components/FacebookPageSwitcher'
@@ -63,6 +64,8 @@ export default function FacebookPage() {
   const [filters, setFilters] = useUrlFilters(DEFAULT_FILTERS)
   const [isPageManagerOpen, setIsPageManagerOpen] = useState(false)
   const [oauthResult, setOauthResult] = useState<FacebookOAuthResult | null>(null)
+  const [grantNoticeOpen, setGrantNoticeOpen] = useState(false)
+  const [lostPages, setLostPages] = useState<string[]>([])
   const canManageConnection = hasPermission(granted, FACEBOOK_ACCESS.manageConnection[0])
 
   useEffect(() => {
@@ -76,6 +79,7 @@ export default function FacebookPage() {
         pageId?: string | null
         restoredPages?: number
         revokedPages?: number
+        lostPages?: string[]
         error?: string | null
       }
       if (message?.type !== 'socialops.facebook.oauth') return
@@ -93,10 +97,11 @@ export default function FacebookPage() {
         toast.success({ title: t('tokenHealth.restored', { count: message.restoredPages }) })
         void queryClient.invalidateQueries({ queryKey: FACEBOOK_QUERY_KEYS.root(brandId) })
       }
-      // Pages left unticked in the Facebook dialog lose access; the health banner then
-      // offers reconnecting them.
+      // Pages left unticked in the Facebook dialog lose access in every Brand using them; say
+      // which, and offer logging in again right away.
       if (message.revokedPages) {
-        toast.warning({ title: t('tokenHealth.revoked', { count: message.revokedPages }) })
+        if (message.lostPages?.length) setLostPages(message.lostPages)
+        else toast.warning({ title: t('tokenHealth.revoked', { count: message.revokedPages }) })
         void queryClient.invalidateQueries({ queryKey: FACEBOOK_QUERY_KEYS.root(brandId) })
       }
       if (message.autoConnected) {
@@ -124,12 +129,40 @@ export default function FacebookPage() {
       { onError: (error) => toast.error({ title: errorMessage(error, t('oauth.startError')) }) },
     )
 
+  // Logging in replaces the whole Page grant: first list the Pages other Brands use.
+  const otherBrandPages = integration.data?.otherBrandPages ?? []
+  const requestConnect = () => {
+    if (otherBrandPages.length) setGrantNoticeOpen(true)
+    else startConnect()
+  }
+
   const oauthModal = (
-    <FacebookOAuthResultModal
-      result={oauthResult}
-      onClose={() => setOauthResult(null)}
-      onConnected={() => setOauthResult(null)}
-    />
+    <>
+      <FacebookOAuthResultModal
+        result={oauthResult}
+        onClose={() => setOauthResult(null)}
+        onConnected={() => setOauthResult(null)}
+      />
+      <FacebookGrantNoticeModal
+        open={grantNoticeOpen}
+        pages={otherBrandPages}
+        loading={connect.isPending}
+        onClose={() => setGrantNoticeOpen(false)}
+        onContinue={() => {
+          setGrantNoticeOpen(false)
+          startConnect()
+        }}
+      />
+      <FacebookLostPagesModal
+        pages={lostPages}
+        loading={connect.isPending}
+        onClose={() => setLostPages([])}
+        onReconnect={() => {
+          setLostPages([])
+          startConnect()
+        }}
+      />
+    </>
   )
 
   if (!brandId)
@@ -155,7 +188,7 @@ export default function FacebookPage() {
   if (!integration.data || integration.data.state === 'disconnected')
     return (
       <>
-        <FacebookDisconnected isConnecting={connect.isPending} onConnect={startConnect} />
+        <FacebookDisconnected isConnecting={connect.isPending} onConnect={requestConnect} />
         {oauthModal}
       </>
     )
@@ -211,7 +244,7 @@ export default function FacebookPage() {
             pages={connectedPages}
             selectedPageId={selectedPageId}
             onPageChange={(pageId) => setFilters({ pageId })}
-            onAddPage={startConnect}
+            onAddPage={requestConnect}
             canManagePages={canManageConnection}
           />
           <span className="relative inline-flex">
@@ -236,7 +269,7 @@ export default function FacebookPage() {
         pages={visiblePages}
         canManage={canManageConnection}
         reconnecting={connect.isPending}
-        onReconnect={startConnect}
+        onReconnect={requestConnect}
       />
       <FacebookSyncBanner brandId={brandId} pageIds={shownPageIds} />
 
@@ -283,7 +316,7 @@ export default function FacebookPage() {
         integration={{ ...data, pages: visiblePages }}
         isOpen={isPageManagerOpen}
         onClose={() => setIsPageManagerOpen(false)}
-        onAddPage={startConnect}
+        onAddPage={requestConnect}
         isAddingPage={connect.isPending}
         canManage={canManageConnection}
       />

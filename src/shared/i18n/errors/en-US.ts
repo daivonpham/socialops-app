@@ -177,6 +177,7 @@ export const errorsEnUS = {
     FACEBOOK_RECONNECT_REQUIRED: 'Reconnect this Facebook Page.',
     FACEBOOK_CONNECTION_UNAVAILABLE: 'The Facebook connection needs to be renewed.',
     FACEBOOK_PERMISSION_MISSING: 'Facebook permissions are missing. Grant them again.',
+    FACEBOOK_COMMENT_PERMISSION_MISSING: 'The Page has not allowed commenting. Reconnect the Page.',
     FACEBOOK_PUBLISH_PERMISSION_MISSING: 'You cannot publish content on this Facebook Page.',
     PAGE_DISCONNECTED: 'This Page is disconnected. Reconnect it.',
     FACEBOOK_PAGE_DISCONNECTED: 'This Page is disconnected. Reconnect it.',

@@ -12,6 +12,7 @@ import {
   IconDelete,
   IconDesktop,
   IconFacebook,
+  IconComment,
   IconLink,
   IconMobile,
   IconProfile,
@@ -705,6 +706,18 @@ function PlanningPostModalContent({
               </a>
             </div>
           ) : null}
+
+          {content.firstComment && content.captionMode !== 'per_target' ? (
+            <div className="grid gap-1 border-t border-border-subtle p-4">
+              <span className="flex items-center gap-2 text-caption text-text-secondary">
+                <IconComment aria-hidden className="shrink-0" />
+                {t('detail.firstComment')}
+              </span>
+              <p className="whitespace-pre-wrap break-words text-body-sm text-text-primary">
+                {content.firstComment}
+              </p>
+            </div>
+          ) : null}
         </section>
 
         <aside className="flex h-[min(70vh,44rem)] min-w-0 flex-col overflow-hidden rounded-xl border border-border-subtle bg-bg-surface lg:sticky lg:top-2">
@@ -906,6 +919,7 @@ function AccountRow({
       </div>
       {publication &&
       ((multipleAccounts && (publication.pendingCaption || publication.captionOverride)) ||
+        (multipleAccounts && publication.firstComment) ||
         (showSchedule && publication.scheduledAt) ||
         (multipleAccounts && publication.publishedAt) ||
         publication.externalPostUrl) ? (
@@ -922,6 +936,17 @@ function AccountRow({
                     {t(`status.${publication.status}`)}
                   </span>
                 ) : null}
+              </dd>
+            </div>
+          ) : null}
+          {multipleAccounts && publication.firstComment ? (
+            <div className="grid min-w-0 gap-1">
+              <dt className="flex items-center gap-2 font-medium text-text-secondary">
+                <IconComment aria-hidden className="shrink-0" />
+                {t('detail.firstComment')}
+              </dt>
+              <dd className="min-w-0 whitespace-pre-wrap break-words text-body-sm text-text-primary">
+                {publication.firstComment}
               </dd>
             </div>
           ) : null}
@@ -968,6 +993,21 @@ function AccountRow({
             {publication.status === 'edit_unknown'
               ? t('detail.editUnknownReason')
               : t(`detail.errorReason.${reasonKey(publication.errorCode)}`)}
+          </p>
+        </div>
+      )}
+      {publication?.firstCommentStatus === 'failed' && (
+        <div
+          role="status"
+          className="flex items-center gap-3 rounded-lg border border-warning-100 bg-warning-50 p-3 text-caption text-warning-700"
+        >
+          <IconWarning aria-hidden className="shrink-0 text-icon-md" />
+          <p>
+            {t(
+              publication.firstCommentError === 'FACEBOOK_COMMENT_PERMISSION_MISSING'
+                ? 'detail.firstCommentFailed.permission'
+                : 'detail.firstCommentFailed.other',
+            )}
           </p>
         </div>
       )}

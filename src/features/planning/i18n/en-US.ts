@@ -204,6 +204,12 @@ export const planningEnUS = {
     retryAllResult: 'Queued {{queued}} Pages for retry',
     retryNone: 'No Page can be retried yet. Review the reason for each Page.',
     retrySkipped: 'Not retried: {{reason}}',
+    firstComment: 'First comment',
+    firstCommentFailed: {
+      permission:
+        'The post is published but the comment was not: the Page has not allowed commenting. Reconnect the Page to allow it.',
+      other: 'The post is published but the comment was not. You can comment on Facebook yourself.',
+    },
     errorReason: {
       reconnect: 'The token is expired or missing. Reconnect this Page.',
       permission:
@@ -352,6 +358,12 @@ export const planningEnUS = {
       facebookStory: 'Story',
       tiktokVideo: 'Video post',
       tiktokPhoto: 'Photo post',
+    },
+    firstComment: {
+      title: 'First comment',
+      toggle: 'Add a first comment',
+      accountLabel: 'First comment for {{name}}',
+      placeholder: 'For example a product link, hashtags or a question for readers…',
     },
     content: {
       title: 'Content',

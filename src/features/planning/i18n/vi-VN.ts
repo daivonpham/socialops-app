@@ -207,6 +207,12 @@ export const planningViVN = {
     retryAllResult: 'Đã xếp hàng thử lại {{queued}} Trang',
     retryNone: 'Chưa có Trang nào đủ điều kiện thử lại. Hãy xem lý do theo từng Trang.',
     retrySkipped: 'Chưa thử lại: {{reason}}',
+    firstComment: 'Bình luận đầu tiên',
+    firstCommentFailed: {
+      permission:
+        'Bài đã đăng nhưng chưa bình luận được: Trang chưa cấp quyền bình luận. Hãy kết nối lại Trang để cấp quyền.',
+      other: 'Bài đã đăng nhưng chưa bình luận được. Bạn có thể tự bình luận trên Facebook.',
+    },
     errorReason: {
       reconnect: 'Token hết hạn hoặc thiếu token. Hãy kết nối lại Trang.',
       permission:
@@ -355,6 +361,12 @@ export const planningViVN = {
       facebookStory: 'Tin',
       tiktokVideo: 'Bài đăng video',
       tiktokPhoto: 'Bài đăng ảnh',
+    },
+    firstComment: {
+      title: 'Bình luận đầu tiên',
+      toggle: 'Thêm bình luận đầu tiên',
+      accountLabel: 'Bình luận đầu tiên cho {{name}}',
+      placeholder: 'Ví dụ: link sản phẩm, hashtag hoặc lời mời bình luận…',
     },
     content: {
       title: 'Nội dung',

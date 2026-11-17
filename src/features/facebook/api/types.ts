@@ -17,11 +17,20 @@ export type FacebookPageDto = {
   lastSyncedAt: string
 }
 
+/** A working Page of another Brand; a new Facebook login must tick it again. */
+export type FacebookOtherBrandPage = {
+  id: string
+  name: string
+  avatarUrl?: string
+  brandNames: string[]
+}
+
 export type FacebookIntegrationDto = {
   state: FacebookConnectionState
   connectedBy?: string
   connectedAt?: string
   pages: FacebookPageDto[]
+  otherBrandPages?: FacebookOtherBrandPage[]
 }
 
 export type MetricKey =

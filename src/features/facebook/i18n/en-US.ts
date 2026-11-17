@@ -132,6 +132,19 @@ export const facebookEnUS = {
     permission_missing: 'Permission missing',
     disconnected: 'Disconnected',
   },
+  grant: {
+    noticeTitle: 'Tick the Pages already in use',
+    noticeDescription:
+      'If you use the same Facebook account, tick the Pages below in the Page step too, or they stop working.',
+    usedIn: 'Used in {{brands}}',
+    continue: 'Continue with Facebook',
+    lostTitle_one: 'Facebook removed access to {{count}} Page',
+    lostTitle_other: 'Facebook removed access to {{count}} Pages',
+    lostDescription:
+      'These Pages were not ticked when granting Facebook access, so they stopped syncing and publishing in every brand using them. Reconnect and tick every Page to restore them.',
+    reconnect: 'Reconnect Facebook',
+    later: 'Later',
+  },
   tokenHealth: {
     pausedTitle_one: '{{count}} Page needs Facebook reconnected',
     pausedTitle_other: '{{count}} Pages need Facebook reconnected',

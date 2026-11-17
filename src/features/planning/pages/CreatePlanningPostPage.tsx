@@ -53,6 +53,7 @@ import {
   createComposerDraftFromAiSuggestion,
   createComposerDraftFromContent,
   getPlanningContentIntent,
+  isComposerCaptionMissing,
   isScheduleIntent,
   toCreatePlanningContentInput,
   toUpdatePlanningContentInput,
@@ -434,6 +435,8 @@ function PlanningComposerWorkspace({
   const [draft, setDraft] = useState(initialDraft)
   const [previewViewport, setPreviewViewport] = useState<PreviewViewport>('mobile')
   const [submitPhase, setSubmitPhase] = useState<'uploading' | 'saving' | null>(null)
+  // Caption errors stay hidden until the user first tries to post.
+  const [captionErrorsShown, setCaptionErrorsShown] = useState(false)
   const [mediaUploads, setMediaUploads] = useState<Record<string, MediaUploadState>>({})
   const submitting = useRef(false)
   const [submitError, setSubmitError] = useState<unknown>(null)
@@ -458,8 +461,7 @@ function PlanningComposerWorkspace({
   // pick again. A new post asks whenever it has content, an AI one included; an edit, when changed.
   const dirty = useMemo(
     () =>
-      hasPostContent(draft) &&
-      (!content || draftSignature(draft) !== draftSignature(initialDraft)),
+      hasPostContent(draft) && (!content || draftSignature(draft) !== draftSignature(initialDraft)),
     [content, draft, initialDraft],
   )
   const leaveGuard = useLeaveGuard(dirty && submitPhase === null)
@@ -593,7 +595,13 @@ function PlanningComposerWorkspace({
     }
   }
 
-  const canSubmit = canSubmitComposer(draft)
+  // A missing caption does not lock the button: it shows its error once the user tries to post.
+  const canSubmit = canSubmitComposer(draft, { ignoreCaption: true })
+  const validateSubmit = () => {
+    if (publishIntent === 'draft' || !isComposerCaptionMissing(draft)) return true
+    setCaptionErrorsShown(true)
+    return false
+  }
   const saveContent = content ? updateContent : createContent
 
   return (
@@ -634,6 +642,7 @@ function PlanningComposerWorkspace({
               draft={draft}
               accounts={accounts}
               setDraft={setDraft}
+              showCaptionErrors={captionErrorsShown}
               mediaUploads={mediaUploads}
               onRetryUpload={retryUploads}
               onMediaAdded={startUploads}
@@ -649,6 +658,7 @@ function PlanningComposerWorkspace({
               loading={saveContent.isPending || submitPhase !== null}
               submitPhase={submitPhase}
               canSubmit={publishIntent === 'draft' || canSubmit}
+              validate={validateSubmit}
               onIntentChange={(intent) => {
                 setPublishIntent(intent)
                 setDraft((current) => ({
@@ -686,12 +696,14 @@ function PlanningComposerWorkspace({
 }
 
 /** What the user can change in a draft; a picked file counts by its name, size and date. */
-/** A caption (shared or for one Page), a link, a file or a cover. */
+/** A caption (shared or for one Page), a link, a first comment, a file or a cover. */
 function hasPostContent(draft: PlanningComposerDraft): boolean {
   return (
     draft.caption.trim() !== '' ||
     Object.values(draft.captionOverrides).some((caption) => caption.trim() !== '') ||
     draft.link.trim() !== '' ||
+    draft.firstComment.trim() !== '' ||
+    Object.values(draft.firstCommentOverrides).some((comment) => comment.trim() !== '') ||
     draft.media.length > 0 ||
     draft.thumbnail !== null
   )
@@ -781,6 +793,7 @@ function PublishingActionBar({
   loading,
   submitPhase,
   canSubmit,
+  validate,
   onIntentChange,
   onDraftChange,
   onSubmit,
@@ -795,6 +808,8 @@ function PublishingActionBar({
   loading: boolean
   submitPhase: 'uploading' | 'saving' | null
   canSubmit: boolean
+  /** Shows what still blocks the post; `false` stops the submit. */
+  validate: () => boolean
   onIntentChange: (intent: PlanningPublishIntent) => void
   onDraftChange: Dispatch<SetStateAction<PlanningComposerDraft>>
   onSubmit: () => void
@@ -852,6 +867,7 @@ function PublishingActionBar({
     }
   }
   const onPrimaryClick = () => {
+    if (!validate()) return
     if (intent === 'draft') onSubmit()
     else setConfirming(true)
   }

@@ -20,6 +20,7 @@ export default function FacebookCallbackPage() {
   const pageId = params.get('pageId')
   const restoredPages = Number(params.get('restoredPages') ?? 0)
   const revokedPages = Number(params.get('revokedPages') ?? 0)
+  const lostPages = params.getAll('lostPage')
   const callbackError = params.get('error')
   const isPopup = Boolean(window.opener && window.opener !== window)
   const { workspaceId } = useActiveWorkspace()
@@ -46,6 +47,7 @@ export default function FacebookCallbackPage() {
         pageId,
         restoredPages,
         revokedPages,
+        lostPages,
         error: callbackError,
       },
       window.location.origin,

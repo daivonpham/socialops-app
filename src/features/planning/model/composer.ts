@@ -35,6 +35,10 @@ export type PlanningComposerDraft = {
   media: ComposerMedia[]
   /** Only Reels have one; other post types ignore it. */
   thumbnail: ComposerThumbnail | null
+  /** Posted by the Page under the post once it is out; Stories take none. */
+  firstComment: string
+  /** Per-Page first comments, used with per-Page captions and kept like them when it is off. */
+  firstCommentOverrides: Record<string, string>
   captionMode: PlanningCaptionMode
   /** Per-Page captions. Kept while the per-Page mode is off so turning it back on restores them. */
   captionOverrides: Record<string, string>
@@ -93,6 +97,8 @@ export function createComposerDraft(platform: PlanningPlatform): PlanningCompose
     link: '',
     media: [],
     thumbnail: null,
+    firstComment: '',
+    firstCommentOverrides: {},
     captionMode: 'shared',
     captionOverrides: {},
     publishMode: 'publish_now',
@@ -128,7 +134,7 @@ export function composerCaptionFor(draft: PlanningComposerDraft, accountId: stri
   return usesCaptionPerAccount(draft) ? (draft.captionOverrides[accountId] ?? '') : draft.caption
 }
 
-/** Turning per-Page captions on starts every empty Page from the shared caption. */
+/** Turning per-Page captions on starts every empty Page from the shared caption and comment. */
 export function setComposerCaptionMode(
   draft: PlanningComposerDraft,
   captionMode: PlanningCaptionMode,
@@ -145,7 +151,23 @@ export function setComposerCaptionMode(
           .map((accountId) => [accountId, draft.caption]),
       ),
     },
+    firstCommentOverrides: {
+      ...draft.firstCommentOverrides,
+      ...Object.fromEntries(
+        draft.targetIds
+          .filter((accountId) => !draft.firstCommentOverrides[accountId]?.trim())
+          .map((accountId) => [accountId, draft.firstComment]),
+      ),
+    },
   }
+}
+
+/** Whether any Page of the draft posts a first comment. */
+export function hasComposerFirstComment(draft: PlanningComposerDraft): boolean {
+  if (draft.postType === 'facebook_story') return false
+  return usesCaptionPerAccount(draft)
+    ? draft.targetIds.some((id) => draft.firstCommentOverrides[id]?.trim())
+    : draft.firstComment.trim() !== ''
 }
 
 /** A feed post needs text, a link or media on every Page. */
@@ -203,6 +225,7 @@ export function createComposerDraftFromContent(content: PlanningContent): Planni
     link: content.link ?? '',
     media: content.media ?? fallbackMedia,
     thumbnail: content.thumbnail ? { ...content.thumbnail, source: 'upload' } : null,
+    firstComment: content.firstComment ?? '',
     captionMode: publications.length > 1 ? captionMode : 'shared',
     captionOverrides:
       publications.length > 1 && captionMode === 'per_target'
@@ -210,6 +233,16 @@ export function createComposerDraftFromContent(content: PlanningContent): Planni
             publications.flatMap((publication) =>
               publication.captionOverride
                 ? [[publication.socialAccountId, publication.captionOverride]]
+                : [],
+            ),
+          )
+        : {},
+    firstCommentOverrides:
+      publications.length > 1 && captionMode === 'per_target'
+        ? Object.fromEntries(
+            publications.flatMap((publication) =>
+              publication.firstComment
+                ? [[publication.socialAccountId, publication.firstComment]]
                 : [],
             ),
           )
@@ -256,18 +289,29 @@ export function getPlanningContentIntent(
   )
 }
 
-export function canSubmitComposer(draft: PlanningComposerDraft): boolean {
-  if (draft.targetIds.length === 0 || !hasValidContentForPostType(draft)) return false
+/**
+ * `ignoreCaption` leaves out the missing-caption check, so the submit button stays clickable and
+ * the caption error shows only once the user tries to submit.
+ */
+export function canSubmitComposer(
+  draft: PlanningComposerDraft,
+  { ignoreCaption = false }: { ignoreCaption?: boolean } = {},
+): boolean {
+  if (draft.targetIds.length === 0 || !hasValidContentForPostType(draft, ignoreCaption))
+    return false
   if (draft.publishMode !== 'schedule') return true
   if (draft.scheduleMode === 'same_time') return Boolean(draft.scheduledAt)
   return draft.targetIds.every((accountId) => Boolean(draft.accountSchedules[accountId]))
 }
 
-function hasValidContentForPostType(draft: PlanningComposerDraft): boolean {
+function hasValidContentForPostType(
+  draft: PlanningComposerDraft,
+  ignoreCaption = false,
+): boolean {
   if (draft.postType === 'facebook_feed') {
     if (draft.link.trim() && draft.media.length) return false
     if (draft.media.some((item) => item.type === 'video') && draft.media.length !== 1) return false
-    return !isComposerCaptionMissing(draft)
+    return ignoreCaption || !isComposerCaptionMissing(draft)
   }
   if (draft.postType === 'facebook_reel' || draft.postType === 'tiktok_video') {
     return draft.media.length === 1 && draft.media[0]?.type === 'video'
@@ -304,11 +348,16 @@ export function toCreatePlanningContentInput(
             name: draft.thumbnail.name,
           }
         : null,
+    firstComment: draft.postType === 'facebook_story' ? null : draft.firstComment.trim() || null,
     intent,
     platformSettings: draft.platformSettings,
     publications: draft.targetIds.map((socialAccountId) => ({
       socialAccountId,
       captionOverride: perAccount ? composerCaptionFor(draft, socialAccountId).trim() : undefined,
+      firstComment:
+        perAccount && draft.postType !== 'facebook_story'
+          ? (draft.firstCommentOverrides[socialAccountId] ?? '').trim()
+          : undefined,
       scheduledAt: plannedAt(draft, socialAccountId, intent),
     })),
   }

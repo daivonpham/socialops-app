@@ -73,6 +73,8 @@ export type PlanningContent = {
   media?: PlanningMedia[]
   /** A Reel's chosen cover; Facebook picks one when there is none. */
   thumbnail?: PlanningMedia
+  /** Posted by the Page under the post once it is out. */
+  firstComment?: string
   platformSettings?: Record<string, boolean | string>
   platform: PlanningPlatform
   targets: PlanningTarget[]
@@ -124,6 +126,12 @@ export type PlanningPublication = {
   publishedAt?: string
   errorCode?: string
   errorMessage?: string
+  /** This Page's own first comment when every Page has its own caption. */
+  firstComment?: string
+  /** How the first comment went on this Page; the post is out either way. */
+  firstCommentStatus?: 'posting' | 'posted' | 'failed'
+  /** An API error code, translated in the `errors` namespace. */
+  firstCommentError?: string
 }
 
 export type PlanningRetryResult = {
@@ -159,10 +167,14 @@ export type CreatePlanningContentInput = {
   media: PlanningMedia[]
   /** A Reel's cover, uploaded like other media; `null` clears it. */
   thumbnail?: PlanningMedia | null
+  /** `null` posts no first comment. */
+  firstComment?: string | null
   publications: Array<{
     socialAccountId: string
     captionOverride?: string
     scheduledAt?: string
+    /** This Page's own first comment, sent in per-Page mode; empty posts none. */
+    firstComment?: string
   }>
   intent: PlanningPublishIntent
   platformSettings: Record<string, boolean | string>
