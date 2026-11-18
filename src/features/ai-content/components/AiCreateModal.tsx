@@ -3,6 +3,7 @@ import {
   useRef,
   useState,
   type ClipboardEvent,
+  type DragEvent,
   type ReactNode,
   type KeyboardEvent,
 } from 'react'
@@ -15,6 +16,7 @@ import {
   Alert,
   ConfirmDialog,
   Form,
+  IconAttach,
   IconClose,
   IconEdit,
   IconSendLine,
@@ -296,6 +298,45 @@ export function AiCreateModal({
     attachments.add(files)
   }
 
+  // Files dragged onto the composer are attached the same way. Children fire their own enter and
+  // leave, so a count tells when the drag has really left the box.
+  const dragDepth = useRef(0)
+  const [dragging, setDragging] = useState(false)
+  const carriesFiles = (event: DragEvent) => Array.from(event.dataTransfer.types).includes('Files')
+  const endDrag = () => {
+    dragDepth.current = 0
+    setDragging(false)
+  }
+  const dropTarget = {
+    onDragEnter: (event: DragEvent<HTMLDivElement>) => {
+      if (!carriesFiles(event)) return
+      event.preventDefault()
+      dragDepth.current += 1
+      setDragging(true)
+    },
+    onDragOver: (event: DragEvent<HTMLDivElement>) => {
+      if (!carriesFiles(event)) return
+      event.preventDefault()
+      event.dataTransfer.dropEffect = editing === null ? 'copy' : 'none'
+    },
+    onDragLeave: (event: DragEvent<HTMLDivElement>) => {
+      if (!carriesFiles(event)) return
+      dragDepth.current -= 1
+      if (dragDepth.current <= 0) endDrag()
+    },
+    onDrop: (event: DragEvent<HTMLDivElement>) => {
+      if (!carriesFiles(event)) return
+      event.preventDefault()
+      endDrag()
+      // Nothing to attach to while a sent message is being edited.
+      if (editing === null) attachments.add(filesFromClipboard(event.dataTransfer))
+    },
+  }
+  // A file dropped beside the composer would make the browser open it and leave the app.
+  const keepDropsInApp = (event: DragEvent<HTMLElement>) => {
+    if (carriesFiles(event)) event.preventDefault()
+  }
+
   const resetErrors = () => {
     if (start.isError) start.reset()
     if (followUp.isError) followUp.reset()
@@ -525,7 +566,11 @@ export function AiCreateModal({
                 onOpenProfile={() => setProfileOpen(true)}
                 onStartTyping={() => composer.current?.querySelector('textarea')?.focus()}
               />
-              <section className="flex min-h-[560px] min-w-0 flex-col bg-bg-surface-subtle md:min-h-0">
+              <section
+                className="flex min-h-[560px] min-w-0 flex-col bg-bg-surface-subtle md:min-h-0"
+                onDragOver={keepDropsInApp}
+                onDrop={keepDropsInApp}
+              >
                 <div
                   ref={list}
                   className="app-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto"
@@ -550,7 +595,19 @@ export function AiCreateModal({
                       )}
                     </div>
                   ) : null}
-                  <div className="rounded-xl border border-border-subtle bg-bg-surface px-4 pt-3 pb-2 shadow-xs transition-colors focus-within:border-ai-400">
+                  <div
+                    {...dropTarget}
+                    className="relative rounded-xl border border-border-subtle bg-bg-surface px-4 pt-3 pb-2 shadow-xs transition-colors focus-within:border-ai-400"
+                  >
+                    {dragging && editing === null ? (
+                      <div
+                        aria-hidden
+                        className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-ai-400 bg-ai-50/95 text-label-md text-ai-700"
+                      >
+                        <IconAttach className="text-icon-md" />
+                        {t('attach.dropHere')}
+                      </div>
+                    ) : null}
                     {editing ? (
                       <div className="mb-2 flex items-center gap-2 rounded-lg bg-ai-50 px-3 py-1 text-label-sm text-ai-700">
                         <button

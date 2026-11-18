@@ -47,6 +47,7 @@ export const aiContentEnUS = {
     remove: 'Remove {{name}}',
     tooLarge: 'Files over 10 MB cannot be added.',
     tooMany: 'You can attach up to {{count}} files.',
+    dropHere: 'Drop images or files here',
   },
   form: {
     pages: 'Choose Pages',

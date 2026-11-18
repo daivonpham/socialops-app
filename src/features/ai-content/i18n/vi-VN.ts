@@ -49,6 +49,7 @@ export const aiContentViVN = {
     remove: 'Bỏ {{name}}',
     tooLarge: 'File lớn hơn 10 MB nên không thêm được.',
     tooMany: 'Chỉ đính kèm được tối đa {{count}} file.',
+    dropHere: 'Thả ảnh hoặc file vào đây',
   },
   form: {
     pages: 'Chọn Page',

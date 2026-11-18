@@ -1204,4 +1204,43 @@ describe('AiCreateButton', () => {
     Reflect.deleteProperty(URL, 'createObjectURL')
     Reflect.deleteProperty(URL, 'revokeObjectURL')
   })
+
+  it('attaches files dropped on the composer, showing where to drop them on the way', async () => {
+    mockApi()
+    const created: Array<{ name: string; mimeType: string }> = []
+    server.use(
+      http.post('*/brands/brand-1/ai/attachments', async ({ request }) => {
+        created.push((await request.json()) as { name: string; mimeType: string })
+        return HttpResponse.json(
+          { data: { id: `att-${created.length}`, uploadUrl: 'https://upload.test/file' } },
+          { status: 201 },
+        )
+      }),
+      http.put('https://upload.test/:name', () => new HttpResponse(null, { status: 200 })),
+      http.post('*/brands/brand-1/ai/attachments/:id/finalize', ({ params }) =>
+        HttpResponse.json({
+          data: { id: params.id, type: 'image', name: 'a.png', url: 'https://files.test/a' },
+        }),
+      ),
+    )
+    Object.assign(URL, { createObjectURL: () => 'blob:preview', revokeObjectURL: vi.fn() })
+    const { user } = renderButton()
+    const dialog = await openDialog(user)
+    const area = within(dialog).getByLabelText('What do you want to post about?')
+    const files = [
+      new File(['x'], 'photo.png', { type: 'image/png' }),
+      new File(['y'], 'brief.pdf', { type: 'application/pdf' }),
+    ]
+    const dataTransfer = { types: ['Files'], files, items: [], dropEffect: 'none' }
+
+    fireEvent.dragEnter(area, { dataTransfer })
+    expect(within(dialog).getByText('Drop images or files here')).toBeInTheDocument()
+    fireEvent.drop(area, { dataTransfer })
+    expect(within(dialog).queryByText('Drop images or files here')).not.toBeInTheDocument()
+
+    await waitFor(() => expect(created).toHaveLength(2))
+    expect(created.map((file) => file.name)).toEqual(['photo.png', 'brief.pdf'])
+    Reflect.deleteProperty(URL, 'createObjectURL')
+    Reflect.deleteProperty(URL, 'revokeObjectURL')
+  })
 })
