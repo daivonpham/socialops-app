@@ -59,12 +59,9 @@ export default function FacebookPostDetailPage() {
     navigate(`${FACEBOOK_ROUTES.OVERVIEW}${from ?? '?tab=posts'}`, { replace: Boolean(from) })
 
   const header = (
-    <header className="flex items-start gap-3">
+    <header className="flex items-center gap-3">
       <Button icon={<IconArrowLeft />} aria-label={t('postDetail.back')} onClick={goBack} />
-      <div className="grid gap-1">
-        <span className="text-caption text-text-tertiary">{t('postDetail.eyebrow')}</span>
-        <h1 className="text-heading-2 font-semibold text-text-primary">{t('postDetail.title')}</h1>
-      </div>
+      <h1 className="text-heading-2 font-semibold text-text-primary">{t('postDetail.title')}</h1>
     </header>
   )
 

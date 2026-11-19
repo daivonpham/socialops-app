@@ -412,7 +412,6 @@ export const facebookEnUS = {
   },
   postDetail: {
     back: 'Back to posts',
-    eyebrow: 'Content library',
     title: 'Post insights',
     loadError: 'Could not load the post',
     notFoundTitle: 'Post not found',

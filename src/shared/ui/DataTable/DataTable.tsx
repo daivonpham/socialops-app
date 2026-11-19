@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   columnFilteringFeature,
@@ -35,6 +35,7 @@ import { Button } from '../primitives/Button'
 import { Checkbox } from '../primitives/Checkbox'
 import { Dropdown } from '../primitives/Dropdown'
 import { Select } from '../primitives/Select'
+import { StickyHorizontalScrollbar } from './StickyHorizontalScrollbar'
 import {
   IconArrowDown,
   IconArrowUp,
@@ -545,12 +546,15 @@ export function DataTable<T extends object>({
   const paddingClass = CELL_PADDING_CLASS[density]
   const selectionPaddingClass = SELECTION_CELL_PADDING_CLASS[density]
   const rows = table.getRowModel().rows
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   return (
     // With a sticky header the rows scroll inside the table, so the card can shrink to the space
     // its parent gives it while the header stays in view.
+    // Otherwise the card clips rather than hides overflow: a hidden overflow would trap the
+    // sideways scrollbar below the rows, which has to stick to the bottom of the page instead.
     <div
-      className={`w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-border-subtle bg-bg-surface shadow-xs ${stickyHeader ? 'flex min-h-0 flex-col' : ''}`}
+      className={`w-full min-w-0 max-w-full rounded-xl border border-border-subtle bg-bg-surface shadow-xs ${stickyHeader ? 'flex min-h-0 flex-col overflow-hidden' : 'overflow-clip'}`}
     >
       {title || toolbar || showColumnSettings ? (
         <div className="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-4 py-2">
@@ -586,7 +590,8 @@ export function DataTable<T extends object>({
         </div>
       ) : null}
       <div
-        className={`app-scrollbar min-w-0 max-w-full ${stickyHeader ? 'min-h-0 flex-1 overflow-auto overscroll-contain' : 'overflow-x-auto overscroll-x-contain'}`}
+        ref={scrollRef}
+        className={`min-w-0 max-w-full ${stickyHeader ? 'app-scrollbar min-h-0 flex-1 overflow-auto overscroll-contain' : 'scrollbar-none overflow-x-auto overscroll-x-contain'}`}
       >
         <table
           aria-label={ariaLabel}
@@ -844,6 +849,7 @@ export function DataTable<T extends object>({
           </tbody>
         </table>
       </div>
+      {stickyHeader ? null : <StickyHorizontalScrollbar targetRef={scrollRef} />}
       {pagination ? (
         <DataTablePaginationBar
           table={table}

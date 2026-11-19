@@ -414,7 +414,6 @@ export const facebookViVN = {
   },
   postDetail: {
     back: 'Quay lại danh sách bài viết',
-    eyebrow: 'Thư viện nội dung',
     title: 'Thông tin chi tiết về bài viết',
     loadError: 'Không tải được bài viết',
     notFoundTitle: 'Không tìm thấy bài viết',

@@ -72,12 +72,17 @@ export function LineChart({ data, xAxisKey, series, ariaLabel, valueFormatter }:
               tickLine={false}
               minTickGap={space[4]}
               interval="preserveStartEnd"
+              // Keeps the first and last dates off the corner the value axis's 0 sits in, and off
+              // the card's right edge.
+              padding={{ left: space[4], right: space[4] }}
+              tickMargin={space[2]}
               tick={{ fill: semanticColor.text.tertiary }}
             />
             <YAxis
               axisLine={false}
               tickLine={false}
               width={space[12]}
+              tickMargin={space[2]}
               tickFormatter={(value) => formatValue(Number(value))}
               tick={{ fill: semanticColor.text.tertiary }}
             />
