@@ -65,8 +65,9 @@ export function FilterDropdown({
         </div>
       }
     >
+      {/* Just the icon on a phone, where the toolbars around it need the room. */}
       <Button size="md" variant="secondary" icon={<IconFilter />} aria-label={String(triggerLabel)}>
-        {triggerLabel}
+        <span className="max-sm:sr-only">{triggerLabel}</span>
       </Button>
     </Dropdown>
   )

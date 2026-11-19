@@ -19,7 +19,7 @@ export function DashboardCard({
 }) {
   return (
     <section
-      className={`flex min-w-0 flex-col gap-5 rounded-xl border border-border-subtle bg-bg-surface p-5 shadow-xs ${className}`}
+      className={`flex min-w-0 flex-col gap-5 rounded-xl border border-border-subtle bg-bg-surface p-4 shadow-xs sm:p-5 ${className}`}
     >
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="grid min-w-0 gap-1">

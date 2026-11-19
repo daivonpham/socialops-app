@@ -85,12 +85,12 @@ export default function AllPlatformsPage() {
 
   return (
     <div className="grid gap-6">
-      <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
+      <header className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className="min-w-0">
           <h1 className="text-heading-2 font-semibold text-text-primary">{t('title')}</h1>
           <p className="mt-1 text-body-sm text-text-secondary">{t('subtitle')}</p>
         </div>
-        <div className="flex flex-wrap items-center justify-end gap-3">
+        <div className="flex min-w-0 xl:shrink-0 xl:justify-end">
           <FacebookFilters
             range={range}
             since={query.since}
@@ -124,7 +124,7 @@ export default function AllPlatformsPage() {
         ) : null
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(20rem,1fr)]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(24rem,1fr)]">
         {analyticsBrandId && summary.data ? (
           <Card title={t('trendTitle')}>
             <div className="p-5">
@@ -202,7 +202,7 @@ function PublishingHealth({ query }: { query: ReturnType<typeof usePlanningSumma
       extra={
         <Link
           to={PLANNING_PATH}
-          className="rounded-sm text-label-md text-link outline-none hover:text-link-hover focus-visible:focus-ring"
+          className="ms-3 whitespace-nowrap rounded-sm text-label-md text-link outline-none hover:text-link-hover focus-visible:focus-ring"
         >
           {t('publishing.openPlanning')}
         </Link>

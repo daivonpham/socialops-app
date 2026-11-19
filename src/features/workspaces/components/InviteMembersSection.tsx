@@ -30,8 +30,9 @@ import { useApiErrorMessage } from '@/shared/hooks'
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /** Shared by the header and every row so the columns line up like a table. */
+/** On a phone the remove button sits beside the email and the rest take full rows. */
 const ROW_GRID =
-  'grid gap-3 md:grid-cols-[minmax(0,1fr)_11rem_minmax(0,1.3fr)_2rem] md:items-center'
+  'grid grid-cols-[minmax(0,1fr)_2rem] items-center gap-x-2 gap-y-3 md:grid-cols-[minmax(0,1fr)_11rem_minmax(0,1.3fr)_2rem] md:gap-3'
 
 type InviteRow = {
   id: string
@@ -131,6 +132,7 @@ export function InviteMembersSection({
                 prefix={<IconMail aria-hidden className="text-icon-md text-neutral-400" />}
                 placeholder={t('members.emailPlaceholder')}
                 aria-label={t('members.email')}
+                className="max-md:col-start-1 max-md:row-start-1"
                 autoComplete="off"
                 onChange={(event) => patch(row.id, { email: event.target.value })}
               />
@@ -138,7 +140,7 @@ export function InviteMembersSection({
                 aria-label={t('members.role')}
                 value={row.role}
                 showSearch={false}
-                className="w-full"
+                className="w-full max-md:col-span-2"
                 onChange={(event) => patch(row.id, { role: event.target.value as InvitableRole })}
                 options={grantableRoles(actorRole).map((role) => ({
                   value: role,
@@ -151,7 +153,7 @@ export function InviteMembersSection({
                 }}
               />
               <Button
-                className="h-9 w-full justify-start px-3"
+                className="h-9 w-full justify-start px-3 max-md:col-span-2"
                 disabled={hasFullAccess(row.role)}
                 title={t(`roleDescriptions.${row.role}`)}
                 onClick={() => setAccessRowId(row.id)}
@@ -175,6 +177,7 @@ export function InviteMembersSection({
                 size="sm"
                 icon={<IconClose aria-hidden />}
                 aria-label={t('members.removeRow')}
+                className="max-md:col-start-2 max-md:row-start-1"
                 disabled={rows.length === 1}
                 onClick={() => setRows((current) => current.filter((item) => item.id !== row.id))}
               />

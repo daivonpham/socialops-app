@@ -319,7 +319,7 @@ function PublishedPlanningEditor({
   }
 
   return (
-    <div className="grid min-h-full gap-5">
+    <div className="grid min-h-full content-start gap-5">
       <header className="flex items-center gap-3">
         <Button
           variant="ghost"
@@ -605,7 +605,7 @@ function PlanningComposerWorkspace({
   const saveContent = content ? updateContent : createContent
 
   return (
-    <div className="grid min-h-full gap-5">
+    <div className="grid min-h-full content-start gap-5">
       <header>
         <div className="flex min-w-0 items-start gap-3">
           <Button
@@ -636,8 +636,11 @@ function PlanningComposerWorkspace({
 
       {/* The file card plays the preview's video. */}
       <PreviewPlaybackProvider>
-        <div className="grid min-h-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(28rem,0.9fr)]">
-          <div className="grid min-w-0 content-start gap-3">
+        {/* Form, send bar and preview share one grid. From 1280px the preview stands beside
+            the form and the bar sits under the form; narrower, the bar goes last and stays at
+            the bottom of the screen while the form and preview scroll past. */}
+        <div className="grid min-h-0 grid-cols-1 gap-x-5 gap-y-3 xl:grid-cols-[minmax(0,1fr)_minmax(28rem,0.9fr)] xl:grid-rows-[auto_1fr]">
+          <div className="min-w-0 xl:col-start-1 xl:row-start-1">
             <PlanningPostEditor
               draft={draft}
               accounts={accounts}
@@ -647,6 +650,9 @@ function PlanningComposerWorkspace({
               onRetryUpload={retryUploads}
               onMediaAdded={startUploads}
             />
+          </div>
+          {/* Pinned past the page's bottom padding, so nothing shows beneath it. */}
+          <div className="order-last -mb-4 min-w-0 bg-bg-surface pb-4 max-xl:sticky max-xl:-bottom-4 max-xl:z-[5] md:-mb-5 md:pb-5 md:max-xl:-bottom-5 xl:order-none xl:col-start-1 xl:row-start-2 xl:mb-0 xl:self-start xl:bg-transparent xl:pb-0">
             <PublishingActionBar
               draft={draft}
               accounts={accounts}
@@ -670,7 +676,7 @@ function PlanningComposerWorkspace({
               onSubmit={() => submit(publishIntent)}
             />
           </div>
-          <aside className="min-w-0 xl:sticky xl:top-0 xl:h-[calc(100vh-7rem)]">
+          <aside className="mt-2 min-w-0 xl:sticky xl:top-0 xl:col-start-2 xl:row-span-2 xl:row-start-1 xl:mt-0 xl:h-[calc(100vh-7rem)]">
             <PlanningPostPreview
               draft={draft}
               accounts={accounts}
@@ -885,7 +891,9 @@ function PublishingActionBar({
   }
 
   return (
-    <div className="grid gap-3 border-t border-border-subtle pt-3">
+    // Under the preview on narrower screens it is pinned to the bottom: a solid background keeps
+    // what scrolls behind it out of the way.
+    <div className="grid gap-3 border-t border-border-subtle bg-bg-surface pt-3 max-xl:pb-3">
       {usesAccountSchedule && selectedAccounts.length > 0 ? (
         <div className="grid gap-3 rounded-xl border border-border-subtle bg-bg-surface p-4">
           {selectedAccounts.map((account) => (
@@ -922,7 +930,7 @@ function PublishingActionBar({
       <div
         className={
           usesSharedSchedule || hasNoScheduledAccounts
-            ? 'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2'
+            ? 'grid grid-cols-1 items-center gap-2 sm:grid-cols-[minmax(0,1fr)_auto]'
             : 'flex items-center justify-end'
         }
       >
@@ -941,14 +949,15 @@ function PublishingActionBar({
             {t('composer.publishing.selectAccountsToSchedule')}
           </p>
         ) : null}
-        <div className="flex items-center">
+        {/* A phone gets the whole row to tap. */}
+        <div className="flex w-full items-center sm:w-auto">
           <Button
             variant="primary"
             layered={false}
             icon={<IconSend aria-hidden />}
             loading={loading}
             disabled={!canSubmit}
-            className="rounded-e-none border-[2px] border-e-bg-surface"
+            className="min-w-0 flex-1 rounded-e-none border-[2px] border-e-bg-surface sm:flex-none"
             onClick={onPrimaryClick}
           >
             {buttonLabel}

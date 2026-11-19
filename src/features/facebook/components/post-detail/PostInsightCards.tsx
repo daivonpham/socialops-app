@@ -71,9 +71,45 @@ function StatTile({
         {label}
         <span className="text-icon-sm text-text-tertiary">{icon}</span>
       </span>
-      <span className="text-heading-2 font-semibold tabular-nums text-text-primary">{value}</span>
-      {note}
+      <span className="flex items-end justify-between gap-2">
+        <span className="text-heading-2 font-semibold tabular-nums text-text-primary">{value}</span>
+        {note}
+      </span>
     </div>
+  )
+}
+
+/** Only the percent shows on the tile; what it compares against is in the tooltip. */
+function ChangeBadge({
+  change,
+  locale,
+  hint,
+}: {
+  change: number
+  locale: AppLocale
+  hint: string
+}) {
+  const { t } = useTranslation('facebook')
+  const label = t(change >= 0 ? 'postDetail.aboveTypical' : 'postDetail.belowTypical', {
+    percent: `${formatNumber(Math.abs(change), locale, { maximumFractionDigits: 0 })}%`,
+  })
+  return (
+    <Tooltip
+      title={
+        <span className="grid gap-1">
+          <span className="font-semibold">{label}</span>
+          <span>{hint}</span>
+        </span>
+      }
+    >
+      <span
+        tabIndex={0}
+        aria-label={`${label}. ${hint}`}
+        className={`shrink-0 cursor-default rounded-pill px-2 py-[2px] text-caption font-semibold tabular-nums focus-visible:focus-ring ${change >= 0 ? 'bg-brand-50 text-brand-700' : 'bg-accent-50 text-accent-700'}`}
+      >
+        {`${change >= 0 ? '+' : '-'}${formatNumber(Math.abs(change), locale, { maximumFractionDigits: 0 })}%`}
+      </span>
+    </Tooltip>
   )
 }
 
@@ -146,15 +182,11 @@ export function PostStatTiles({ detail }: { detail: Detail }) {
       icon: <IconView aria-hidden />,
       note:
         change === null ? undefined : (
-          <Tooltip title={t('postDetail.typicalHint', { count: typical?.posts ?? 0 })}>
-            <span
-              className={`justify-self-start rounded-pill px-2 py-[2px] text-caption font-semibold ${change >= 0 ? 'bg-brand-50 text-brand-700' : 'bg-accent-50 text-accent-700'}`}
-            >
-              {t(change >= 0 ? 'postDetail.aboveTypical' : 'postDetail.belowTypical', {
-                percent: `${formatNumber(Math.abs(change), locale, { maximumFractionDigits: 0 })}%`,
-              })}
-            </span>
-          </Tooltip>
+          <ChangeBadge
+            change={change}
+            locale={locale}
+            hint={t('postDetail.typicalHint', { count: typical?.posts ?? 0 })}
+          />
         ),
     },
     {
@@ -188,7 +220,7 @@ export function PostStatTiles({ detail }: { detail: Detail }) {
   ]
   return (
     <div
-      className={`grid gap-4 sm:grid-cols-2 ${tiles.length > 4 ? 'xl:grid-cols-5' : 'xl:grid-cols-4'}`}
+      className={`grid grid-cols-2 gap-3 sm:gap-4 ${tiles.length > 4 ? 'xl:grid-cols-5' : 'xl:grid-cols-4'}`}
     >
       {tiles.map(({ key, ...tile }) => (
         <StatTile key={key} {...tile} />
@@ -259,11 +291,12 @@ export function InteractionsCard({ post }: { post: Post }) {
         aria-label={t('postDetail.interactions.byType')}
       >
         {REACTIONS.map((key) => (
-          <li key={key} className="grid justify-items-center gap-1 text-center">
+          // Names that wrap take the extra height, so every count sits on the same line.
+          <li key={key} className="flex flex-col items-center gap-1 text-center">
             <span className="text-heading-3" aria-hidden>
               {REACTION_EMOJI[key]}
             </span>
-            <span className="text-caption text-text-tertiary">
+            <span className="flex flex-1 items-center text-caption text-text-tertiary">
               {t(`postDetail.interactions.reaction.${key}`)}
             </span>
             <span className="text-label-md tabular-nums text-text-primary">
@@ -272,8 +305,8 @@ export function InteractionsCard({ post }: { post: Post }) {
           </li>
         ))}
         {extra.map((key) => (
-          <li key={key} className="grid justify-items-center gap-1 text-center">
-            <span className="text-caption text-text-tertiary">{key}</span>
+          <li key={key} className="flex flex-col items-center justify-end gap-1 text-center">
+            <span className="flex flex-1 items-center text-caption text-text-tertiary">{key}</span>
             <span className="text-label-md tabular-nums text-text-primary">
               {formatNumber(post.reactionTypes[key] ?? 0, locale)}
             </span>

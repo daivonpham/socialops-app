@@ -23,7 +23,7 @@ export function ReportsShowcase() {
       aria-label={t('showcase.label')}
       className="relative overflow-hidden rounded-2xl border border-border-subtle bg-gradient-to-br from-brand-50 via-bg-surface to-bg-surface"
     >
-      <div className="grid gap-10 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:items-center lg:gap-12 lg:p-10">
+      <div className="grid gap-10 p-5 sm:p-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:items-center lg:gap-12 lg:p-10">
         <div className="grid gap-6">
           <div className="grid gap-3">
             <span className="inline-flex w-fit items-center gap-2 rounded-pill border border-brand-100 bg-bg-surface px-3 py-1 text-label-sm text-brand-700">
@@ -126,7 +126,8 @@ function SampleReport() {
     { name: 'Bakery Lab', value: '41.5K', width: 'w-4/12' },
   ]
   return (
-    <div aria-hidden className="relative pb-6 pe-4 sm:pe-6">
+    // A drawing of a report: too small to read on a phone, so it shows from 640px.
+    <div aria-hidden className="relative hidden pb-6 pe-4 sm:block sm:pe-6">
       <div className="overflow-hidden rounded-xl border border-border-subtle bg-bg-surface shadow-lg">
         <div className="flex items-center justify-between gap-4 border-b border-border-subtle px-5 py-4">
           <div className="grid gap-1">

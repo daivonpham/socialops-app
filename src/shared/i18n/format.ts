@@ -73,6 +73,19 @@ export function formatLocalizedDate(
   return formatter.format(date)
 }
 
+/** A span of days as the locale writes it, sharing what both ends share: "Nov 16 – 22". */
+export function formatLocalizedDateRange(
+  start: DateInput,
+  end: DateInput,
+  locale: string | null | undefined,
+  options: Intl.DateTimeFormatOptions,
+): string {
+  const from = toDate(start)
+  const to = toDate(end)
+  if (!from || !to) return ''
+  return new Intl.DateTimeFormat(resolveLocale(locale), options).formatRange(from, to)
+}
+
 export function getLocalTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone
 }

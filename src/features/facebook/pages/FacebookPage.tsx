@@ -239,7 +239,7 @@ export default function FacebookPage() {
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <FacebookPageSwitcher
             pages={connectedPages}
             selectedPageId={selectedPageId}
@@ -273,7 +273,8 @@ export default function FacebookPage() {
       />
       <FacebookSyncBanner brandId={brandId} pageIds={shownPageIds} />
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* The view tabs get a row of their own until the filters fit beside them (1280px). */}
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between xl:gap-4">
         <Tabs
           value={tab}
           ariaLabel={t('tabs.label')}
@@ -283,7 +284,7 @@ export default function FacebookPage() {
             { value: 'posts', label: t('tabs.posts') },
           ]}
         />
-        <div className="flex flex-wrap items-center justify-end gap-3">
+        <div className="flex min-w-0 xl:justify-end">
           <FacebookFilters
             range={query.range}
             since={query.since}

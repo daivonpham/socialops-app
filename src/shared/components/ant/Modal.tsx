@@ -16,6 +16,7 @@ export function Modal({
   floatingClose = false,
   padding = 'default',
   blurBackdrop = false,
+  fullScreenOnPhone = false,
   onClose,
 }: ModalProps) {
   return (
@@ -74,7 +75,14 @@ export function Modal({
       }
       footer={footer}
       width={width}
-      className={floatingClose ? 'app-modal-floating-close' : undefined}
+      className={
+        [
+          floatingClose ? 'app-modal-floating-close' : '',
+          fullScreenOnPhone ? 'app-modal-phone-full' : '',
+        ]
+          .filter(Boolean)
+          .join(' ') || undefined
+      }
       styles={
         padding === 'none'
           ? { content: { padding: 0, overflow: floatingClose ? undefined : 'hidden' } }

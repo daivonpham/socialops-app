@@ -52,8 +52,12 @@ export function FacebookFilters({
   }))
 
   return (
-    <div className="flex flex-wrap items-center justify-end gap-3">
+    // Phone: the quick ranges share a row with Filters and the dates take the next. From 768px
+    // everything is one row, the dates taking what is left.
+    <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:flex md:justify-end md:gap-3 xl:w-auto">
       <Tabs
+        // Fills its half of the row on a phone; its own width beside the dates.
+        className="min-w-0 max-md:[&_.ant-segmented-item]:min-w-0 max-md:[&_.ant-segmented-item]:flex-1 max-md:[&_.ant-segmented]:flex max-md:[&_.ant-segmented]:w-full md:shrink-0"
         value={quickRange ?? ''}
         ariaLabel={t('common.quickRange')}
         onChange={(next) => onChange({ range: next, since: '', until: '' })}
@@ -64,7 +68,7 @@ export function FacebookFilters({
       />
       <DateRangePicker
         aria-label={t('common.dateRange')}
-        className="min-w-64"
+        className="order-last col-span-2 w-full md:order-none md:w-auto md:min-w-[16rem] md:flex-1 xl:flex-none"
         value={value}
         presets={presets}
         // A day that has not begun has no data yet.

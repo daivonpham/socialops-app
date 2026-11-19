@@ -368,7 +368,8 @@ function SettingsSection({
   children: ReactNode
 }) {
   return (
-    <section className="grid gap-5 border-b border-border-subtle py-6 last:border-b-0 lg:grid-cols-[17.5rem_minmax(0,1fr)] lg:gap-8">
+    // Label beside the content from 1280px: narrower, the invite row and the table need the width.
+    <section className="grid gap-5 border-b border-border-subtle py-6 last:border-b-0 xl:grid-cols-[17.5rem_minmax(0,1fr)] xl:gap-8">
       <div>
         <h2 className="text-label-md font-semibold text-text-secondary">{title}</h2>
         <p className="mt-1 text-body-sm text-text-tertiary">{description}</p>

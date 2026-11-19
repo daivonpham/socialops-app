@@ -9,6 +9,7 @@ export {
   formatDate,
   formatDateTime,
   formatLocalizedDate,
+  formatLocalizedDateRange,
   formatNumber,
   formatTime,
   getDatePickerFormat,

@@ -163,7 +163,9 @@ export function PlanningPostEditor({
     <section className="overflow-hidden rounded-xl border border-border-subtle bg-bg-surface shadow-xs">
       <div className="grid gap-5 p-5">
         <FieldGroup label={t('composer.postType.title')}>
+          {/* Three post types can be wider than a phone: they scroll inside the card. */}
           <Tabs
+            className="app-scrollbar -mx-1 max-w-[calc(100%+0.5rem)] overflow-x-auto px-1 py-px"
             value={draft.postType}
             ariaLabel={t('composer.postType.title')}
             onChange={(postType) => {

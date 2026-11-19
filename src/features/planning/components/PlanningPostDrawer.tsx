@@ -174,8 +174,10 @@ export function PlanningPostModal({
         }
         footer={
           content ? (
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <Button disabled={Boolean(deleting)} onClick={onClose}>
+            // Phone: two actions to a row, each half wide, one left over taking the row; Close
+            // goes, the corner's X does the same.
+            <div className="flex flex-wrap items-center justify-end gap-2 max-sm:[&>*]:min-w-[calc(50%-4px)] max-sm:[&>*]:flex-1">
+              <Button className="max-sm:hidden" disabled={Boolean(deleting)} onClick={onClose}>
                 {t('common.close')}
               </Button>
               {canPublishDirect ? (

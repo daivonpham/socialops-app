@@ -125,6 +125,8 @@ export const planningViVN = {
     view: 'Kiểu hiển thị lịch',
     month: 'Xem theo tháng',
     week: 'Xem theo tuần',
+    monthShort: 'Tháng',
+    weekShort: 'Tuần',
     weekNumber: 'Tuần {{week}}',
     timeZone: 'Múi giờ: {{timeZone}}',
     more: '+{{count}} mục khác',

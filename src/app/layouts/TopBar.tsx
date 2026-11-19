@@ -44,74 +44,88 @@ export function TopBar({
   const platformParam = overviewMatch?.params.platform ?? planningMatch?.params.platform
   const activePlatform = PLATFORMS.find((platform) => platform === platformParam)
 
-  return (
-    <header className="relative flex shrink-0 items-stretch border-b border-border-subtle bg-bg-surface">
-      {/* Same width + right border as the sidebar so the rail reads as one column. */}
-      <div
-        className={
-          'flex min-w-0 items-center gap-2 px-3 py-2 md:shrink-0 md:border-e md:border-border-subtle md:transition-[width] md:duration-drawer md:ease-standard ' +
-          (desktopSidebarExpanded ? 'md:w-sidebar' : 'md:w-sidebar-collapsed md:justify-center')
-        }
-        onMouseEnter={onPreviewOpen}
-        onMouseLeave={onPreviewClose}
+  const platformNav = topNav.map((entry) =>
+    activePlatform ? (
+      <NavItem
+        key={entry.path}
+        to={generatePath(entry.path, { platform: activePlatform })}
+        label={t(entry.labelKey)}
+      />
+    ) : (
+      <span
+        key={entry.path}
+        aria-disabled="true"
+        className="flex h-10 cursor-not-allowed items-center rounded-lg px-3 text-label-md text-text-disabled"
       >
-        {onOpenSidebar ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            aria-label={t('topbar.openNavigation')}
-            className="md:hidden"
-            onClick={onOpenSidebar}
-          >
-            <span className="flex items-center">
-              <IconMenu aria-hidden className="text-icon-md text-text-secondary" />
-            </span>
-          </Button>
-        ) : null}
-        <Link
-          to={ROUTES.ROOT}
-          aria-label={t('topbar.home')}
-          className="shrink-0 rounded-sm outline-none focus-visible:focus-ring"
-        >
-          <Logo size="sm" />
-        </Link>
-        <div className={desktopSidebarExpanded ? 'hidden min-w-0 flex-1 md:block' : 'hidden'}>
-          <WorkspaceSwitcher />
-        </div>
-      </div>
+        {t(entry.labelKey)}
+      </span>
+    ),
+  )
 
-      <div className="flex min-w-0 flex-1 items-center gap-2 px-4 py-2 md:gap-3 md:px-5">
-        <div className="hidden min-w-0 md:block">
-          <BrandSwitcher />
+  return (
+    <>
+      <header className="relative flex shrink-0 items-stretch border-b border-border-subtle bg-bg-surface">
+        {/* Same width + right border as the sidebar so the rail reads as one column. */}
+        <div
+          className={
+            'flex min-w-0 items-center gap-2 px-3 py-2 lg:shrink-0 lg:border-e lg:border-border-subtle lg:transition-[width] lg:duration-drawer lg:ease-standard ' +
+            (desktopSidebarExpanded ? 'lg:w-sidebar' : 'lg:w-sidebar-collapsed lg:justify-center')
+          }
+          onMouseEnter={onPreviewOpen}
+          onMouseLeave={onPreviewClose}
+        >
+          {onOpenSidebar ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-label={t('topbar.openNavigation')}
+              className="lg:hidden"
+              onClick={onOpenSidebar}
+            >
+              <span className="flex items-center">
+                <IconMenu aria-hidden className="text-icon-md text-text-secondary" />
+              </span>
+            </Button>
+          ) : null}
+          <Link
+            to={ROUTES.ROOT}
+            aria-label={t('topbar.home')}
+            className="shrink-0 rounded-sm outline-none focus-visible:focus-ring"
+          >
+            <Logo size="sm" />
+          </Link>
+          <div className={desktopSidebarExpanded ? 'hidden min-w-0 flex-1 lg:block' : 'hidden'}>
+            <WorkspaceSwitcher />
+          </div>
         </div>
-        <div className="flex-1" />
+
+        <div className="flex min-w-0 flex-1 items-center gap-2 px-4 py-2 md:gap-3 md:px-5">
+          <div className="hidden min-w-0 md:block">
+            <BrandSwitcher />
+          </div>
+          <div className="flex-1" />
+          <nav
+            aria-label={t('topbar.primaryNavigation')}
+            className="hidden items-center gap-1 lg:flex"
+          >
+            {platformNav}
+          </nav>
+          <InvitationsInbox />
+          <AccountMenu />
+        </div>
+        <TopLoadingBar label={t('topbar.loading')} />
+      </header>
+      {/* Below 1024px there is no room in the bar: a platform's Overview and Planning get their own
+        row, so they can still be reached. */}
+      {activePlatform ? (
         <nav
           aria-label={t('topbar.primaryNavigation')}
-          className="hidden items-center gap-1 lg:flex"
+          className="flex shrink-0 items-center gap-1 border-b border-border-subtle bg-bg-surface px-4 py-1 md:px-5 lg:hidden"
         >
-          {topNav.map((entry) =>
-            activePlatform ? (
-              <NavItem
-                key={entry.path}
-                to={generatePath(entry.path, { platform: activePlatform })}
-                label={t(entry.labelKey)}
-              />
-            ) : (
-              <span
-                key={entry.path}
-                aria-disabled="true"
-                className="flex h-10 cursor-not-allowed items-center rounded-lg px-3 text-label-md text-text-disabled"
-              >
-                {t(entry.labelKey)}
-              </span>
-            ),
-          )}
+          {platformNav}
         </nav>
-        <InvitationsInbox />
-        <AccountMenu />
-      </div>
-      <TopLoadingBar label={t('topbar.loading')} />
-    </header>
+      ) : null}
+    </>
   )
 }
 

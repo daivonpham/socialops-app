@@ -20,6 +20,8 @@ export type ModalProps = {
   /** `none` removes the body padding, for dialogs that lay out their own panels edge to edge. */
   padding?: 'default' | 'none'
   blurBackdrop?: boolean
+  /** Below 768px the dialog takes the whole screen, for ones built like an app view. */
+  fullScreenOnPhone?: boolean
   onClose: () => void
 }
 export { Modal } from '@/shared/components/ant/Modal'

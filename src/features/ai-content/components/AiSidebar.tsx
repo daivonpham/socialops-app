@@ -855,6 +855,7 @@ export function AiSidebar({
   onDeleted,
   onOpenProfile,
   onStartTyping,
+  phoneOpen = false,
 }: {
   brandId: string
   pages: Pages
@@ -869,6 +870,8 @@ export function AiSidebar({
   onNew: () => void
   /** A chat was deleted; the open one is left for a new chat. */
   onDeleted: (id: string) => void
+  /** On a phone the column covers the chat while open, and is hidden otherwise. */
+  phoneOpen?: boolean
   onOpenProfile: () => void
   /** Puts the cursor in the composer. */
   onStartTyping: () => void
@@ -954,11 +957,12 @@ export function AiSidebar({
   return (
     <aside
       aria-label={t('modal.title')}
-      className="app-scrollbar flex min-h-0 min-w-0 flex-col gap-4 overflow-y-auto border-b border-ai-100 bg-ai-50 bg-cover bg-right-bottom p-5 md:border-e md:border-b-0"
+      className={`app-scrollbar flex min-h-0 min-w-0 flex-col gap-4 overflow-y-auto border-ai-100 bg-ai-50 bg-cover bg-right-bottom p-5 max-md:absolute max-md:inset-0 max-md:z-10 md:border-e ${phoneOpen ? '' : 'max-md:hidden'}`}
       // Quoted: a small SVG is inlined as a data URL that may hold spaces.
       style={{ backgroundImage: `url("${background}")` }}
     >
-      <div className="flex items-center gap-2">
+      {/* On a phone the dialog's close button sits in this row's corner. */}
+      <div className="flex items-center gap-2 max-md:pe-10">
         <h2 className="flex flex-1 items-center gap-2 text-heading-4 text-text-primary">
           <AiMark className="w-[28px]" />
           {t('modal.title')}
@@ -968,7 +972,7 @@ export function AiSidebar({
             type="button"
             aria-label={t('sidebar.collapse')}
             onClick={onToggle}
-            className="hidden size-[32px] items-center justify-center rounded-lg text-icon-md text-text-secondary transition-colors hover:bg-bg-surface hover:text-ai-600 focus-visible:focus-ring md:flex"
+            className="flex size-[32px] items-center justify-center rounded-lg text-icon-md text-text-secondary transition-colors hover:bg-bg-surface hover:text-ai-600 focus-visible:focus-ring"
           >
             <IconPanelLeftClose aria-hidden />
           </button>

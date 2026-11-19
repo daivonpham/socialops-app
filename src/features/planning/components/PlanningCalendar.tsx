@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next'
 import {
   formatDateTime,
   formatLocalizedDate,
+  formatLocalizedDateRange,
   getLocalTimeZone,
   uses12HourTime,
 } from '@/shared/i18n'
@@ -53,7 +54,7 @@ import {
 import { PlanningCalendarEvent } from './PlanningCalendarEvent'
 import { PlanningCalendarStack } from './PlanningCalendarStack'
 import './planning-calendar.css'
-import { useApiErrorMessage } from '@/shared/hooks'
+import { PHONE_QUERY, useApiErrorMessage, useMediaQuery } from '@/shared/hooks'
 import { hasPermission, usePermissions } from '@/shared/permissions'
 import { PLANNING_ACCESS } from '../config/planning-access'
 
@@ -72,6 +73,8 @@ type PlanningEventProperties = {
 type CalendarHeading = {
   title: string
   range: string
+  /** What the date control shows on a phone: the month, or a week's range without its year. */
+  shortRange: string
   month: string
   day: string
   week: number
@@ -111,6 +114,7 @@ export function PlanningCalendar({
   const [calendarHeading, setCalendarHeading] = useState<CalendarHeading>({
     title: '',
     range: '',
+    shortRange: '',
     month: '',
     day: '',
     week: 0,
@@ -119,6 +123,10 @@ export function PlanningCalendar({
   const toast = useToast()
   const [openStackId, setOpenStackId] = useState<string | null>(null)
   const fullCalendarView = calendarView === 'month' ? 'dayGridMonth' : 'timeGridWeek'
+  // On a phone the month fits the width: each post is a status-coloured chip with its picture,
+  // its details one tap away. The week keeps its width and scrolls sideways.
+  const phone = useMediaQuery(PHONE_QUERY)
+  const compactMonth = phone && calendarView === 'month'
   const uses12HourClock = uses12HourTime(i18n.resolvedLanguage)
   const timeZone = getLocalTimeZone()
   const events = useMemo<EventInput[]>(
@@ -324,7 +332,7 @@ export function PlanningCalendar({
 
   return (
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border-subtle bg-bg-surface shadow-xs">
-      <div className="flex shrink-0 flex-col gap-4 border-b border-border-subtle p-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex shrink-0 flex-col gap-3 border-b border-border-subtle p-4 md:gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex min-w-0 items-center gap-3">
           <div className="hidden h-16 w-16 shrink-0 flex-col overflow-hidden rounded-lg border border-border-subtle bg-bg-surface shadow-xs sm:flex">
             <span className="flex h-6 w-full items-center justify-center bg-bg-surface-muted text-micro font-medium uppercase text-text-tertiary">
@@ -346,8 +354,9 @@ export function PlanningCalendar({
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center">
+        {/* The date control takes what the view picker leaves, so it never runs off a phone. */}
+        <div className="flex w-full min-w-0 items-center gap-2 xl:w-auto xl:shrink-0">
+          <div className="flex min-w-0 flex-1 items-center xl:flex-none">
             <Button
               icon={<IconChevronLeft />}
               aria-label={t('calendar.previous')}
@@ -356,10 +365,12 @@ export function PlanningCalendar({
             />
             <DatePicker
               value={selectedDate}
-              displayValue={calendarHeading.range || t('calendar.today')}
+              displayValue={
+                (phone ? calendarHeading.shortRange : calendarHeading.range) || t('calendar.today')
+              }
               aria-label={t('calendar.selectDate')}
               suffixIcon={null}
-              className="-ms-px w-[270px] rounded-none z-1"
+              className="-ms-px z-1 w-auto min-w-0 flex-1 rounded-none xl:w-[270px] xl:flex-none"
               onChange={handleDatePick}
             />
             <Button
@@ -373,17 +384,19 @@ export function PlanningCalendar({
             aria-label={t('calendar.view')}
             value={calendarView}
             showSearch={false}
-            className="min-w-40"
+            className="w-[6.5rem] shrink-0 sm:w-[11.5rem]"
             onChange={(event) => onCalendarViewChange(event.target.value as PlanningCalendarView)}
             options={[
-              { value: 'month', label: t('calendar.month') },
-              { value: 'week', label: t('calendar.week') },
+              { value: 'month', label: t(phone ? 'calendar.monthShort' : 'calendar.month') },
+              { value: 'week', label: t(phone ? 'calendar.weekShort' : 'calendar.week') },
             ]}
           />
         </div>
       </div>
 
-      <div className="planning-calendar app-scrollbar min-h-0 flex-1 overflow-auto">
+      <div
+        className={`planning-calendar app-scrollbar min-h-0 flex-1 overflow-auto ${compactMonth ? 'planning-calendar--compact' : ''}`}
+      >
         <FullCalendar
           key={createPlatform ?? 'read-only'}
           ref={calendarRef}
@@ -400,7 +413,8 @@ export function PlanningCalendar({
           allDaySlot={false}
           editable
           eventDurationEditable={false}
-          dayMaxEvents={3}
+          dayMaxEvents={compactMonth ? 2 : 3}
+          dayHeaderFormat={compactMonth ? { weekday: 'narrow' } : undefined}
           eventMaxStack={2}
           slotEventOverlap={false}
           moreLinkClick="popover"
@@ -410,7 +424,9 @@ export function PlanningCalendar({
             minute: '2-digit',
             hour12: uses12HourClock,
           }}
-          moreLinkContent={(args) => t('calendar.more', { count: args.num })}
+          moreLinkContent={(args) =>
+            compactMonth ? `+${args.num}` : t('calendar.more', { count: args.num })
+          }
           eventAllow={(_, event) => {
             if (!event) return false
             const { contents } = event.extendedProps as PlanningEventProperties
@@ -634,6 +650,7 @@ function isSameCalendarHeading(current: CalendarHeading, next: CalendarHeading) 
   return (
     current.title === next.title &&
     current.range === next.range &&
+    current.shortRange === next.shortRange &&
     current.month === next.month &&
     current.day === next.day &&
     current.week === next.week
@@ -651,6 +668,7 @@ function createCalendarHeading(
     day: 'numeric',
     year: 'numeric',
   }
+  const shortRangeOptions: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }
   const month = formatLocalizedDate(currentDate, locale, { month: 'short' })
     .replace('.', '')
     .toUpperCase()
@@ -658,6 +676,10 @@ function createCalendarHeading(
   return {
     title: info.view.title,
     range: `${formatLocalizedDate(info.view.currentStart, locale, rangeFormatOptions)} – ${formatLocalizedDate(rangeEnd, locale, rangeFormatOptions)}`,
+    shortRange:
+      info.view.type === 'dayGridMonth'
+        ? formatLocalizedDate(currentDate, locale, { month: 'short', year: 'numeric' })
+        : formatLocalizedDateRange(info.view.currentStart, rangeEnd, locale, shortRangeOptions),
     month,
     day: String(currentDate.getDate()),
     week: getIsoWeek(currentDate),

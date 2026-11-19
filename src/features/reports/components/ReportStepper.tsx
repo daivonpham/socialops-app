@@ -24,14 +24,19 @@ export function ReportStepper({
   collapsed?: boolean
   onSelect: (id: number) => void
 }) {
+  // A row joined by lines below4 1280px, a column from there (the builder's rail). On a phone
+  // only the current step keeps its name.
   return (
     <nav aria-label={label}>
-      <ol>
+      <ol className="flex items-center xl:block">
         {steps.map((step, index) => {
           const active = step.id === current
           const done = step.id < current
           return (
-            <li key={step.id}>
+            <li
+              key={step.id}
+              className={`flex min-w-0 items-center last:flex-none xl:block ${active ? 'flex-none' : 'flex-1'}`}
+            >
               <button
                 type="button"
                 disabled={step.id > reached}
@@ -39,10 +44,10 @@ export function ReportStepper({
                 aria-label={collapsed ? step.title : undefined}
                 title={collapsed ? step.title : undefined}
                 onClick={() => onSelect(step.id)}
-                className="flex w-full items-center gap-3 rounded-lg text-left outline-none focus-visible:focus-ring disabled:cursor-default"
+                className={`flex items-center gap-2 rounded-lg text-left outline-none focus-visible:focus-ring disabled:cursor-default xl:w-full xl:gap-3 ${active ? 'shrink-0' : 'min-w-0'}`}
               >
                 <span
-                  className={`relative flex size-10 shrink-0 items-center justify-center rounded-lg border bg-bg-surface text-icon-md shadow-xs ${
+                  className={`relative flex size-8 shrink-0 items-center justify-center rounded-lg border bg-bg-surface text-icon-md shadow-xs xl:size-10 ${
                     active
                       ? 'border-border-strong text-text-primary'
                       : 'border-border-subtle text-text-disabled'
@@ -56,14 +61,14 @@ export function ReportStepper({
                   ) : null}
                 </span>
                 {collapsed ? null : (
-                  <span className="grid min-w-0">
+                  <span className={`min-w-0 xl:grid ${active ? 'grid' : 'hidden sm:grid'}`}>
                     <span
-                      className={`text-label-md font-semibold ${active ? 'text-text-primary' : 'text-text-disabled'}`}
+                      className={`truncate text-label-md font-semibold xl:whitespace-normal ${active ? 'text-text-primary' : 'text-text-disabled'}`}
                     >
                       {step.title}
                     </span>
                     <span
-                      className={`text-body-sm ${active ? 'text-text-secondary' : 'text-text-disabled'}`}
+                      className={`text-body-sm max-xl:hidden ${active ? 'text-text-secondary' : 'text-text-disabled'}`}
                     >
                       {step.hint}
                     </span>
@@ -73,7 +78,7 @@ export function ReportStepper({
               {index < steps.length - 1 ? (
                 <span
                   aria-hidden
-                  className="ms-[19px] my-1 block h-6 w-[2px] rounded-pill bg-border-subtle"
+                  className="mx-2 block h-[2px] min-w-4 flex-1 rounded-pill bg-border-subtle xl:mx-0 xl:my-1 xl:ms-[19px] xl:h-6 xl:w-[2px] xl:min-w-0 xl:flex-none"
                 />
               ) : null}
             </li>

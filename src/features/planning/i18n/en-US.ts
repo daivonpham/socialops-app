@@ -121,6 +121,8 @@ export const planningEnUS = {
     view: 'Calendar view',
     month: 'Month view',
     week: 'Week view',
+    monthShort: 'Month',
+    weekShort: 'Week',
     weekNumber: 'Week {{week}}',
     timeZone: 'Timezone: {{timeZone}}',
     more: '+{{count}} more',

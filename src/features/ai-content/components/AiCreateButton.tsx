@@ -15,6 +15,7 @@ export function AiCreateButton({
   onOpenContent,
   onUseSuggestion,
   onCreated,
+  className = '',
 }: {
   brandId: string | null
   defaultPageId?: string
@@ -22,6 +23,8 @@ export function AiCreateButton({
   /** "Use" on a suggestion: open the post screen filled with it. */
   onUseSuggestion: (suggestion: AiSuggestionHandoff) => void
   onCreated: () => void
+  /** Width and placement from the toolbar it sits in, e.g. full width on a phone. */
+  className?: string
 }) {
   const { t } = useTranslation('aiContent')
   const availability = useAiAvailability(brandId)
@@ -39,11 +42,12 @@ export function AiCreateButton({
           ref={buttonRef}
           type="button"
           onClick={() => setOpen(true)}
-          className="app-ai-running-border inline-flex h-[36px] items-center gap-2 rounded-lg px-4 text-label-md text-text-inverse shadow-[0_4px_14px_-4px] shadow-ai-500/60 transition-[filter,box-shadow] duration-fast hover:brightness-110 hover:shadow-ai-500/80 focus-visible:focus-ring active:brightness-95"
+          className={`app-ai-running-border inline-flex h-[36px] items-center justify-center gap-2 whitespace-nowrap rounded-lg px-4 text-label-md text-text-inverse shadow-[0_4px_14px_-4px] shadow-ai-500/60 transition-[filter,box-shadow] duration-fast hover:brightness-110 hover:shadow-ai-500/80 focus-visible:focus-ring active:brightness-95 ${className}`}
         >
           <AiMark tone="white" className="w-[20px]" />
           {t('button')}
-          <span className="rounded-full border border-bg-surface/40 bg-bg-surface/20 px-2 text-caption font-medium">
+          {/* Dropped on a phone, where the button has half a row. */}
+          <span className="hidden rounded-full border border-bg-surface/40 bg-bg-surface/20 px-2 text-caption font-medium sm:inline">
             {t('beta')}
           </span>
         </button>

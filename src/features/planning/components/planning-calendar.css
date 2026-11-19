@@ -1,8 +1,10 @@
 @reference '../../../shared/styles/index.css';
 
 @layer components {
+  /* Seven readable days fit from a tablet; narrower, the week scrolls sideways and the month
+     turns compact (below). */
   .planning-calendar .fc {
-    min-width: 48rem;
+    min-width: 40rem;
     @apply text-body-sm text-text-secondary;
   }
 
@@ -221,4 +223,45 @@
    dragged copy lives outside it, and the list stays mounted so the drag continues. */
 body.planning-stack-dragging .ant-popover:has(.planning-calendar-stack-list) {
   visibility: hidden;
+}
+
+/* A phone's month: no minimum width, so the seven days fit; each post shrinks to a status-coloured
+ chip with its picture. Adding a post goes through "Create post", so cells keep no + button.
+ Outside the layer: the cards' own utility classes, such as `flex`, would win otherwise. */
+.planning-calendar--compact .fc {
+  min-width: 0;
+}
+
+.planning-calendar--compact .fc .fc-col-header-cell-cushion {
+  @apply px-0 py-2;
+}
+
+.planning-calendar--compact .fc .fc-daygrid-day-frame {
+  min-height: 4.5rem;
+}
+
+.planning-calendar--compact .fc .fc-daygrid-day-number {
+  @apply m-[2px] h-6 min-w-6 text-caption;
+}
+
+.planning-calendar--compact .fc .fc-daygrid-event-harness {
+  @apply mx-[2px] mb-[2px];
+}
+
+.planning-calendar--compact .fc .planning-calendar-event {
+  @apply px-1 py-[2px];
+}
+
+.planning-calendar--compact .fc .planning-calendar-event__primary {
+  @apply justify-center gap-0;
+}
+
+.planning-calendar--compact .fc .planning-calendar-event__primary > :not(:first-child),
+.planning-calendar--compact .fc .planning-calendar-event__meta,
+.planning-calendar--compact .fc .planning-calendar__create-action--month {
+  display: none;
+}
+
+.planning-calendar--compact .fc .fc-daygrid-more-link {
+  @apply ms-0 block px-1 text-center;
 }

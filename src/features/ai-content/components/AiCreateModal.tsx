@@ -10,7 +10,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import { isApiErrorCode } from '@/shared/api/errors'
 import { useAuth } from '@/shared/auth'
-import { useApiErrorMessage } from '@/shared/hooks'
+import { PHONE_QUERY, useApiErrorMessage, useMediaQuery } from '@/shared/hooks'
 import { formatDate } from '@/shared/i18n'
 import {
   Alert,
@@ -18,7 +18,9 @@ import {
   Form,
   IconAttach,
   IconClose,
+  IconCompose,
   IconEdit,
+  IconPanelLeftOpen,
   IconSendLine,
   IconSendSolid,
   Input,
@@ -120,6 +122,9 @@ export function AiCreateModal({
   // Answered in this sitting; availability catches up behind it.
   const [onboarded, setOnboarded] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
+  // A phone shows the chat; the column of chats, Pages and options opens over it on demand.
+  const phone = useMediaQuery(PHONE_QUERY)
+  const [phoneSidebarOpen, setPhoneSidebarOpen] = useState(false)
   const [conversationId, setConversationId] = useState(() => readOpenChat(user?.id, brandId))
   const [editing, setEditing] = useState<AiGeneration | null>(null)
   // A request sent while a file is still uploading goes out as soon as the uploads finish.
@@ -468,7 +473,10 @@ export function AiCreateModal({
       </div>
     ) : turns.length ? (
       // The top padding keeps the first message clear of the dialog's close button.
-      <ul className="grid content-start gap-6 px-6 pt-12 pb-6" aria-label={t('chat.list')}>
+      <ul
+        className="grid content-start gap-6 px-4 pt-4 pb-6 md:px-6 md:pt-12"
+        aria-label={t('chat.list')}
+      >
         {turns.map((turn) => (
           <AiChatTurn
             key={turn.id}
@@ -493,6 +501,7 @@ export function AiCreateModal({
         open
         title={null}
         width={1040}
+        fullScreenOnPhone
         padding="none"
         floatingClose
         onClose={onClose}
@@ -534,7 +543,7 @@ export function AiCreateModal({
           >
             <div
               className={
-                'grid overflow-hidden rounded-2xl md:h-[min(720px,calc(100vh-120px))] ' +
+                'relative flex h-[100dvh] flex-col overflow-hidden md:grid md:h-[min(720px,calc(100vh-120px))] md:rounded-2xl ' +
                 (collapsed
                   ? 'md:grid-cols-[72px_minmax(0,1fr)]'
                   : 'md:grid-cols-[288px_minmax(0,1fr)]')
@@ -547,16 +556,21 @@ export function AiCreateModal({
                 historyDays={availability.historyDays}
                 credits={availability}
                 currentId={conversationId}
-                collapsed={collapsed}
+                collapsed={phone ? false : collapsed}
+                phoneOpen={phoneSidebarOpen}
                 background={assistantBackground}
-                onToggle={() => setCollapsed((value) => !value)}
+                onToggle={() =>
+                  phone ? setPhoneSidebarOpen(false) : setCollapsed((value) => !value)
+                }
                 onPick={(id) => {
                   setEditing(null)
                   setConversationId(id)
+                  setPhoneSidebarOpen(false)
                 }}
                 onNew={() => {
                   setEditing(null)
                   setConversationId(null)
+                  setPhoneSidebarOpen(false)
                 }}
                 onDeleted={(id) => {
                   if (id !== conversationId) return
@@ -567,10 +581,39 @@ export function AiCreateModal({
                 onStartTyping={() => composer.current?.querySelector('textarea')?.focus()}
               />
               <section
-                className="flex min-h-[560px] min-w-0 flex-col bg-bg-surface-subtle md:min-h-0"
+                className="flex min-h-0 min-w-0 flex-1 flex-col bg-bg-surface-subtle"
                 onDragOver={keepDropsInApp}
                 onDrop={keepDropsInApp}
               >
+                {/* A phone's bar: the chats, the title and a new chat; the dialog's close
+                    button takes the corner. */}
+                {phone ? (
+                  <div className="flex shrink-0 items-center gap-1 border-b border-ai-100 bg-ai-50 py-2 ps-2 pe-[56px] md:hidden">
+                    <button
+                      type="button"
+                      aria-label={t('sidebar.expand')}
+                      onClick={() => setPhoneSidebarOpen(true)}
+                      className="flex size-10 items-center justify-center rounded-lg text-icon-md text-text-secondary hover:bg-bg-surface focus-visible:focus-ring"
+                    >
+                      <IconPanelLeftOpen aria-hidden />
+                    </button>
+                    <h2 className="flex min-w-0 flex-1 items-center gap-2 text-heading-4 text-text-primary">
+                      <AiMark className="w-[24px] shrink-0" />
+                      <span className="truncate">{t('modal.title')}</span>
+                    </h2>
+                    <button
+                      type="button"
+                      aria-label={t('history.new')}
+                      onClick={() => {
+                        setEditing(null)
+                        setConversationId(null)
+                      }}
+                      className="flex size-10 items-center justify-center rounded-lg text-icon-md text-text-secondary hover:bg-bg-surface focus-visible:focus-ring"
+                    >
+                      <IconCompose aria-hidden />
+                    </button>
+                  </div>
+                ) : null}
                 <div
                   ref={list}
                   className="app-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto"
@@ -578,7 +621,7 @@ export function AiCreateModal({
                   {body}
                 </div>
 
-                <div ref={composer} className="px-6 pt-2 pb-5">
+                <div ref={composer} className="px-3 pt-2 pb-3 md:px-6 md:pb-5">
                   {sendError ? (
                     <div className="mb-3">
                       {creditsGone ? (

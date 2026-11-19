@@ -8,13 +8,16 @@ export function Tabs<T extends string>({
   onChange,
   ariaLabel,
   variant = 'solid',
+  className,
+  block = false,
 }: TabsProps<T>) {
   if (variant === 'solid') {
     return (
-      <div aria-label={ariaLabel} role="tablist">
+      <div aria-label={ariaLabel} role="tablist" className={className}>
         <Segmented
           size="middle"
           value={value}
+          block={block}
           className="font-medium"
           style={{ boxShadow: componentToken.tabs.solidTrackOutline }}
           options={options.map((option) => ({

@@ -8,6 +8,10 @@ export type TabsProps<T extends string> = {
   ariaLabel: string
   /** Neutral segmented tabs are the default product pattern; line is available for dense contexts. */
   variant?: 'solid' | 'line' | 'transparent'
+  /** Placement and width from the layout around it, e.g. `w-full` or an order. */
+  className?: string
+  /** Solid tabs share the whole width equally, as on a phone. */
+  block?: boolean
 }
 
 export { Tabs } from '@/shared/components/ant/Tabs'

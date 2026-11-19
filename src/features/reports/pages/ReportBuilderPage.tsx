@@ -366,31 +366,33 @@ export default function ReportBuilderPage() {
   }
 
   return (
-    <div className="-m-4 flex min-h-[calc(100%+2rem)] flex-col md:-m-5 md:min-h-[calc(100%+2.5rem)] lg:flex-row xl:-m-6 xl:min-h-[calc(100%+3rem)]">
-      {/* Left rail: back link and the step list. */}
+    <div className="-m-4 flex min-h-[calc(100%+2rem)] flex-col md:-m-5 md:min-h-[calc(100%+2.5rem)] xl:-m-6 xl:min-h-[calc(100%+3rem)] xl:flex-row">
+      {/* From 1280px a left rail with the back link and the steps; narrower, a bar across the
+          top with the steps in a row, so the form keeps the width. */}
       <aside
-        className={`shrink-0 border-b border-border-subtle bg-bg-surface-subtle px-5 py-6 transition-[width,padding] duration-drawer ease-standard lg:border-b-0 lg:border-e lg:pt-2 lg:pb-6 ${
-          railCollapsed ? 'lg:w-sidebar-collapsed lg:px-4' : 'lg:w-[320px] lg:px-6'
+        className={`shrink-0 border-b border-border-subtle bg-bg-surface-subtle px-4 py-3 transition-[width,padding] duration-drawer ease-standard sm:px-5 xl:border-b-0 xl:border-e xl:pt-2 xl:pb-6 ${
+          railCollapsed ? 'xl:w-sidebar-collapsed xl:px-4' : 'xl:w-[320px] xl:px-6'
         }`}
       >
         {/* Sticky inside the page scroll area so the steps stay visible on long steps. */}
-        <div className="lg:sticky lg:top-2">
+        <div className="flex items-center gap-4 xl:sticky xl:top-2 xl:block">
           {/* Back link and the collapse toggle share the top row; collapsed keeps only the toggle. */}
           <div
-            className={`flex min-h-8 items-center gap-2 ${railCollapsed ? 'lg:justify-center' : 'justify-between'}`}
+            className={`flex min-h-8 shrink-0 items-center gap-2 ${railCollapsed ? 'xl:justify-center' : 'xl:justify-between'}`}
           >
             <Link
               to="/reports"
-              className={`inline-flex min-h-8 items-center gap-2 rounded-sm text-label-md text-text-secondary outline-none hover:text-text-primary focus-visible:focus-ring ${railCollapsed ? 'lg:hidden' : ''}`}
+              aria-label={t('back')}
+              className={`inline-flex min-h-8 items-center gap-2 rounded-sm text-label-md text-text-secondary outline-none hover:text-text-primary focus-visible:focus-ring ${railCollapsed ? 'xl:hidden' : ''}`}
             >
               <IconArrowLeft aria-hidden />
-              {t('back')}
+              <span className="max-sm:hidden">{t('back')}</span>
             </Link>
-            {/* Collapsing only applies to the desktop rail; small screens stack it on top. */}
+            {/* Collapsing only applies to the desktop rail. */}
             <Button
               variant="ghost"
               size="sm"
-              className="max-lg:hidden"
+              className="max-xl:hidden"
               aria-label={railCollapsed ? t('steps.expand') : t('steps.collapse')}
               icon={
                 <span aria-hidden className="flex items-center text-icon-md text-text-secondary">
@@ -400,7 +402,7 @@ export default function ReportBuilderPage() {
               onClick={() => setRailCollapsed((current) => !current)}
             />
           </div>
-          <div className="mt-8">
+          <div className="min-w-0 flex-1 xl:mt-8">
             <ReportStepper
               steps={steps}
               current={step}
@@ -595,7 +597,8 @@ export default function ReportBuilderPage() {
                   ) : null}
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
+              {/* Half the row each on a phone. */}
+              <div className="flex w-full items-center gap-2 sm:w-auto max-sm:[&>*]:min-w-0 max-sm:[&>*]:flex-1">
                 <ReportExportMenu
                   disabled={!preview.data}
                   loading={exporting}

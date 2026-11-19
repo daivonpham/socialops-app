@@ -53,7 +53,9 @@ export function ContentTrendCard({
           : t('dashboard.trend.description')
       }
       extra={
+        // Four metrics do not fit a phone: they scroll sideways inside the card, not the page.
         <Tabs
+          className="app-scrollbar -mx-1 max-w-[calc(100%+0.5rem)] overflow-x-auto px-1 py-px"
           value={metric}
           ariaLabel={t('dashboard.trend.metric')}
           onChange={setMetric}
@@ -64,7 +66,7 @@ export function ContentTrendCard({
         />
       }
     >
-      <dl className="flex flex-wrap gap-x-10 gap-y-4">
+      <dl className="flex flex-wrap gap-x-8 gap-y-4 sm:gap-x-10">
         <div className="grid gap-1">
           <dt className="text-caption text-text-tertiary">
             {t('dashboard.trend.total', { metric: metricLabel.toLowerCase() })}
@@ -76,13 +78,13 @@ export function ContentTrendCard({
             {compare ? <ChangePill change={change} locale={locale} /> : null}
           </dd>
         </div>
-        <div className="grid gap-1 border-s border-border-subtle ps-5">
+        <div className="grid gap-1 sm:border-s sm:border-border-subtle sm:ps-5">
           <dt className="text-caption text-text-tertiary">{t('dashboard.trend.average')}</dt>
           <dd className="text-heading-3 tabular-nums text-text-primary">
             {formatCompact(labels.length ? total / labels.length : 0, locale)}
           </dd>
         </div>
-        <div className="grid gap-1 border-s border-border-subtle ps-5">
+        <div className="grid gap-1 sm:border-s sm:border-border-subtle sm:ps-5">
           <dt className="text-caption text-text-tertiary">{t('dashboard.trend.peak')}</dt>
           <dd className="text-heading-3 tabular-nums text-text-primary">
             {labels[peakIndex]

@@ -57,7 +57,8 @@ export default function AdminLayout() {
         onPreviewClose={closeDesktopPreview}
       />
       <div className="flex min-h-0 flex-1">
-        <div className="hidden min-h-0 md:flex md:flex-col">
+        {/* Kept beside the content from 1024px; narrower screens open it as a drawer (§55). */}
+        <div className="hidden min-h-0 lg:flex lg:flex-col">
           <Sidebar
             collapsed={!desktopSidebarExpanded}
             onPreviewOpen={openDesktopPreview}

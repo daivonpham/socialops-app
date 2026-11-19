@@ -281,7 +281,9 @@ export default function PlanningPage() {
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-5">
-      <div className="flex shrink-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* Phone: the views and Filters share a row, the two ways to create share the next, half
+          each. From 768px everything sits on one row. */}
+      <div className="flex shrink-0 flex-wrap items-center gap-2 md:flex-nowrap md:gap-3">
         <Tabs
           value={view}
           ariaLabel={t('tabs.ariaLabel')}
@@ -295,7 +297,7 @@ export default function PlanningPage() {
             { value: 'list', label: t('tabs.list') },
           ]}
         />
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="ms-auto">
           <PlanningFilters
             accounts={accounts}
             platform={platform}
@@ -306,6 +308,8 @@ export default function PlanningPage() {
             approvalStatus={approvalStatus}
             onChange={(filters) => setUrlFilters(filters)}
           />
+        </div>
+        <div className="flex w-full items-center gap-2 md:w-auto md:gap-3 [&>*]:min-w-0 [&>*]:flex-1 md:[&>*]:flex-none">
           {platform !== 'tiktok' ? (
             <AiCreateButton
               brandId={brandId}

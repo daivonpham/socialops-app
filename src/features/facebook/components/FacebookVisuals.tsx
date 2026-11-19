@@ -31,20 +31,21 @@ export function MetricCards({
   const locale = i18n.resolvedLanguage as AppLocale
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    // Two to a row even on a phone: the icon goes and the change sits under the number there.
+    <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
       {metrics.map((metric) => {
         // Null: the previous period had none, so there is no change to show.
         const positive = metric.change == null || metric.change >= 0
         return (
           <div
             key={metric.key}
-            className="relative flex min-w-0 items-center gap-4 rounded-xl border border-border-subtle bg-bg-surface p-4 shadow-xs"
+            className="relative flex min-w-0 items-center gap-4 rounded-xl border border-border-subtle bg-bg-surface p-3 shadow-xs sm:p-4"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border-subtle bg-bg-surface-subtle text-icon-sm text-[#404040] shadow-xs">
+            <span className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border-subtle bg-bg-surface-subtle text-icon-sm text-text-secondary shadow-xs sm:flex">
               <MetricIcon metricKey={metric.key} />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-x-2">
                 <span className="text-label-sm leading-snug text-text-tertiary">
                   {t(`metrics.${metric.key}`)}
                 </span>
@@ -65,7 +66,7 @@ export function MetricCards({
                   </Tooltip>
                 ) : null}
               </div>
-              <strong className="truncate text-heading-1 tabular-nums text-text-primary">
+              <strong className="block truncate text-heading-2 tabular-nums text-text-primary sm:text-heading-1">
                 {metric.unit === 'percent'
                   ? t('common.percentage', {
                       value: formatNumber(metric.value, locale, { maximumFractionDigits: 1 }),
@@ -75,20 +76,22 @@ export function MetricCards({
                       maximumFractionDigits: 1,
                     })}
               </strong>
+              {metric.change === undefined ? null : metric.change === null ? (
+                <span className="text-label-sm text-text-tertiary sm:absolute sm:bottom-4 sm:right-4">
+                  —
+                </span>
+              ) : (
+                <span
+                  className={
+                    'flex shrink-0 items-center gap-1 text-label-sm sm:absolute sm:bottom-4 sm:right-4 ' +
+                    (positive ? 'text-success-700' : 'text-error-700')
+                  }
+                >
+                  {positive ? <IconArrowUp /> : <IconArrowDown />}
+                  <span className="tabular-nums">{Math.abs(metric.change)}%</span>
+                </span>
+              )}
             </div>
-            {metric.change === undefined ? null : metric.change === null ? (
-              <span className="absolute bottom-4 right-4 text-label-sm text-text-tertiary">—</span>
-            ) : (
-              <span
-                className={
-                  'absolute bottom-4 right-4 flex shrink-0 items-center gap-1 text-label-sm ' +
-                  (positive ? 'text-success-700' : 'text-error-700')
-                }
-              >
-                {positive ? <IconArrowUp /> : <IconArrowDown />}
-                <span className="tabular-nums">{Math.abs(metric.change)}%</span>
-              </span>
-            )}
           </div>
         )
       })}

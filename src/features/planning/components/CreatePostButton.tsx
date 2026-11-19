@@ -11,9 +11,12 @@ import type { PlanningAccount } from '../model'
 export function CreatePostButton({
   accounts,
   platform,
+  className,
 }: {
   accounts: PlanningAccount[]
   platform: 'all' | PlanningPlatform
+  /** Width from the toolbar it sits in, e.g. full width on a phone. */
+  className?: string
 }) {
   const { t } = useTranslation('planning')
   const navigate = useNavigate()
@@ -27,6 +30,7 @@ export function CreatePostButton({
   const trigger = (
     <Button
       variant="primary"
+      className={className}
       icon={<IconPlusCircle />}
       disabled={!canCreatePost || (platform !== 'all' && !canPublishOnPlatform(platform))}
       title={
