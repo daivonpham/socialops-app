@@ -7,6 +7,7 @@ import { useLogin, useRegister, useStartGoogleAuth } from '../api'
 import type { RegisterInput } from '../api'
 import { useNewPasswordRules } from '../model/password-policy'
 import { AuthLayout } from '../components/AuthLayout'
+import { LegalConsent } from '../components/LegalConsent'
 import { BackToLoginLink } from '../components/BackToLoginLink'
 import { AUTH_ROUTES } from '../config/auth.routes'
 import { getInboxUrl } from '../model/inbox-url'
@@ -213,6 +214,7 @@ export default function RegisterPage() {
           >
             {t('register.google')}
           </Button>
+          <LegalConsent />
         </div>
       </Form>
     </AuthLayout>

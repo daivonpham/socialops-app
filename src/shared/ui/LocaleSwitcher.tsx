@@ -29,22 +29,43 @@ export function useLocaleMenu() {
   }
 }
 
-export function LocaleSwitcher({ className = '' }: { className?: string }) {
+/** Language menu. `compact` shows only the globe and chevron, for tight headers. */
+export function LocaleSwitcher({
+  className = '',
+  compact = false,
+}: {
+  className?: string
+  compact?: boolean
+}) {
   const { t } = useTranslation('common')
   const { locale, localeLabel, items, selectLocale } = useLocaleMenu()
 
   return (
     <Dropdown placement="bottomRight" selectedKey={locale} items={items} onSelect={selectLocale}>
-      <Button
-        icon={<IconGlobe aria-hidden />}
-        aria-label={t('locales.changeLanguage')}
-        className={`h-9 ${className}`.trim()}
-      >
-        <span className="flex items-center gap-2">
-          <span>{localeLabel}</span>
-          <IconChevronDown aria-hidden className="text-icon-sm" />
-        </span>
-      </Button>
+      {compact ? (
+        <Button
+          variant="ghost"
+          aria-label={t('locales.changeLanguage')}
+          title={localeLabel}
+          className={`h-9 px-2 ${className}`.trim()}
+        >
+          <span className="flex items-center gap-1 text-text-secondary">
+            <IconGlobe aria-hidden className="text-icon-md" />
+            <IconChevronDown aria-hidden className="text-icon-sm" />
+          </span>
+        </Button>
+      ) : (
+        <Button
+          icon={<IconGlobe aria-hidden />}
+          aria-label={t('locales.changeLanguage')}
+          className={`h-9 ${className}`.trim()}
+        >
+          <span className="flex items-center gap-2">
+            <span>{localeLabel}</span>
+            <IconChevronDown aria-hidden className="text-icon-sm" />
+          </span>
+        </Button>
+      )}
     </Dropdown>
   )
 }

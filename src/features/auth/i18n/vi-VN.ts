@@ -28,7 +28,10 @@ export const authViVN = {
     passwordMin: 'Mật khẩu phải có ít nhất {{min}} ký tự.',
     passwordMax: 'Mật khẩu không được vượt quá {{max}} ký tự.',
     confirmPasswordRequired: 'Nhập lại mật khẩu.',
-    termsRequired: 'Bạn phải đồng ý với Điều khoản và Chính sách quyền riêng tư.',
+  },
+  legal: {
+    consent:
+      'Khi tiếp tục, bạn đồng ý với <terms>Điều khoản dịch vụ</terms> và <privacy>Chính sách quyền riêng tư</privacy> của SocialOps.',
   },
   login: {
     title: 'Chào mừng trở lại',
@@ -44,7 +47,6 @@ export const authViVN = {
     title: 'Tạo tài khoản',
     description: 'Bắt đầu lập kế hoạch và đăng nội dung mạng xã hội.',
     passwordHint: 'Mật khẩu phải có ít nhất {{min}} ký tự.',
-    acceptTerms: 'Tôi đồng ý với Điều khoản và Chính sách quyền riêng tư',
     submit: 'Tạo tài khoản',
     google: 'Đăng ký bằng Google',
     hasAccount: 'Đã có tài khoản?',

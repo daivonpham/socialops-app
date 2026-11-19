@@ -6,6 +6,7 @@ import { useAuth } from '@/shared/auth'
 import { useLogin, useStartGoogleAuth } from '../api'
 import { PASSWORD_MAX_LENGTH } from '../model/password-policy'
 import { AuthLayout } from '../components/AuthLayout'
+import { LegalConsent } from '../components/LegalConsent'
 import { AUTH_ROUTES } from '../config/auth.routes'
 import { rememberPendingInvitation } from '../model/pending-invitation'
 import { CodedError, parseErrorCode } from '@/shared/api/errors'
@@ -140,6 +141,7 @@ export default function LoginPage() {
           >
             {t('login.google')}
           </Button>
+          <LegalConsent />
         </div>
       </Form>
     </AuthLayout>

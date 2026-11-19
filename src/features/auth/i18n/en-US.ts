@@ -25,7 +25,10 @@ export const authEnUS = {
     passwordMin: 'Password must contain at least {{min}} characters.',
     passwordMax: 'Password must not exceed {{max}} characters.',
     confirmPasswordRequired: 'Confirm your password.',
-    termsRequired: 'You must accept the Terms and Privacy Policy.',
+  },
+  legal: {
+    consent:
+      'By continuing, you agree to the SocialOps <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>.',
   },
   login: {
     title: 'Welcome back',
@@ -41,7 +44,6 @@ export const authEnUS = {
     title: 'Create an account',
     description: 'Start planning and publishing your social content.',
     passwordHint: 'Must be at least {{min}} characters.',
-    acceptTerms: 'I agree to the Terms and Privacy Policy',
     submit: 'Create account',
     google: 'Sign up with Google',
     hasAccount: 'Already have an account?',

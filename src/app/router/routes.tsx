@@ -254,6 +254,22 @@ const routes: RouteObject[] = [
     hydrateFallbackElement: bootFallback,
   },
   {
+    path: ROUTES.PRIVACY,
+    handle: handle({ auth: 'public' }),
+    lazy: async () => ({
+      Component: (await import('@/features/privacy/pages/PrivacyPolicyPage')).default,
+    }),
+    hydrateFallbackElement: bootFallback,
+  },
+  {
+    path: ROUTES.TERMS,
+    handle: handle({ auth: 'public' }),
+    lazy: async () => ({
+      Component: (await import('@/features/privacy/pages/TermsPage')).default,
+    }),
+    hydrateFallbackElement: bootFallback,
+  },
+  {
     path: ROUTES.GOOGLE_CALLBACK,
     handle: handle({ auth: 'required' }),
     lazy: async () => ({

@@ -1,5 +1,6 @@
 import { AUTH_ROUTES } from '@/features/auth/config/auth.routes'
 import { FACEBOOK_ROUTES } from '@/features/facebook/config/facebook.routes'
+import { LEGAL_ROUTES } from '@/features/privacy/config/legal'
 
 /** Single source of route paths — never hard-code path strings elsewhere. */
 export const ROUTES = {
@@ -14,6 +15,9 @@ export const ROUTES = {
   FACEBOOK_CALLBACK: '/auth/facebook/callback',
   /** Meta links users here after a data deletion request; must stay public and stable. */
   FACEBOOK_DATA_DELETION: '/facebook/data-deletion',
+  /** Public legal pages, linked from sign-in and from the Meta and Google app settings. */
+  PRIVACY: LEGAL_ROUTES.PRIVACY,
+  TERMS: LEGAL_ROUTES.TERMS,
   /** Printed into report PDFs by headless Chromium; public, authorized by a one-time token. */
   REPORT_PRINT: '/reports/print',
   TIKTOK_CALLBACK: '/auth/tiktok/callback',
