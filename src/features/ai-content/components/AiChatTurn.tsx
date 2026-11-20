@@ -140,7 +140,10 @@ function RequestEditor({
   }
 
   return (
-    <div ref={box} className="w-full rounded-xl border border-ai-300 bg-bg-surface px-4 pt-3 pb-3 shadow-xs">
+    <div
+      ref={box}
+      className="w-full rounded-xl border border-ai-300 bg-bg-surface px-4 pt-3 pb-3 shadow-xs"
+    >
       <Textarea
         value={text}
         onChange={(event) => setText(event.target.value)}
@@ -558,7 +561,10 @@ function SuggestionCard({
           </>
         )}
         <div className="ms-auto flex items-center gap-2">
-          <IconAction label={t(copied ? 'chat.copied' : 'chat.copy')} onClick={() => void copy(caption)}>
+          <IconAction
+            label={t(copied ? 'chat.copied' : 'chat.copy')}
+            onClick={() => void copy(caption)}
+          >
             {copied ? <IconCheckSolid /> : <IconCopy />}
           </IconAction>
           {used ? null : (
@@ -811,12 +817,7 @@ export function AiChatTurn({
 }) {
   return (
     <li className="grid gap-8">
-      <UserMessage
-        turn={turn}
-        templates={templates}
-        busy={busy}
-        onResend={actions.onResend}
-      />
+      <UserMessage turn={turn} templates={templates} busy={busy} onResend={actions.onResend} />
       <AssistantMessage
         brandId={brandId}
         turn={turn}

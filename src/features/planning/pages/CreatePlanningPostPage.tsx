@@ -47,6 +47,7 @@ import { moveVideoFrames } from '../components/composer/videoFrames'
 import {
   allowedIntent,
   canSubmitComposer,
+  tiktokMissingChoice,
   canWithdrawApproval,
   composerCaptionFor,
   createComposerDraft,
@@ -596,7 +597,8 @@ function PlanningComposerWorkspace({
   }
 
   // A missing caption does not lock the button: it shows its error once the user tries to post.
-  const canSubmit = canSubmitComposer(draft, { ignoreCaption: true })
+  // TikTok also needs its audience (no default) and, for commercial content, which kind.
+  const canSubmit = canSubmitComposer(draft, { ignoreCaption: true }) && !tiktokMissingChoice(draft)
   const validateSubmit = () => {
     if (publishIntent === 'draft' || !isComposerCaptionMissing(draft)) return true
     setCaptionErrorsShown(true)

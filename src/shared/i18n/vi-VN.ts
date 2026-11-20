@@ -55,6 +55,16 @@ export const commonViVN = {
     previousPage: 'Trước',
     nextPage: 'Sau',
   },
+  analytics: {
+    dateRange: 'Khoảng ngày',
+    quickRange: 'Khoảng nhanh',
+    days: '{{count}} ngày',
+    lastDays: '{{count}} ngày qua',
+    compare: 'So sánh',
+    noCompare: 'Không so sánh',
+    previousPeriod: 'Kỳ trước',
+    percentage: '{{value}}%',
+  },
   locales: {
     enUS: 'English (US)',
     viVN: 'Tiếng Việt',

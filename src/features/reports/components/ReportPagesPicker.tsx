@@ -1,8 +1,13 @@
 import { useTranslation } from 'react-i18next'
-import type { FacebookIntegrationDto } from '@/features/facebook'
-import { Avatar, Checkbox } from '@/shared/ui'
+import { Avatar, Checkbox, IconFacebook, IconTikTok } from '@/shared/ui'
 
-type FacebookPage = FacebookIntegrationDto['pages'][number]
+/** A channel of any platform; `id` is the platform's own account ID, as reports store it. */
+export type ReportChannel = {
+  id: string
+  name: string
+  avatarUrl?: string
+  platform: 'facebook' | 'tiktok'
+}
 
 /** "All Pages" or a hand-picked subset of the Pages the member can see. */
 export function ReportPagesPicker({
@@ -10,7 +15,7 @@ export function ReportPagesPicker({
   value,
   onChange,
 }: {
-  pages: FacebookPage[]
+  pages: ReportChannel[]
   value: 'all' | string[]
   onChange: (value: 'all' | string[]) => void
 }) {
@@ -49,6 +54,11 @@ export function ReportPagesPicker({
                   <span className="flex items-center gap-3">
                     <Avatar name={page.name} src={page.avatarUrl} size="xs" />
                     <span className="text-body-sm text-text-primary">{page.name}</span>
+                    {page.platform === 'tiktok' ? (
+                      <IconTikTok aria-hidden className="text-platform-tiktok" />
+                    ) : (
+                      <IconFacebook aria-hidden className="text-platform-facebook" />
+                    )}
                   </span>
                 </Checkbox>
               </div>

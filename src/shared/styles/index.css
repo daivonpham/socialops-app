@@ -556,3 +556,13 @@
     transform: translateY(-4px);
   }
 }
+
+/* The sound line of the TikTok preview scrolls like TikTok's. */
+@keyframes tiktok-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}

@@ -11,7 +11,6 @@ import { FaComment, FaImages, FaLink } from 'react-icons/fa6'
 import { SocialAccountLabel } from '@/features/social-accounts'
 import {
   Button,
-  Checkbox,
   FileUploadCard,
   IconChevronDown,
   IconComment,
@@ -25,7 +24,6 @@ import {
   Input,
   MediaDropzone,
   Popover,
-  Select,
   Tabs,
   Textarea,
 } from '@/shared/ui'
@@ -38,19 +36,13 @@ import {
   type ComposerMedia,
   type PlanningAccount,
   type PlanningComposerDraft,
+  TIKTOK_LIMITS,
 } from '../../model'
 import { PlanningAccountMultiSelect } from './PlanningAccountMultiSelect'
+import { TikTokPostSettings } from './TikTokPostSettings'
 import { ReelCoverField } from './ReelCoverPicker'
 import { clearVideoFrames, forgetVideoFrames, prepareVideoFrames } from './videoFrames'
 import { usePreviewPlayback } from '../preview/previewPlayback'
-
-const TIKTOK_BOOLEAN_SETTINGS = [
-  ['allowComments', 'composer.settings.allowComments'],
-  ['allowDuet', 'composer.settings.allowDuet'],
-  ['allowStitch', 'composer.settings.allowStitch'],
-  ['commercialContent', 'composer.settings.commercialContent'],
-  ['aiGeneratedContent', 'composer.settings.aiGeneratedContent'],
-] as const
 
 export type MediaUploadState =
   { status: 'uploading'; percent: number } | { status: 'uploaded' } | { status: 'failed' }
@@ -86,6 +78,9 @@ export function PlanningPostEditor({
   >({})
   const [captionFocused, setCaptionFocused] = useState(false)
   const [mediaPopoverOpen, setMediaPopoverOpen] = useState(false)
+  const [rejectedFiles, setRejectedFiles] = useState(0)
+  const captionLimit =
+    draft.postType === 'tiktok_photo' ? TIKTOK_LIMITS.photoDescription : TIKTOK_LIMITS.videoCaption
   const selectedAccounts = accounts.filter((account) => draft.targetIds.includes(account.id))
   const perAccountCaption = usesCaptionPerAccount(draft)
   const published = publishedMode
@@ -111,24 +106,36 @@ export function PlanningPostEditor({
     }
   }, [])
 
-  const setSetting = (key: string, value: boolean | string) =>
-    setDraft((current) => ({
-      ...current,
-      platformSettings: { ...current.platformSettings, [key]: value },
-    }))
-
   const addMedia = (files: FileList | File[] | null) => {
     if (!files) return
-    const allowedTypes =
+    const allowedTypes: readonly string[] =
       draft.postType === 'facebook_story'
         ? ['image/jpeg', 'image/png', 'image/webp', 'video/mp4']
-        : draft.postType === 'facebook_reel' || draft.postType === 'tiktok_video'
-          ? ['video/mp4']
-          : ['image/jpeg', 'image/png', 'image/webp']
-    const singleMedia = draft.postType === 'facebook_story' || allowedTypes[0] === 'video/mp4'
-    const slots = singleMedia ? 1 : 10 - draft.media.length
-    const media = [...files]
-      .filter((file) => allowedTypes.includes(file.type))
+        : draft.postType === 'tiktok_video'
+          ? TIKTOK_LIMITS.videoTypes
+          : draft.postType === 'tiktok_photo'
+            ? TIKTOK_LIMITS.photoTypes
+            : draft.postType === 'facebook_reel'
+              ? ['video/mp4']
+              : ['image/jpeg', 'image/png', 'image/webp']
+    const singleMedia = draft.postType === 'facebook_story' || allowedTypes[0]!.startsWith('video/')
+    const maxMedia = draft.postType === 'tiktok_photo' ? TIKTOK_LIMITS.photos : 10
+    const slots = singleMedia ? 1 : maxMedia - draft.media.length
+    const picked = [...files]
+    // TikTok takes JPEG and WebP photos up to 20 MB: say so instead of dropping files silently.
+    setRejectedFiles(
+      picked.filter(
+        (file) =>
+          !allowedTypes.includes(file.type) ||
+          (draft.postType === 'tiktok_photo' && file.size > TIKTOK_LIMITS.photoBytes),
+      ).length,
+    )
+    const media = picked
+      .filter(
+        (file) =>
+          allowedTypes.includes(file.type) &&
+          !(draft.postType === 'tiktok_photo' && file.size > TIKTOK_LIMITS.photoBytes),
+      )
       .slice(0, Math.max(slots, 0))
       .map((file) => ({
         id: crypto.randomUUID(),
@@ -154,7 +161,7 @@ export function PlanningPostEditor({
     }
     setDraft((current) => ({
       ...current,
-      media: singleMedia ? media : [...current.media, ...media].slice(0, 10),
+      media: singleMedia ? media : [...current.media, ...media].slice(0, maxMedia),
     }))
     onMediaAdded?.(media)
   }
@@ -279,7 +286,7 @@ export function PlanningPostEditor({
                 <Textarea
                   value={draft.caption}
                   rows={7}
-                  maxLength={2200}
+                  maxLength={captionLimit}
                   placeholder={t('composer.content.captionPlaceholder')}
                   aria-invalid={sharedCaptionMissing || undefined}
                   className="border-0 shadow-none"
@@ -302,9 +309,13 @@ export function PlanningPostEditor({
                         draft.postType === 'facebook_feed' || draft.postType === 'tiktok_photo'
                       }
                       accept={
-                        draft.postType.includes('video') || draft.postType.includes('reel')
-                          ? 'video/*'
-                          : 'image/*'
+                        draft.postType === 'tiktok_photo'
+                          ? TIKTOK_LIMITS.photoTypes.join(',')
+                          : draft.postType === 'tiktok_video'
+                            ? TIKTOK_LIMITS.videoTypes.join(',')
+                            : draft.postType.includes('video') || draft.postType.includes('reel')
+                              ? 'video/*'
+                              : 'image/*'
                       }
                       onChange={(event) => {
                         addMedia(event.target.files)
@@ -384,7 +395,7 @@ export function PlanningPostEditor({
                 <span className="flex-1" />
                 {perAccountCaption ? null : (
                   <span className="px-2 text-caption tabular-nums text-text-tertiary">
-                    {draft.caption.length.toLocaleString()}/2,200
+                    {draft.caption.length.toLocaleString()}/{captionLimit.toLocaleString()}
                   </span>
                 )}
               </div>
@@ -393,6 +404,18 @@ export function PlanningPostEditor({
           {sharedCaptionMissing ? (
             <span role="alert" className="text-caption text-error-700">
               {t('composer.customization.captionRequired')}
+            </span>
+          ) : null}
+          {rejectedFiles ? (
+            <span role="alert" className="text-caption text-error-700">
+              {draft.platform === 'tiktok'
+                ? t(
+                    draft.postType === 'tiktok_photo'
+                      ? 'composer.tiktok.photoRejected'
+                      : 'composer.tiktok.videoRejected',
+                    { count: rejectedFiles },
+                  )
+                : t('composer.media.rejected', { count: rejectedFiles })}
             </span>
           ) : null}
         </FieldGroup>
@@ -471,54 +494,18 @@ export function PlanningPostEditor({
       </div>
 
       {draft.platform === 'tiktok' ? (
-        <details className="group border-t border-border-subtle">
-          <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-4 text-label-md text-text-secondary outline-none hover:bg-bg-surface-subtle focus-visible:focus-ring">
-            <IconSettings aria-hidden className="text-icon-md" />
-            <span>{t('composer.advanced.title')}</span>
-            <IconChevronDown
-              aria-hidden
-              className="ms-auto text-icon-sm transition-transform duration-fast group-open:rotate-180"
-            />
-          </summary>
-          <div className="grid gap-4 border-t border-border-subtle p-5">
-            <Select
-              label={t('composer.settings.visibility')}
-              value={String(draft.platformSettings.visibility)}
-              onChange={(event) => setSetting('visibility', event.target.value)}
-              options={[
-                { value: 'public', label: t('composer.settings.public') },
-                { value: 'friends', label: t('composer.settings.friends') },
-                { value: 'private', label: t('composer.settings.private') },
-              ]}
-            />
-            <div className="grid gap-3 sm:grid-cols-2">
-              {TIKTOK_BOOLEAN_SETTINGS.map(([key, labelKey]) => (
-                <SettingCheckbox
-                  key={key}
-                  checked={Boolean(draft.platformSettings[key])}
-                  label={t(labelKey)}
-                  onChange={(checked) => setSetting(key, checked)}
-                />
-              ))}
-            </div>
-            {draft.postType === 'tiktok_video' ? (
-              <label className="grid gap-2 text-label-md text-text-secondary">
-                <span>{t('composer.settings.coverFrame')}</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={String(draft.platformSettings.coverFrame)}
-                  className="w-full accent-action-primary"
-                  onChange={(event) => setSetting('coverFrame', event.target.value)}
-                />
-                <span className="text-caption text-text-tertiary">
-                  {t('composer.settings.coverFrameHint')}
-                </span>
-              </label>
-            ) : null}
-          </div>
-        </details>
+        <div className="grid gap-4 border-t border-border-subtle p-5">
+          <span className="flex items-center gap-2 text-label-md text-text-secondary">
+            <IconSettings aria-hidden className="text-icon-sm text-text-tertiary" />
+            {t('composer.tiktok.title')}
+          </span>
+          <TikTokPostSettings
+            draft={draft}
+            setDraft={setDraft}
+            accounts={selectedAccounts}
+            disabled={published}
+          />
+        </div>
       ) : null}
 
       {supportsCaptionPerAccount(draft) ? (
@@ -567,7 +554,7 @@ export function PlanningPostEditor({
                           <Textarea
                             value={caption}
                             rows={4}
-                            maxLength={2200}
+                            maxLength={captionLimit}
                             aria-label={account.name}
                             placeholder={t('composer.customization.accountCaptionPlaceholder')}
                             onChange={(event) =>
@@ -670,22 +657,5 @@ function TabLabel({ icon, label }: { icon: ReactNode; label: string }) {
       </span>
       {label}
     </span>
-  )
-}
-
-function SettingCheckbox({
-  checked,
-  label,
-  onChange,
-}: {
-  checked: boolean
-  label: string
-  onChange: (checked: boolean) => void
-}) {
-  return (
-    <label className="flex cursor-pointer items-center gap-3 text-body-sm text-text-primary">
-      <Checkbox checked={checked} onChange={(event) => onChange(event.target.checked)} />
-      {label}
-    </label>
   )
 }

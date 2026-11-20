@@ -215,6 +215,7 @@ export const errorsViVN = {
 
     // TikTok
     TIKTOK_NOT_CONFIGURED: 'TikTok chưa được cấu hình.',
+    TIKTOK_OAUTH_CANCELLED: 'Đã hủy kết nối TikTok.',
     TIKTOK_OAUTH_FAILED: 'Đăng nhập TikTok thất bại. Vui lòng thử lại.',
     TIKTOK_PERMISSION_MISSING: 'Bạn chưa cấp quyền đăng bài TikTok.',
     TIKTOK_TOKEN_EXPIRED: 'Kết nối TikTok đã hết hạn. Hãy kết nối lại TikTok.',
@@ -227,5 +228,37 @@ export const errorsViVN = {
     TIKTOK_OUTCOME_UNKNOWN: 'TikTok chưa xác nhận kết quả. Hãy kiểm tra bài viết trên TikTok.',
     TIKTOK_REQUEST_FAILED: 'TikTok từ chối yêu cầu.',
     TIKTOK_INVALID_RESPONSE: 'TikTok trả về phản hồi không hợp lệ.',
+    TIKTOK_DAILY_POST_LIMIT:
+      'Tài khoản TikTok này đã đạt giới hạn đăng trong ngày. Hãy thử lại ngày mai hoặc đăng trong app TikTok.',
+    TIKTOK_POSTING_BANNED: 'TikTok đang không cho tài khoản này đăng bài.',
+    TIKTOK_ACTIVE_USER_CAP:
+      'SocialOps đã đạt số tài khoản TikTok cho phép đăng trong hôm nay. Hãy thử lại ngày mai.',
+    TIKTOK_UNAUDITED_PRIVATE_ONLY:
+      'Cho tới khi TikTok duyệt SocialOps, chỉ đăng được lên tài khoản riêng tư và bài ở chế độ riêng tư.',
+    TIKTOK_MEDIA_URL_UNVERIFIED: 'Domain chứa media chưa được xác minh với TikTok.',
+    TIKTOK_PRIVACY_LEVEL_INVALID:
+      'Quyền xem đã chọn không còn khả dụng cho tài khoản TikTok này. Hãy chọn lại.',
+    TIKTOK_PENDING_SHARE_LIMIT:
+      'Có quá nhiều bản nháp đang chờ trong hộp thư TikTok. Hãy hoàn tất bớt trong app trước.',
+    TIKTOK_APP_VERSION_TOO_OLD: 'Hãy cập nhật app TikTok để nhận bản nháp ảnh.',
+    TIKTOK_POST_FILE_FORMAT: 'TikTok không nhận định dạng tệp này.',
+    TIKTOK_POST_DURATION: 'Video quá ngắn hoặc quá dài so với mức tài khoản TikTok này được đăng.',
+    TIKTOK_POST_FRAME_RATE: 'TikTok chỉ nhận video từ 23 đến 60 khung hình/giây.',
+    TIKTOK_POST_PICTURE_SIZE: 'TikTok không nhận kích thước ảnh hoặc video này.',
+    TIKTOK_POST_PULL_FAILED: 'TikTok không tải được tệp. Hãy thử lại.',
+    TIKTOK_POST_CANCELLED: 'Bài TikTok đã bị hủy.',
+    TIKTOK_POST_AUTH_REMOVED: 'Tài khoản đã gỡ SocialOps trong TikTok khi bài đang được xử lý.',
+    TIKTOK_POST_SPAM_TEXT: 'TikTok đánh dấu chú thích là spam. Hãy sửa rồi thử lại.',
+    TIKTOK_POST_SPAM: 'TikTok đánh giá bài có rủi ro.',
+    TIKTOK_POST_INTERNAL: 'TikTok không xử lý được bài. Hãy thử lại.',
+    TIKTOK_PROCESSING_TIMEOUT: 'TikTok xử lý quá lâu. Hãy kiểm tra bài trong app TikTok.',
+    TIKTOK_WEBHOOK_SIGNATURE_INVALID: 'Không xác minh được thông báo từ TikTok.',
+    TIKTOK_PHOTOS_REQUIRED: 'Bài ảnh TikTok cần từ 1 đến 35 ảnh.',
+    TIKTOK_CAPTION_TOO_LONG: 'Chú thích, tiêu đề hoặc mô tả TikTok quá dài.',
+    TIKTOK_PRIVACY_REQUIRED: 'Hãy chọn ai có thể xem bài TikTok.',
+    TIKTOK_COMMERCIAL_CHOICE_REQUIRED:
+      'Hãy chọn Thương hiệu của bạn, Nội dung có thương hiệu hoặc cả hai.',
+    TIKTOK_BRANDED_PRIVATE: 'Nội dung có thương hiệu không thể để riêng tư trên TikTok.',
+    TIKTOK_PUBLISHING_DISABLED: 'Chức năng đăng TikTok chưa được bật. Bạn vẫn có thể lưu bản nháp.',
   },
 } as const satisfies TranslationShape<typeof errorsEnUS>

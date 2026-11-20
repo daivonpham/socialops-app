@@ -11,7 +11,8 @@ export function ReportFreshnessBar({
 }: {
   document: ReportDocument
   refresh: ReportRefresh | null
-  onRefresh: () => void
+  /** Absent when no selected channel can be fetched again (TikTok keeps no history). */
+  onRefresh?: () => void
 }) {
   const { t, i18n } = useTranslation('reports')
   const { freshness, meta } = document
@@ -66,7 +67,7 @@ export function ReportFreshnessBar({
           </div>
         ) : null}
       </div>
-      {needsAction ? (
+      {needsAction && onRefresh ? (
         <Button size="sm" icon={<IconRefresh aria-hidden />} loading={running} onClick={onRefresh}>
           {freshness.missingRanges.length ? t('freshness.backfill') : t('freshness.refresh')}
         </Button>

@@ -13,6 +13,7 @@ import {
   type FacebookQuery,
 } from '@/features/facebook'
 import { usePlanningSummary } from '@/features/planning'
+import { useTikTokDashboard } from '@/features/tiktok'
 import { useSocialAccountCounts } from '@/features/social-accounts'
 import { useUrlFilters } from '@/shared/hooks'
 import { formatDateTime, formatNumber, type AppLocale } from '@/shared/i18n'
@@ -63,6 +64,14 @@ export default function AllPlatformsPage() {
   const summary = useFacebookOverviewSummary(analyticsBrandId, query)
   const details = useFacebookDetails(analyticsBrandId, query)
   const publishing = usePlanningSummary(brandId, period)
+  const tiktokConnected = (counts.data?.tiktok ?? 0) > 0
+  const tiktok = useTikTokDashboard(canViewAnalytics && tiktokConnected ? brandId : null, {
+    accountId: 'all',
+    range,
+    since: filters.since || undefined,
+    until: filters.until || undefined,
+    compare: filters.compare,
+  })
 
   if (!brandId)
     return (
@@ -145,6 +154,7 @@ export default function AllPlatformsPage() {
         tiktokCount={counts.data?.tiktok ?? 0}
         summary={analyticsBrandId ? summary.data : undefined}
         publishedPosts={details.data?.publishedMetric.value}
+        tiktok={canViewAnalytics ? tiktok.data?.kpis : undefined}
       />
 
       {analyticsBrandId ? (
@@ -313,11 +323,14 @@ function PlatformComparison({
   tiktokCount,
   summary,
   publishedPosts,
+  tiktok,
 }: {
   facebookCount: number
   tiktokCount: number
   summary?: { metrics: Array<{ key: string; value: number }> }
   publishedPosts?: number
+  /** TikTok figures of the period, from SocialOps' daily snapshots. */
+  tiktok?: Record<'views' | 'engagements' | 'followers' | 'videos', { value: number }>
 }) {
   const { t, i18n } = useTranslation('overview')
   const locale = i18n.resolvedLanguage as AppLocale
@@ -346,13 +359,24 @@ function PlatformComparison({
           ) : null}
         </PlatformRow>
         <PlatformRow
-          icon={<IconTikTok className="text-icon-lg text-text-primary" />}
+          icon={<IconTikTok className="text-icon-lg text-platform-tiktok" />}
           name={t('platforms.tiktok')}
           count={tiktokCount}
           path={TIKTOK_PATH}
         >
           {tiktokCount > 0 ? (
-            <p className="text-body-sm text-text-tertiary">{t('platforms.tiktokUnavailable')}</p>
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-4">
+              <PlatformStat label={t('platforms.views')} value={format(tiktok?.views.value)} />
+              <PlatformStat
+                label={t('platforms.interactions')}
+                value={format(tiktok?.engagements.value)}
+              />
+              <PlatformStat
+                label={t('platforms.followers')}
+                value={format(tiktok?.followers.value)}
+              />
+              <PlatformStat label={t('platforms.posts')} value={format(tiktok?.videos.value)} />
+            </dl>
           ) : null}
         </PlatformRow>
       </div>

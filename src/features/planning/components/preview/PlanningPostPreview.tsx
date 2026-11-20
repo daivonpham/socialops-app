@@ -1,10 +1,13 @@
 import { useEffect } from 'react'
+import { useTikTokCreatorInfo } from '@/features/tiktok'
+import { useActiveBrand } from '@/shared/scope'
 import { useTranslation } from 'react-i18next'
 import { SocialAccountLabel } from '@/features/social-accounts'
 import { IconDesktop, IconMobile, Select, Tabs, Tooltip } from '@/shared/ui'
 import type { PlanningAccount } from '../../model'
 import {
   composerCaptionFor,
+  readTikTokSettings,
   type PlanningComposerDraft,
   type PreviewViewport,
 } from '../../model/composer'
@@ -36,6 +39,12 @@ export function PlanningPostPreview({
   }, [account, onPreviewAccountChange, previewAccountId])
 
   const caption = account ? composerCaptionFor(draft, account.id) : draft.caption
+  // Read from the cache the TikTok settings fill; TikTok shows the @username.
+  const { brandId } = useActiveBrand()
+  const creator = useTikTokCreatorInfo(
+    brandId,
+    draft.platform === 'tiktok' ? (account?.id ?? null) : null,
+  )
 
   return (
     <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border-subtle bg-bg-surface shadow-xs">
@@ -115,9 +124,25 @@ export function PlanningPostPreview({
             caption={caption}
             media={draft.media}
             viewport={viewport}
+            {...tiktokPreviewOptions(draft)}
+            handle={creator.data?.creatorUsername}
           />
         )}
       </div>
     </section>
   )
+}
+
+/** The photo title and the labels TikTok will show, from the post's TikTok settings. */
+export function tiktokPreviewOptions(draft: PlanningComposerDraft) {
+  const settings = readTikTokSettings(draft.platformSettings)
+  return {
+    title: draft.postType === 'tiktok_photo' ? settings.photoTitle : undefined,
+    labels: {
+      brandOrganic: settings.brandOrganic,
+      brandContent: settings.brandContent,
+      isAigc: settings.aiGenerated,
+      privateOnly: settings.mode === 'direct' && settings.privacyLevel === 'SELF_ONLY',
+    },
+  }
 }

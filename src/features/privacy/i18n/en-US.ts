@@ -52,7 +52,7 @@ We store the Page name, ID and picture, an encrypted Page access token, the Page
       },
       otherIntegrations: {
         title: 'Data from TikTok and Google',
-        body: `- TikTok: when you connect a TikTok account, we store an encrypted access token, the account's public profile, its videos and their statistics, and publish the videos you ask us to.
+        body: `- TikTok: when you connect a TikTok account, we request only what the features need: user.info.basic, user.info.profile and user.info.stats (name, username, picture, bio, verified badge and follower, following, like and video counts), video.list (the account's public videos and their view, like, comment and share counts), video.publish (post the videos and photos you ask us to) and, optionally, video.upload (send drafts to your TikTok inbox). We store an encrypted access token, the profile, the public videos and a daily record of their counts to draw the statistics over time. If you remove SocialOps in TikTok, TikTok tells us and we disconnect the account.
 - Google Sheets: when you export a report to Google Sheets, we ask for access only to the files SocialOps creates (drive.file). We cannot see the rest of your Google Drive.
 
 SocialOps's use and transfer of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements.`,

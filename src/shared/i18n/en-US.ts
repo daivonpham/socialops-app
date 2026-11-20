@@ -52,6 +52,16 @@ export const commonEnUS = {
     previousPage: 'Previous',
     nextPage: 'Next',
   },
+  analytics: {
+    dateRange: 'Date range',
+    quickRange: 'Quick range',
+    days: '{{count}} days',
+    lastDays: 'Last {{count}} days',
+    compare: 'Compare',
+    noCompare: 'No comparison',
+    previousPeriod: 'Previous period',
+    percentage: '{{value}}%',
+  },
   locales: {
     enUS: 'English (US)',
     viVN: 'Tiếng Việt',

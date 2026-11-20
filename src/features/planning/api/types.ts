@@ -125,6 +125,11 @@ export type PlanningPublication = {
   externalPostUrl?: string
   publishedAt?: string
   errorCode?: string
+  /**
+   * TikTok only: where TikTok is with the post (`started`, `processing`, `moderation`, `inbox`,
+   * `published`, `published_without_id`).
+   */
+  providerPhase?: string
   errorMessage?: string
   /** This Page's own first comment when every Page has its own caption. */
   firstComment?: string

@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useFacebookIntegration } from '@/features/facebook'
+import { useTikTokIntegration } from '@/features/tiktok'
 import { formatDate } from '@/shared/i18n'
 import { hasPermission, PERMISSIONS, usePermissions } from '@/shared/permissions'
 import { useActiveBrand } from '@/shared/scope'
@@ -47,6 +48,7 @@ export default function ReportsPage() {
   const [deleting, setDeleting] = useState(false)
   const reports = useReports(brandId, page, search.trim())
   const facebook = useFacebookIntegration(brandId)
+  const tiktok = useTikTokIntegration(brandId)
 
   const refresh = () => void queryClient.invalidateQueries({ queryKey: ['reports', brandId] })
 
@@ -213,7 +215,7 @@ export default function ReportsPage() {
         ) : null}
       </header>
 
-      {facebook.data?.state === 'disconnected' ? (
+      {facebook.data?.state === 'disconnected' && tiktok.data?.state === 'disconnected' ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border-subtle bg-bg-surface-subtle px-4 py-3">
           <p className="text-body-sm text-text-secondary">{t('noPages')}</p>
           <Link

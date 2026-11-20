@@ -70,6 +70,12 @@ const layoutChildren: RouteObject[] = [
     path: ROUTES.TIKTOK_OVERVIEW,
     lazy: async () => ({ Component: (await import('@/features/tiktok/pages/TikTokPage')).default }),
   },
+  {
+    path: ROUTES.TIKTOK_VIDEO_DETAIL,
+    lazy: async () => ({
+      Component: (await import('@/features/tiktok/pages/TikTokVideoDetailPage')).default,
+    }),
+  },
 
   {
     path: ROUTES.PLATFORM_OVERVIEW,

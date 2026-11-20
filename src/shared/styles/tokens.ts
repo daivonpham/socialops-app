@@ -71,7 +71,13 @@ export const color = {
    */
   accent: { 50: '#FBF5EF', 100: '#FBEBDC', 300: '#E9A45C', 500: '#D9822B', 700: '#A65A12' },
   /** Contextual identifiers only — never product-brand surfaces (design.md §3.6). */
-  platform: { facebook: '#1877F2', tiktok: '#111111' },
+  platform: {
+    facebook: '#1877F2',
+    tiktok: '#111111',
+    /** TikTok's own pink and cyan, only inside the TikTok post preview. */
+    tiktokPink: '#FE2C55',
+    tiktokCyan: '#25F4EE',
+  },
 } as const
 
 /** Semantic light-mode mapping — design.md §3.3. */

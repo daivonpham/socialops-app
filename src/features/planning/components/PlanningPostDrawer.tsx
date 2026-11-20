@@ -1,5 +1,9 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useTikTokCreatorInfo } from '@/features/tiktok'
+import { useActiveBrand } from '@/shared/scope'
+import { CodedError } from '@/shared/api/errors'
+import { useApiErrorMessage } from '@/shared/hooks'
 import { formatDateTime, getLocalTimeZone } from '@/shared/i18n'
 import { hasPermission, usePermissions } from '@/shared/permissions'
 import {
@@ -41,6 +45,7 @@ import {
 } from '../model'
 import { FacebookPostPreview } from './preview/FacebookPostPreview'
 import { TikTokPostPreview } from './preview/TikTokPostPreview'
+import { tiktokPreviewOptions } from './preview/PlanningPostPreview'
 import { CaptionClamp } from './CaptionClamp'
 import { PlanningStatusTag } from './PlanningStatusTag'
 import { ApprovalButtons } from './ApprovalStatusSelect'
@@ -545,6 +550,12 @@ function PlanningPostModalContent({
     platform: content.platform,
   }))
   const previewAccount = accounts.find((account) => account.id === selectedAccountId) ?? accounts[0]
+  // TikTok shows the @username; it comes with the creator info.
+  const { brandId: activeBrandId } = useActiveBrand()
+  const creator = useTikTokCreatorInfo(
+    activeBrandId,
+    content.platform === 'tiktok' ? (previewAccount?.id ?? null) : null,
+  )
   const previewPublication = content.publications?.find(
     (item) => item.socialAccountId === previewAccount?.id,
   )
@@ -765,6 +776,8 @@ function PlanningPostModalContent({
                   caption={previewCaption}
                   media={draft.media}
                   viewport={viewport}
+                  {...tiktokPreviewOptions(draft)}
+                  handle={creator.data?.creatorUsername}
                 />
               )}
             </div>
@@ -829,6 +842,11 @@ function AccountRow({
   onDismissEdit?: (publicationId: string) => void
 }) {
   const { t, i18n } = useTranslation('planning')
+  const errorMessage = useApiErrorMessage('planning')
+  const tiktokPhase =
+    publication?.providerPhase && TIKTOK_PHASES.includes(publication.providerPhase)
+      ? publication.providerPhase
+      : null
   return (
     <li className="min-w-0 space-y-3 py-4 first:pt-0 last:pb-0">
       <div className="flex min-w-0 items-center gap-2">
@@ -862,7 +880,10 @@ function AccountRow({
         </button>
         {publication ? (
           <div className="flex shrink-0 items-center gap-1">
-            {publication.status === 'published' && multipleAccounts && onDeletePublished ? (
+            {publication.status === 'published' &&
+            multipleAccounts &&
+            onDeletePublished &&
+            !publication.providerPhase ? (
               <Button
                 size="sm"
                 variant="ghost"
@@ -985,6 +1006,15 @@ function AccountRow({
           ) : null}
         </dl>
       ) : null}
+      {tiktokPhase && !publication?.errorCode ? (
+        <div
+          role="status"
+          className="flex items-center gap-3 rounded-lg border border-border-subtle bg-bg-surface-subtle p-3 text-caption text-text-secondary"
+        >
+          <IconTikTok aria-hidden className="shrink-0 text-icon-md text-platform-tiktok" />
+          <p>{t(`detail.tiktokPhase.${tiktokPhase as 'processing'}`)}</p>
+        </div>
+      ) : null}
       {publication?.errorCode && !['cancelled', 'deleted'].includes(publication.status) && (
         <div
           role="status"
@@ -994,7 +1024,9 @@ function AccountRow({
           <p>
             {publication.status === 'edit_unknown'
               ? t('detail.editUnknownReason')
-              : t(`detail.errorReason.${reasonKey(publication.errorCode)}`)}
+              : publication.errorCode.startsWith('TIKTOK_')
+                ? errorMessage(new CodedError(publication.errorCode), t('detail.errorReason.other'))
+                : t(`detail.errorReason.${reasonKey(publication.errorCode)}`)}
           </p>
         </div>
       )}
@@ -1033,6 +1065,9 @@ function accountStatusClass(status: PlanningPublication['status']): string {
   if (tone === 'info') return 'border-info-100 bg-info-50 text-info-700'
   return 'border-border-subtle bg-bg-surface-subtle text-text-secondary'
 }
+
+/** Steps TikTok goes through after SocialOps hands the post over; each has its own note. */
+const TIKTOK_PHASES = ['started', 'processing', 'moderation', 'inbox', 'published_without_id']
 
 function reasonKey(code: string | undefined) {
   if (

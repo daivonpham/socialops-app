@@ -1,5 +1,6 @@
 import { AUTH_ROUTES } from '@/features/auth/config/auth.routes'
 import { FACEBOOK_ROUTES } from '@/features/facebook/config/facebook.routes'
+import { TIKTOK_ROUTES } from '@/features/tiktok/config/tiktok.routes'
 import { LEGAL_ROUTES } from '@/features/privacy/config/legal'
 
 /** Single source of route paths — never hard-code path strings elsewhere. */
@@ -33,7 +34,8 @@ export const ROUTES = {
   PLATFORM_PLANNING_EDIT: '/platforms/:platform/planning/:contentId/edit',
   FACEBOOK_OVERVIEW: FACEBOOK_ROUTES.OVERVIEW,
   FACEBOOK_POST_DETAIL: FACEBOOK_ROUTES.POST_DETAIL,
-  TIKTOK_OVERVIEW: '/platforms/tiktok/overview',
+  TIKTOK_OVERVIEW: TIKTOK_ROUTES.OVERVIEW,
+  TIKTOK_VIDEO_DETAIL: TIKTOK_ROUTES.VIDEO_DETAIL,
   REPORTS: '/reports',
   REPORTS_NEW: '/reports/new',
   REPORTS_DETAIL: '/reports/:reportId',

@@ -55,7 +55,7 @@ Chúng tôi lưu tên, ID và ảnh của Trang, mã truy cập Trang đã mã h
       },
       otherIntegrations: {
         title: 'Dữ liệu từ TikTok và Google',
-        body: `- TikTok: khi bạn kết nối tài khoản TikTok, chúng tôi lưu mã truy cập đã mã hóa, hồ sơ công khai, các video và số liệu của tài khoản, và đăng những video bạn yêu cầu.
+        body: `- TikTok: khi bạn kết nối tài khoản TikTok, chúng tôi chỉ xin những quyền tính năng cần: user.info.basic, user.info.profile và user.info.stats (tên, username, ảnh đại diện, tiểu sử, dấu xác minh và số người theo dõi, đang theo dõi, lượt thích, số video), video.list (các video công khai cùng lượt xem, thích, bình luận, chia sẻ), video.publish (đăng video và bài ảnh bạn yêu cầu) và, không bắt buộc, video.upload (gửi bản nháp vào hộp thư TikTok của bạn). Chúng tôi lưu mã truy cập đã mã hóa, hồ sơ, các video công khai và bản ghi số liệu theo ngày để vẽ thống kê theo thời gian. Nếu bạn gỡ SocialOps trong TikTok, TikTok sẽ báo cho chúng tôi và tài khoản được ngắt kết nối.
 - Google Sheets: khi bạn xuất báo cáo sang Google Sheets, chúng tôi chỉ xin quyền truy cập các tệp do SocialOps tạo (drive.file). Chúng tôi không xem được phần còn lại trong Google Drive của bạn.
 
 Việc SocialOps sử dụng và chuyển giao thông tin nhận từ Google API tuân thủ Chính sách dữ liệu người dùng của Google API Services, bao gồm các yêu cầu về Giới hạn sử dụng (Limited Use).`,

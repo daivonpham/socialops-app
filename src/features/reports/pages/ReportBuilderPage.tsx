@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useFacebookIntegration } from '@/features/facebook'
+import { useTikTokIntegration } from '@/features/tiktok'
 import {
   connectGoogleInPopup,
   GOOGLE_QUERY_KEYS,
@@ -44,7 +45,7 @@ import {
 import type { ReportConfig, ReportMetricId, ReportRefresh } from '../api/types'
 import { ReportExportMenu, type ExportFormat } from '../components/ReportExportMenu'
 import { ReportFreshnessBar } from '../components/ReportFreshnessBar'
-import { ReportPagesPicker } from '../components/ReportPagesPicker'
+import { ReportPagesPicker, type ReportChannel } from '../components/ReportPagesPicker'
 import { ReportDataPreview } from '../components/ReportDataPreview'
 import { ReportSectionsEditor } from '../components/ReportSectionsEditor'
 import { ReportStepDots, ReportStepHeader, ReportStepper } from '../components/ReportStepper'
@@ -99,7 +100,24 @@ export default function ReportBuilderPage() {
   const facebook = useFacebookIntegration(brandId)
   const google = useGoogleConnection()
   const preview = useReportPreview(brandId, previewConfig, postsPage, name, step === 3)
-  const pages = (facebook.data?.pages ?? []).filter((page) => page.health !== 'disconnected')
+  const tiktok = useTikTokIntegration(brandId)
+  // Every channel the report can cover: Facebook Pages and TikTok accounts.
+  const pages: ReportChannel[] = [
+    ...(facebook.data?.pages ?? [])
+      .filter((page) => page.health !== 'disconnected')
+      .map((page) => ({
+        id: page.id,
+        name: page.name,
+        avatarUrl: page.avatarUrl,
+        platform: 'facebook' as const,
+      })),
+    ...(tiktok.data?.accounts ?? []).map((account) => ({
+      id: account.providerAccountId,
+      name: account.name,
+      avatarUrl: account.avatarUrl,
+      platform: 'tiktok' as const,
+    })),
+  ]
   const selectedPages = config.pageIds === 'all' ? pages.length : config.pageIds.length
   // CSV choices are exactly the tables the export contains.
 
@@ -629,7 +647,16 @@ export default function ReportBuilderPage() {
                 <ReportFreshnessBar
                   document={preview.data}
                   refresh={refresh}
-                  onRefresh={() => void startRefresh()}
+                  // Only Facebook keeps history to fetch again; TikTok channels sync on their own.
+                  onRefresh={
+                    pages.some(
+                      (page) =>
+                        page.platform === 'facebook' &&
+                        (config.pageIds === 'all' || config.pageIds.includes(page.id)),
+                    )
+                      ? () => void startRefresh()
+                      : undefined
+                  }
                 />
                 <ReportDataPreview
                   document={preview.data}

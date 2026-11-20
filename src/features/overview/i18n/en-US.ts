@@ -23,7 +23,6 @@ export const overviewEnUS = {
     notConnected: 'Not connected',
     viewDetails: 'View details',
     connect: 'Connect',
-    tiktokUnavailable: 'TikTok analytics are not available yet.',
     views: 'Views',
     interactions: 'Interactions',
     followers: 'Followers',

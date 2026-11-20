@@ -105,19 +105,101 @@ export function createComposerDraft(platform: PlanningPlatform): PlanningCompose
     scheduleMode: 'same_time',
     scheduledAt: '',
     accountSchedules: {},
-    platformSettings:
-      platform === 'facebook'
-        ? {}
-        : {
-            visibility: 'public',
-            allowComments: true,
-            allowDuet: true,
-            allowStitch: true,
-            commercialContent: false,
-            aiGeneratedContent: false,
-            coverFrame: '0',
-          },
+    // TikTok's guidelines: no default audience and no interaction ticked in advance.
+    platformSettings: platform === 'facebook' ? {} : { ...TIKTOK_DEFAULT_SETTINGS },
   }
+}
+
+export const TIKTOK_DEFAULT_SETTINGS: Record<string, boolean | string> = {
+  mode: 'direct',
+  privacyLevel: '',
+  allowComment: false,
+  allowDuet: false,
+  allowStitch: false,
+  commercialContent: false,
+  brandOrganic: false,
+  brandContent: false,
+  aiGenerated: false,
+  autoAddMusic: false,
+  coverTimestampMs: '',
+  photoCoverIndex: '0',
+  photoTitle: '',
+}
+
+export const TIKTOK_LIMITS = {
+  videoCaption: 2200,
+  photoTitle: 90,
+  photoDescription: 4000,
+  photos: 35,
+  /** TikTok takes JPEG and WebP photos only, up to 20 MB each. */
+  photoTypes: ['image/jpeg', 'image/webp'],
+  photoBytes: 20 * 1024 * 1024,
+  /** TikTok also takes MOV and WebM, but SocialOps stores MP4 videos only. */
+  videoTypes: ['video/mp4'],
+} as const
+
+const TIKTOK_PRIVACY = [
+  'PUBLIC_TO_EVERYONE',
+  'MUTUAL_FOLLOW_FRIENDS',
+  'FOLLOWER_OF_CREATOR',
+  'SELF_ONLY',
+] as const
+
+export type TikTokDraftSettings = {
+  mode: 'direct' | 'inbox'
+  privacyLevel: (typeof TIKTOK_PRIVACY)[number] | ''
+  allowComment: boolean
+  allowDuet: boolean
+  allowStitch: boolean
+  commercialContent: boolean
+  brandOrganic: boolean
+  brandContent: boolean
+  aiGenerated: boolean
+  autoAddMusic: boolean
+  coverTimestampMs?: number
+  photoCoverIndex: number
+  photoTitle: string
+}
+
+/** The TikTok options of a draft, read the way the API reads them. */
+export function readTikTokSettings(raw: Record<string, boolean | string>): TikTokDraftSettings {
+  const flag = (value: unknown) => value === true || value === 'true'
+  const privacy = String(raw.privacyLevel ?? '')
+  const cover = raw.coverTimestampMs === '' ? NaN : Number(raw.coverTimestampMs)
+  return {
+    mode: raw.mode === 'inbox' ? 'inbox' : 'direct',
+    privacyLevel: (TIKTOK_PRIVACY as readonly string[]).includes(privacy)
+      ? (privacy as TikTokDraftSettings['privacyLevel'])
+      : '',
+    allowComment: flag(raw.allowComment),
+    allowDuet: flag(raw.allowDuet),
+    allowStitch: flag(raw.allowStitch),
+    commercialContent: flag(raw.commercialContent),
+    brandOrganic: flag(raw.commercialContent) && flag(raw.brandOrganic),
+    brandContent: flag(raw.commercialContent) && flag(raw.brandContent),
+    aiGenerated: flag(raw.aiGenerated),
+    autoAddMusic: flag(raw.autoAddMusic),
+    coverTimestampMs: Number.isFinite(cover) && cover >= 0 ? cover : undefined,
+    photoCoverIndex: Math.max(0, Math.floor(Number(raw.photoCoverIndex) || 0)),
+    photoTitle: String(raw.photoTitle ?? ''),
+  }
+}
+
+/**
+ * What a TikTok post still needs before it can go out: an audience (TikTok has no default) and,
+ * with commercial content on, which kind. Drafts sent to the inbox skip both.
+ */
+export function tiktokMissingChoice(
+  draft: PlanningComposerDraft,
+): 'privacy' | 'commercial' | 'brandedPrivate' | null {
+  if (draft.platform !== 'tiktok') return null
+  const settings = readTikTokSettings(draft.platformSettings)
+  if (settings.mode === 'inbox') return null
+  if (!settings.privacyLevel) return 'privacy'
+  if (settings.commercialContent && !settings.brandOrganic && !settings.brandContent)
+    return 'commercial'
+  if (settings.brandContent && settings.privacyLevel === 'SELF_ONLY') return 'brandedPrivate'
+  return null
 }
 
 /** Per-Page captions only apply to a post with several Pages that has a caption at all. */
@@ -304,10 +386,7 @@ export function canSubmitComposer(
   return draft.targetIds.every((accountId) => Boolean(draft.accountSchedules[accountId]))
 }
 
-function hasValidContentForPostType(
-  draft: PlanningComposerDraft,
-  ignoreCaption = false,
-): boolean {
+function hasValidContentForPostType(draft: PlanningComposerDraft, ignoreCaption = false): boolean {
   if (draft.postType === 'facebook_feed') {
     if (draft.link.trim() && draft.media.length) return false
     if (draft.media.some((item) => item.type === 'video') && draft.media.length !== 1) return false
@@ -320,7 +399,11 @@ function hasValidContentForPostType(
     return draft.media.length === 1
   }
   if (draft.postType === 'tiktok_photo') {
-    return draft.media.length > 0 && draft.media.every((media) => media.type === 'image')
+    return (
+      draft.media.length > 0 &&
+      draft.media.length <= TIKTOK_LIMITS.photos &&
+      draft.media.every((media) => media.type === 'image')
+    )
   }
   return false
 }

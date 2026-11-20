@@ -215,6 +215,7 @@ export const errorsEnUS = {
 
     // TikTok
     TIKTOK_NOT_CONFIGURED: 'TikTok is not configured.',
+    TIKTOK_OAUTH_CANCELLED: 'TikTok connection was cancelled.',
     TIKTOK_OAUTH_FAILED: 'TikTok sign-in failed. Please try again.',
     TIKTOK_PERMISSION_MISSING: 'TikTok publishing permission was not granted.',
     TIKTOK_TOKEN_EXPIRED: 'The TikTok connection expired. Reconnect TikTok.',
@@ -227,5 +228,37 @@ export const errorsEnUS = {
     TIKTOK_OUTCOME_UNKNOWN: 'TikTok did not confirm the result. Check the post on TikTok.',
     TIKTOK_REQUEST_FAILED: 'TikTok rejected the request.',
     TIKTOK_INVALID_RESPONSE: 'TikTok returned an invalid response.',
+    TIKTOK_DAILY_POST_LIMIT:
+      'This TikTok account reached its daily posting limit. Try again tomorrow or post in the TikTok app.',
+    TIKTOK_POSTING_BANNED: 'TikTok does not let this account post right now.',
+    TIKTOK_ACTIVE_USER_CAP:
+      'SocialOps reached the number of accounts TikTok lets it post for today. Try again tomorrow.',
+    TIKTOK_UNAUDITED_PRIVATE_ONLY:
+      'Until TikTok approves SocialOps, posts can only go to private accounts and stay private.',
+    TIKTOK_MEDIA_URL_UNVERIFIED: 'The media domain is not verified with TikTok yet.',
+    TIKTOK_PRIVACY_LEVEL_INVALID:
+      'The chosen audience is no longer available for this TikTok account. Choose again.',
+    TIKTOK_PENDING_SHARE_LIMIT:
+      'Too many drafts are waiting in the TikTok inbox. Finish some in the app first.',
+    TIKTOK_APP_VERSION_TOO_OLD: 'Update the TikTok app to receive photo drafts.',
+    TIKTOK_POST_FILE_FORMAT: 'TikTok does not accept this file format.',
+    TIKTOK_POST_DURATION: 'The video is too short or too long for this TikTok account.',
+    TIKTOK_POST_FRAME_RATE: 'TikTok takes videos of 23 to 60 frames per second.',
+    TIKTOK_POST_PICTURE_SIZE: 'TikTok does not accept this picture or video size.',
+    TIKTOK_POST_PULL_FAILED: 'TikTok could not download the files. Try again.',
+    TIKTOK_POST_CANCELLED: 'The TikTok post was cancelled.',
+    TIKTOK_POST_AUTH_REMOVED:
+      'The account removed SocialOps in TikTok while the post was processing.',
+    TIKTOK_POST_SPAM_TEXT: 'TikTok flagged the caption as spam. Change it and try again.',
+    TIKTOK_POST_SPAM: 'TikTok flagged the post as risky.',
+    TIKTOK_POST_INTERNAL: 'TikTok failed to process the post. Try again.',
+    TIKTOK_PROCESSING_TIMEOUT: 'TikTok is taking too long. Check the post in the TikTok app.',
+    TIKTOK_WEBHOOK_SIGNATURE_INVALID: 'The TikTok notification could not be verified.',
+    TIKTOK_PHOTOS_REQUIRED: 'A TikTok photo post needs 1 to 35 photos.',
+    TIKTOK_CAPTION_TOO_LONG: 'The TikTok caption, title or description is too long.',
+    TIKTOK_PRIVACY_REQUIRED: 'Choose who can view the TikTok post.',
+    TIKTOK_COMMERCIAL_CHOICE_REQUIRED: 'Choose Your brand, Branded content or both.',
+    TIKTOK_BRANDED_PRIVATE: 'Branded content cannot be private on TikTok.',
+    TIKTOK_PUBLISHING_DISABLED: 'TikTok posting is not turned on yet. You can still save drafts.',
   },
 } as const

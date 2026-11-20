@@ -26,7 +26,6 @@ export const overviewViVN = {
     notConnected: 'Chưa kết nối',
     viewDetails: 'Xem chi tiết',
     connect: 'Kết nối',
-    tiktokUnavailable: 'Chưa hỗ trợ số liệu TikTok.',
     views: 'Lượt xem',
     interactions: 'Tương tác',
     followers: 'Người theo dõi',
