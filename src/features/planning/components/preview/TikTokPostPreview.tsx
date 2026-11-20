@@ -55,6 +55,7 @@ export function TikTokPostPreview({
   sound,
   fit = 'contain',
   handle: username,
+  coverTimeMs,
 }: {
   account?: PlanningAccount
   caption: string
@@ -74,6 +75,8 @@ export function TikTokPostPreview({
   fit?: 'contain' | 'cover'
   /** The account's @username; TikTok shows it, not the display name. */
   handle?: string
+  /** The video's cover frame: shown while the video is paused. */
+  coverTimeMs?: number
 }) {
   const handle = username ?? account?.name ?? 'tiktok_account'
   const name = account?.name ?? 'TikTok'
@@ -81,7 +84,7 @@ export function TikTokPostPreview({
   const soundLine = sound ?? `original sound - ${handle}`
 
   const screen = (
-    <Screen media={media} fit={fit}>
+    <Screen media={media} fit={fit} coverTimeMs={coverTimeMs}>
       {viewport === 'mobile' ? <MobileTopBar /> : null}
       <Overlay
         handle={handle}
@@ -129,10 +132,12 @@ export function TikTokPostPreview({
 function Screen({
   media,
   fit,
+  coverTimeMs,
   children,
 }: {
   media: ComposerMedia[]
   fit: 'contain' | 'cover'
+  coverTimeMs?: number
   children: ReactNode
 }) {
   const playback = usePreviewPlayback()
@@ -151,6 +156,7 @@ function Screen({
           className="h-full w-full object-cover"
           progressPosition="bottom"
           onPlayingChange={playback?.report}
+          {...(coverTimeMs === undefined ? {} : { posterTime: coverTimeMs / 1000 })}
         />
       ) : photos.length ? (
         <>

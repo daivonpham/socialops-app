@@ -7,6 +7,8 @@ export type VideoPreviewProps = {
   className?: string
   progressPosition?: 'top' | 'bottom'
   onPlayingChange?: (playing: boolean) => void
+  /** Second shown while the video is paused, such as a chosen cover frame. */
+  posterTime?: number
 }
 
 export type VideoPreviewHandle = {
@@ -15,7 +17,7 @@ export type VideoPreviewHandle = {
 }
 
 export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(function VideoPreview(
-  { src, className, progressPosition = 'bottom', onPlayingChange },
+  { src, className, progressPosition = 'bottom', onPlayingChange, posterTime },
   ref,
 ) {
   const { t } = useTranslation('common')
@@ -30,6 +32,21 @@ export const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(fu
     setCurrentTime(0)
     setDuration(0)
   }, [src])
+
+  // A paused video moves to the chosen frame, once its length is known.
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video || posterTime === undefined || !video.paused) return
+    const seek = () => {
+      video.currentTime = posterTime
+    }
+    if (video.readyState >= HTMLMediaElement.HAVE_METADATA) {
+      seek()
+      return
+    }
+    video.addEventListener('loadedmetadata', seek, { once: true })
+    return () => video.removeEventListener('loadedmetadata', seek)
+  }, [posterTime, src])
 
   const togglePlayback = () => {
     if (!videoRef.current) return

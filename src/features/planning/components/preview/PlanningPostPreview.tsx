@@ -138,6 +138,11 @@ export function tiktokPreviewOptions(draft: PlanningComposerDraft) {
   const settings = readTikTokSettings(draft.platformSettings)
   return {
     title: draft.postType === 'tiktok_photo' ? settings.photoTitle : undefined,
+    // Only a direct video post takes a cover frame; the preview shows it while paused.
+    coverTimeMs:
+      draft.postType === 'tiktok_video' && settings.mode === 'direct'
+        ? settings.coverTimestampMs
+        : undefined,
     labels: {
       brandOrganic: settings.brandOrganic,
       brandContent: settings.brandContent,

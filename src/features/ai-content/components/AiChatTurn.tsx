@@ -28,6 +28,7 @@ import {
   type AiAvailability,
   type AiGeneration,
   type AiPartialSuggestion,
+  type AiPlatform,
   type AiPostIntent,
   type AiLiveText,
   type AiTemplateOption,
@@ -49,7 +50,7 @@ export type AiTurnActions = {
    * for a retry of the same edit. Resolves true once it is sent.
    */
   onResend: (turn: AiGeneration, text: string, key: string) => Promise<boolean>
-  onOpenContent: (contentId: string) => void
+  onOpenContent: (contentId: string, platform: AiPlatform) => void
 }
 
 /** What the person asked, as it reads in the chat. */
@@ -535,7 +536,7 @@ function SuggestionCard({
               <IconCheck aria-hidden />
               {t('chat.used')}
             </span>
-            <ActionButton icon={<IconOpen />} onClick={() => actions.onOpenContent(used)}>
+            <ActionButton icon={<IconOpen />} onClick={() => actions.onOpenContent(used, turn.platform)}>
               {t('progress.open')}
             </ActionButton>
           </>
@@ -544,13 +545,16 @@ function SuggestionCard({
             <ActionButton primary icon={<IconCheck />} onClick={() => actions.onUse(turn)}>
               {t('chat.use')}
             </ActionButton>
-            <PostButton
-              turn={turn}
-              pages={pages}
-              canPublishDirect={canPublishDirect}
-              busy={busy}
-              onPost={actions.onPost}
-            />
+            {/* A TikTok post is set up on the post screen, which "Use" opens. */}
+            {turn.platform === 'facebook' ? (
+              <PostButton
+                turn={turn}
+                pages={pages}
+                canPublishDirect={canPublishDirect}
+                busy={busy}
+                onPost={actions.onPost}
+              />
+            ) : null}
             <ActionButton
               icon={<IconEdit />}
               disabled={busy || editing}
@@ -766,7 +770,7 @@ function AssistantMessage({
           </p>
         ) : null}
         <div>
-          <ActionButton icon={<IconOpen />} onClick={() => actions.onOpenContent(contentId)}>
+          <ActionButton icon={<IconOpen />} onClick={() => actions.onOpenContent(contentId, turn.platform)}>
             {t('progress.open')}
           </ActionButton>
         </div>

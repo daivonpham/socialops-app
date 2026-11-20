@@ -126,6 +126,27 @@ describe('per-account captions', () => {
     ).toEqual(['page-a', 'page-b'])
   })
 
+  it('fills a TikTok post from an AI suggestion, a photo post when it has images', () => {
+    const images = [{ id: 'img-1', url: 'https://files.test/1', name: 'ai-1' }]
+    const photo = createComposerDraftFromAiSuggestion(
+      { platform: 'tiktok', socialAccountIds: ['tt-1'], captions: { 'tt-1': 'Hi' }, images },
+      ['tt-1'],
+    )
+    expect(photo).toMatchObject({
+      platform: 'tiktok',
+      postType: 'tiktok_photo',
+      targetIds: ['tt-1'],
+      caption: 'Hi',
+      platformSettings: { privacyLevel: '' },
+    })
+    expect(
+      createComposerDraftFromAiSuggestion(
+        { platform: 'tiktok', socialAccountIds: ['tt-1'], captions: {}, images: [] },
+        ['tt-1'],
+      ).postType,
+    ).toBe('tiktok_video')
+  })
+
   it('fills the caption of a suggestion made without Pages and leaves the Pages to pick', () => {
     expect(
       createComposerDraftFromAiSuggestion(

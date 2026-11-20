@@ -20,8 +20,8 @@ const AVAILABLE: AiAvailability = {
   canPublishDirect: true,
   canManageChannels: true,
   pages: [
-    { id: 'page-a', name: 'Page A' },
-    { id: 'page-b', name: 'Page B' },
+    { id: 'page-a', name: 'Page A', platform: 'facebook' },
+    { id: 'page-b', name: 'Page B', platform: 'facebook' },
   ],
   hasProfile: true,
   needsOnboarding: false,
@@ -41,6 +41,7 @@ const turn = (overrides: Partial<AiGeneration> = {}): AiGeneration => ({
   brief: { topic: 'New cold brew' },
   templateKey: null,
   socialAccountIds: ['page-a'],
+  platform: 'facebook',
   autoSubmit: false,
   attachments: [],
   suggestion: {
@@ -105,7 +106,7 @@ function mockApi(availability: Partial<AiAvailability> = {}, conversation?: () =
   )
 }
 
-function renderButton() {
+function renderButton(platform: 'facebook' | 'tiktok' = 'facebook') {
   const onOpenContent = vi.fn()
   const onCreated = vi.fn()
   const onUseSuggestion = vi.fn()
@@ -115,6 +116,7 @@ function renderButton() {
       element: (
         <AiCreateButton
           brandId="brand-1"
+          platform={platform}
           onOpenContent={onOpenContent}
           onUseSuggestion={onUseSuggestion}
           onCreated={onCreated}
@@ -133,7 +135,7 @@ async function openDialog(user: ReturnType<typeof userEvent.setup>) {
 
 /** Opens the Pages row, which starts folded, and ticks a Page. */
 async function pickPage(user: ReturnType<typeof userEvent.setup>, name: string) {
-  await user.click(await screen.findByRole('button', { name: /Pages to post to/ }))
+  await user.click(await screen.findByRole('button', { name: /Post to:/ }))
   await user.click(await screen.findByRole('checkbox', { name }))
 }
 
@@ -186,6 +188,7 @@ describe('AiCreateButton', () => {
     expect(await within(dialog).findByText('Writing the content')).toBeInTheDocument()
     expect(body).toEqual({
       socialAccountIds: ['page-a'],
+      platform: 'facebook',
       brief: { topic: 'New cold brew' },
       autoSubmit: false,
     })
@@ -201,6 +204,7 @@ describe('AiCreateButton', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Use' }))
     expect(onUseSuggestion).toHaveBeenCalledWith({
       generationId: 'gen-1',
+      platform: 'facebook',
       socialAccountIds: ['page-a'],
       captions: { 'page-a': 'Cold brew is here', 'page-b': 'Cold brew for B' },
       images: [{ id: 'img-1', name: 'ai-1', url: 'https://files.test/ai-1' }],
@@ -341,7 +345,7 @@ describe('AiCreateButton', () => {
     let dialog = await openDialog(user)
     // With Pages already chosen, their row starts folded and names them.
     await user.click(
-      await within(dialog).findByRole('button', { name: /Pages to post to: Page B$/ }),
+      await within(dialog).findByRole('button', { name: /Post to: Page B$/ }),
     )
     expect(screen.getByRole('checkbox', { name: 'Page B' })).toBeChecked()
     expect(screen.getByRole('checkbox', { name: 'Page A' })).not.toBeChecked()
@@ -350,7 +354,7 @@ describe('AiCreateButton', () => {
     await user.click(within(dialog).getByRole('button', { name: /close/i }))
     dialog = await openDialog(user)
     expect(
-      await within(dialog).findByRole('button', { name: /Pages to post to: Page A, Page B$/ }),
+      await within(dialog).findByRole('button', { name: /Post to: Page A, Page B$/ }),
     ).toBeInTheDocument()
     expect(
       JSON.parse(window.localStorage.getItem('socialops.ai-pages.user-1.brand-1') ?? '[]'),
@@ -382,7 +386,7 @@ describe('AiCreateButton', () => {
     expect(await within(dialog).findByText('Used')).toBeInTheDocument()
     expect(within(dialog).queryByRole('button', { name: 'Use' })).not.toBeInTheDocument()
     await user.click(within(dialog).getByRole('button', { name: 'Open post' }))
-    expect(onOpenContent).toHaveBeenCalledWith('content-1')
+    expect(onOpenContent).toHaveBeenCalledWith('content-1', 'facebook')
   })
 
   it('lets someone who needs approval only send the suggestion for approval', async () => {
@@ -408,8 +412,8 @@ describe('AiCreateButton', () => {
     mockApi(
       {
         pages: [
-          { id: 'page-a', name: 'Page A' },
-          { id: 'page-b', name: 'Page B', avatarUrl: url },
+          { id: 'page-a', name: 'Page A', platform: 'facebook' },
+          { id: 'page-b', name: 'Page B', platform: 'facebook', avatarUrl: url },
         ],
       },
       () => chat([turn({ socialAccountIds: ['page-a', 'page-b'] })]),
@@ -491,7 +495,7 @@ describe('AiCreateButton', () => {
     const dialog = await openDialog(user)
     expect(await within(dialog).findByText('Sent for approval')).toBeInTheDocument()
     await user.click(within(dialog).getByRole('button', { name: 'Open post' }))
-    expect(onOpenContent).toHaveBeenCalledWith('content-1')
+    expect(onOpenContent).toHaveBeenCalledWith('content-1', 'facebook')
   })
 
   it('marks the images the customer sent and names the files the AI could not read', async () => {
@@ -740,7 +744,12 @@ describe('AiCreateButton', () => {
     await user.type(area, '{Enter}')
     await waitFor(() =>
       expect(bodies).toEqual([
-        { socialAccountIds: [], brief: { topic: 'Cold\nbrew' }, autoSubmit: false },
+        {
+          socialAccountIds: [],
+          platform: 'facebook',
+          brief: { topic: 'Cold\nbrew' },
+          autoSubmit: false,
+        },
       ]),
     )
   })
@@ -768,6 +777,7 @@ describe('AiCreateButton', () => {
     await waitFor(() =>
       expect(body).toEqual({
         socialAccountIds: [],
+        platform: 'facebook',
         brief: { topic: 'Cold brew' },
         autoSubmit: false,
       }),
@@ -798,7 +808,7 @@ describe('AiCreateButton', () => {
       const card = dialog.querySelector<HTMLElement>('[data-turn-card]')!
       expect(card.querySelector('.text-label-sm')).toBeNull()
       await user.click(within(dialog).getByRole('button', { name: 'Publish now' }))
-      const title = await screen.findByText('Pick Pages to post to')
+      const title = await screen.findByText('Pick accounts to post to')
       const popup = title.parentElement!
       const confirmPick = within(popup).getByRole('button', { name: 'Publish now' })
       expect(confirmPick).toBeDisabled()
@@ -816,7 +826,7 @@ describe('AiCreateButton', () => {
 
     it('goes to the only Page without asking', async () => {
       window.localStorage.setItem(CHAT_KEY, 'conv-1')
-      mockApi({ pages: [{ id: 'page-a', name: 'Page A' }], canPublishDirect: false }, () =>
+      mockApi({ pages: [{ id: 'page-a', name: 'Page A', platform: 'facebook' }], canPublishDirect: false }, () =>
         chat([general()]),
       )
       let body: unknown
@@ -832,7 +842,7 @@ describe('AiCreateButton', () => {
       await waitFor(() =>
         expect(body).toEqual({ intent: 'approval_publish_now', socialAccountIds: ['page-a'] }),
       )
-      expect(screen.queryByText('Pick Pages to post to')).not.toBeInTheDocument()
+      expect(screen.queryByText('Pick accounts to post to')).not.toBeInTheDocument()
     })
 
     it('hands the post screen one caption and lets it ask for the Pages', async () => {
@@ -843,6 +853,7 @@ describe('AiCreateButton', () => {
       await user.click(await within(dialog).findByRole('button', { name: 'Use' }))
       expect(onUseSuggestion).toHaveBeenCalledWith({
         generationId: 'gen-1',
+        platform: 'facebook',
         socialAccountIds: [],
         captions: {},
         generalCaption: 'Cold brew for all',
@@ -1034,7 +1045,7 @@ describe('AiCreateButton', () => {
   })
 
   it('uses the only Page without asking, and folds the left column to icons', async () => {
-    mockApi({ pages: [{ id: 'page-a', name: 'Page A' }] })
+    mockApi({ pages: [{ id: 'page-a', name: 'Page A', platform: 'facebook' }] })
     let body: { socialAccountIds?: string[] } = {}
     server.use(
       http.post('*/brands/brand-1/ai/generations', async ({ request }) => {
@@ -1064,10 +1075,10 @@ describe('AiCreateButton', () => {
     expect(within(steps).queryByText('(done)')).not.toBeInTheDocument()
 
     // The second step opens the Pages row, and picking a Page ticks it.
-    await user.click(within(steps).getByRole('button', { name: /Choose Pages to post to/ }))
+    await user.click(within(steps).getByRole('button', { name: /Choose accounts to post to/ }))
     await user.click(await screen.findByRole('checkbox', { name: 'Page A' }))
     expect(
-      within(steps).getByRole('button', { name: /Choose Pages to post to.*done/ }),
+      within(steps).getByRole('button', { name: /Choose accounts to post to.*done/ }),
     ).toBeInTheDocument()
 
     await user.click(within(steps).getByRole('button', { name: /Send your first request/ }))
@@ -1242,5 +1253,27 @@ describe('AiCreateButton', () => {
     expect(created.map((file) => file.name)).toEqual(['photo.png', 'brief.pdf'])
     Reflect.deleteProperty(URL, 'createObjectURL')
     Reflect.deleteProperty(URL, 'revokeObjectURL')
+  })
+
+  it('on TikTok offers only TikTok accounts, and opens the TikTok post screen instead of posting', async () => {
+    window.localStorage.setItem(CHAT_KEY, 'conv-1')
+    mockApi(
+      {
+        pages: [
+          { id: 'page-a', name: 'Page A', platform: 'facebook' },
+          { id: 'tt-1', name: 'TikTok One', platform: 'tiktok' },
+        ],
+      },
+      () => chat([turn({ socialAccountIds: ['tt-1'], platform: 'tiktok' })]),
+    )
+    const { user, onUseSuggestion } = renderButton('tiktok')
+    const dialog = await openDialog(user)
+
+    await within(dialog).findByRole('button', { name: 'Use' })
+    expect(within(dialog).queryByRole('button', { name: 'Publish now' })).not.toBeInTheDocument()
+    await user.click(within(dialog).getByRole('button', { name: 'Use' }))
+    expect(onUseSuggestion).toHaveBeenCalledWith(
+      expect.objectContaining({ platform: 'tiktok', socialAccountIds: ['tt-1'] }),
+    )
   })
 })

@@ -103,8 +103,8 @@ export default function CreatePlanningPostPage() {
   const requestedPostType = isEditing
     ? null
     : getRequestedPostType(searchParams.get('postType'), platform)
-  const aiSuggestion =
-    isEditing || platform !== 'facebook' ? null : readAiSuggestion(location.state)
+  const suggested = isEditing ? null : readAiSuggestion(location.state)
+  const aiSuggestion = (suggested?.platform ?? 'facebook') === platform ? suggested : null
   const accountsQuery = usePlanningAccounts(brandId)
   const contentQuery = usePlanningContent(brandId, contentId ?? null)
   const planningPath = getPlanningPath(platform)

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ClickWave } from '@/shared/ui'
-import { useAiAvailability, type AiSuggestionHandoff } from '../api'
+import { useAiAvailability, type AiPlatform, type AiSuggestionHandoff } from '../api'
 import { AiCreateModal } from './AiCreateModal'
 import { AiMark } from './AiMark'
 
@@ -11,6 +11,7 @@ import { AiMark } from './AiMark'
  */
 export function AiCreateButton({
   brandId,
+  platform,
   defaultPageId,
   onOpenContent,
   onUseSuggestion,
@@ -18,8 +19,10 @@ export function AiCreateButton({
   className = '',
 }: {
   brandId: string | null
+  /** The network the post is for: the dialog offers only its accounts. */
+  platform: AiPlatform
   defaultPageId?: string
-  onOpenContent: (contentId: string) => void
+  onOpenContent: (contentId: string, platform: AiPlatform) => void
   /** "Use" on a suggestion: open the post screen filled with it. */
   onUseSuggestion: (suggestion: AiSuggestionHandoff) => void
   onCreated: () => void
@@ -55,11 +58,12 @@ export function AiCreateButton({
       {open ? (
         <AiCreateModal
           brandId={brandId}
+          platform={platform}
           availability={data}
           defaultPageId={defaultPageId}
-          onOpenContent={(contentId) => {
+          onOpenContent={(contentId, platform) => {
             setOpen(false)
-            onOpenContent(contentId)
+            onOpenContent(contentId, platform)
           }}
           onUseSuggestion={(suggestion) => {
             setOpen(false)

@@ -36,6 +36,7 @@ import {
   useRenameAiConversation,
   type AiAvailability,
   type AiConversationSummary,
+  type AiPlatform,
 } from '../api'
 import { AiCreditsMeter, AiCreditsRail } from './AiCreditsMeter'
 import { AiMark } from './AiMark'
@@ -254,7 +255,7 @@ function OptionSwitch({
   return (
     <label
       className={
-        'flex h-[44px] items-center gap-3 rounded-lg ps-4 pe-3 ' +
+        'flex min-h-[44px] items-center gap-3 rounded-lg py-2 ps-4 pe-3 ' +
         (disabled ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-bg-surface')
       }
     >
@@ -277,10 +278,12 @@ function OptionsMenu({
   compact,
   open,
   onToggle,
+  platform,
 }: {
   compact: boolean
   open: boolean
   onToggle: () => void
+  platform: AiPlatform
 }) {
   const { t } = useTranslation('aiContent')
   const form = Form.useFormInstance()
@@ -317,8 +320,15 @@ function OptionsMenu({
         name="autoSubmit"
         icon={<IconSendLine />}
         label={t('form.autoSubmit')}
-        hint={noPages ? t('form.autoSubmitNeedsPage') : undefined}
-        disabled={noPages}
+        hint={
+          // TikTok wants who can see the post and its interactions chosen on the post screen.
+          platform === 'tiktok'
+            ? t('form.autoSubmitTikTok')
+            : noPages
+              ? t('form.autoSubmitNeedsPage')
+              : undefined
+        }
+        disabled={noPages || platform === 'tiktok'}
       />
     </MenuSection>
   )
@@ -842,6 +852,7 @@ function ChatList({
  */
 export function AiSidebar({
   brandId,
+  platform,
   pages,
   hasProfile,
   historyDays,
@@ -858,6 +869,7 @@ export function AiSidebar({
   phoneOpen = false,
 }: {
   brandId: string
+  platform: AiPlatform
   pages: Pages
   hasProfile: boolean
   historyDays: number
@@ -898,7 +910,12 @@ export function AiSidebar({
     </Form.Item>
   )
   const optionsField = (
-    <OptionsMenu compact={collapsed} open={openRow === 'options'} onToggle={toggleRow('options')} />
+    <OptionsMenu
+      compact={collapsed}
+      open={openRow === 'options'}
+      onToggle={toggleRow('options')}
+      platform={platform}
+    />
   )
 
   if (collapsed)

@@ -451,8 +451,8 @@ export const planningViVN = {
       consentMusic: 'Khi đăng, bạn đồng ý với <music>Xác nhận sử dụng nhạc</music> của TikTok.',
       consentBranded:
         'Khi đăng, bạn đồng ý với <branded>Chính sách nội dung có thương hiệu</branded> và <music>Xác nhận sử dụng nhạc</music> của TikTok.',
-      photoRejected_one: 'Đã bỏ {{count}} tệp: TikTok chỉ nhận ảnh JPEG hoặc WebP tối đa 20 MB.',
-      photoRejected_other: 'Đã bỏ {{count}} tệp: TikTok chỉ nhận ảnh JPEG hoặc WebP tối đa 20 MB.',
+      photoRejected_one: 'Đã bỏ {{count}} tệp: TikTok chỉ nhận ảnh JPEG, PNG hoặc WebP tối đa 20 MB.',
+      photoRejected_other: 'Đã bỏ {{count}} tệp: TikTok chỉ nhận ảnh JPEG, PNG hoặc WebP tối đa 20 MB.',
       videoRejected_one: 'Đã bỏ {{count}} tệp: SocialOps chỉ đăng video MP4 lên TikTok.',
       videoRejected_other: 'Đã bỏ {{count}} tệp: SocialOps chỉ đăng video MP4 lên TikTok.',
     },

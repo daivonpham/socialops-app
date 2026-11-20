@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ClipboardEvent,
@@ -40,6 +41,7 @@ import {
   useStartAiGeneration,
   type AiAvailability,
   type AiGeneration,
+  type AiPlatform,
   type AiPostIntent,
   type AiSuggestionHandoff,
   type AiTemplateOption,
@@ -81,6 +83,11 @@ const FLASH_CLASS = 'ai-turn-flash'
 const FLASH_MS = 1800
 const soleOf = (pages: AiAvailability['pages']): string[] =>
   pages.length === 1 ? [pages[0]!.id] : []
+const initialPageOf = (
+  pages: AiAvailability['pages'],
+  defaultPageId: string | undefined,
+): AiAvailability['pages'][number] | undefined =>
+  pages.length === 1 ? pages[0] : pages.find((page) => page.id === defaultPageId)
 const unfinished = (turn: AiGeneration): boolean =>
   turn.status === 'queued' || turn.status === 'running'
 
@@ -91,6 +98,7 @@ const unfinished = (turn: AiGeneration): boolean =>
  */
 export function AiCreateModal({
   brandId,
+  platform,
   availability,
   defaultPageId,
   onOpenContent,
@@ -99,9 +107,11 @@ export function AiCreateModal({
   onClose,
 }: {
   brandId: string
+  /** The network the post is for: only its accounts are offered. */
+  platform: AiPlatform
   availability: AiAvailability
   defaultPageId?: string
-  onOpenContent: (contentId: string) => void
+  onOpenContent: (contentId: string, platform: AiPlatform) => void
   onUseSuggestion: (suggestion: AiSuggestionHandoff) => void
   onCreated: () => void
   onClose: () => void
@@ -138,7 +148,14 @@ export function AiCreateModal({
   const flashTimer = useRef<number | undefined>(undefined)
   const composer = useRef<HTMLDivElement>(null)
   const statuses = useRef(new Map<string, AiGeneration['status']>())
-  const { pages } = availability
+  const pages = useMemo(
+    () => availability.pages.filter((page) => page.platform === platform),
+    [availability.pages, platform],
+  )
+  // The first-run profile reads a Facebook Page's posts, so it needs one.
+  const onboardingPage =
+    (platform === 'facebook' ? initialPageOf(pages, defaultPageId) : undefined) ??
+    availability.pages.find((page) => page.platform === 'facebook')
   const turns = chat.data?.turns ?? []
   const working = turns.some(unfinished)
   const template = templates.data?.find((item) => item.key === templateKey)
@@ -146,8 +163,7 @@ export function AiCreateModal({
   // With a template's own fields to fill, the composer only adds detail.
   const topicRequired = extraFields.length === 0 || editing !== null
   // One Page is simply used; otherwise the Page Planning is filtered to, or none yet.
-  const initialPage =
-    pages.length === 1 ? pages[0] : pages.find((page) => page.id === defaultPageId)
+  const initialPage = initialPageOf(pages, defaultPageId)
   // Without either, the Pages chosen last time, of those still usable.
   const [rememberedPages] = useState(() =>
     readChosenPages(user?.id, brandId).filter((id) => pages.some((page) => page.id === id)),
@@ -264,6 +280,7 @@ export function AiCreateModal({
           brandId,
           idempotencyKey: requestKey,
           socialAccountIds: values.pageIds,
+          platform,
           ...(templateKey ? { templateKey } : {}),
           brief: Object.fromEntries(
             [TOPIC_KEY, ...extraFields.map((field) => field.key)].map((key) => [
@@ -271,7 +288,7 @@ export function AiCreateModal({
               values.brief?.[key]?.trim() ?? '',
             ]),
           ),
-          autoSubmit: values.autoSubmit,
+          autoSubmit: platform === 'facebook' && values.autoSubmit,
           ...(conversationId ? { conversationId } : {}),
           ...(attachments.readyIds.length ? { attachmentIds: attachments.readyIds } : {}),
         })
@@ -351,10 +368,15 @@ export function AiCreateModal({
     onUse: (turn) => {
       const captions = turn.suggestion?.captions ?? {}
       const general = turn.socialAccountIds.length ? undefined : captions[AI_GENERAL_CAPTION_KEY]
-      // Made without Pages: one Page is simply used, and with several the post screen asks.
-      const ids = general === undefined ? turn.socialAccountIds : soleOf(pages)
+      // Made without Pages: one Page is simply used, and with several the post screen asks. An
+      // earlier turn of the chat may be for the other network.
+      const ids =
+        general === undefined
+          ? turn.socialAccountIds
+          : soleOf(availability.pages.filter((page) => page.platform === turn.platform))
       onUseSuggestion({
         generationId: turn.id,
+        platform: turn.platform,
         socialAccountIds: ids,
         captions:
           general === undefined ? captions : Object.fromEntries(ids.map((id) => [id, general])),
@@ -389,9 +411,10 @@ export function AiCreateModal({
           brandId,
           idempotencyKey: key,
           socialAccountIds: values.pageIds,
+          platform,
           ...(turn.templateKey ? { templateKey: turn.templateKey } : {}),
           brief: { ...turn.brief, [TOPIC_KEY]: text },
-          autoSubmit: values.autoSubmit,
+          autoSubmit: platform === 'facebook' && values.autoSubmit,
           ...(conversationId ? { conversationId } : {}),
           ...(turn.attachments.length
             ? { attachmentIds: turn.attachments.map((file) => file.id) }
@@ -518,10 +541,10 @@ export function AiCreateModal({
               )}
             />
           </div>
-        ) : availability.needsOnboarding && !onboarded ? (
+        ) : availability.needsOnboarding && !onboarded && onboardingPage ? (
           <AiOnboarding
             brandId={brandId}
-            pageId={(initialPage ?? pages[0]).id}
+            pageId={onboardingPage.id}
             onFinished={(startedChat) => {
               setOnboarded(true)
               if (startedChat) setConversationId(startedChat)
@@ -551,6 +574,7 @@ export function AiCreateModal({
             >
               <AiSidebar
                 brandId={brandId}
+                platform={platform}
                 pages={pages}
                 hasProfile={availability.hasProfile}
                 historyDays={availability.historyDays}

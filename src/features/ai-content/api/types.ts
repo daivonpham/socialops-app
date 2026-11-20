@@ -1,3 +1,6 @@
+/** Networks the AI writes for. */
+export type AiPlatform = 'facebook' | 'tiktok'
+
 export type AiAvailability = {
   /** The system switch is on and the plan includes AI. */
   enabled: boolean
@@ -11,7 +14,8 @@ export type AiAvailability = {
   /** May publish without approval: sees "Publish now" rather than "Send for approval". */
   canPublishDirect: boolean
   canManageChannels: boolean
-  pages: Array<{ id: string; name: string; avatarUrl?: string }>
+  /** Facebook Pages and TikTok accounts; the dialog shows those of the network it was opened for. */
+  pages: Array<{ id: string; name: string; platform: AiPlatform; avatarUrl?: string }>
   hasProfile: boolean
   /** No Brand profile yet, and the first-run screen was neither skipped nor finished. */
   needsOnboarding: boolean
@@ -68,6 +72,8 @@ export type ConfirmAiOnboardingInput = UpdateBrandAiProfileInput & {
 
 export type StartAiGenerationInput = {
   socialAccountIds: string[]
+  /** Where the post goes; every account picked must be on it. */
+  platform: AiPlatform
   templateKey?: string
   brief: Record<string, string>
   /** Send for approval instead of showing a suggestion in the chat. */
@@ -140,6 +146,7 @@ export type AiGeneration = {
   brief: Record<string, string>
   templateKey: string | null
   socialAccountIds: string[]
+  platform: AiPlatform
   autoSubmit: boolean
   attachments: AiTurnFile[]
   suggestion: AiSuggestion | null
@@ -180,6 +187,8 @@ export type AiPostIntent = 'publish_now' | 'approval_publish_now'
  */
 export type AiSuggestionHandoff = {
   generationId: string
+  /** The post screen to open. */
+  platform: AiPlatform
   socialAccountIds: string[]
   captions: Record<string, string>
   /** One caption for whichever Pages are picked: the request was made without Pages. */

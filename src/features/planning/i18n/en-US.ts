@@ -453,9 +453,9 @@ export const planningEnUS = {
       consentBranded:
         "By posting, you agree to TikTok's <branded>Branded Content Policy</branded> and <music>Music Usage Confirmation</music>.",
       photoRejected_one:
-        '{{count}} file was left out: TikTok takes JPEG or WebP photos up to 20 MB.',
+        '{{count}} file was left out: TikTok takes JPEG, PNG or WebP photos up to 20 MB.',
       photoRejected_other:
-        '{{count}} files were left out: TikTok takes JPEG or WebP photos up to 20 MB.',
+        '{{count}} files were left out: TikTok takes JPEG, PNG or WebP photos up to 20 MB.',
       videoRejected_one: '{{count}} file was left out: SocialOps posts MP4 videos to TikTok.',
       videoRejected_other: '{{count}} files were left out: SocialOps posts MP4 videos to TikTok.',
     },

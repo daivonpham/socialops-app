@@ -310,19 +310,20 @@ export default function PlanningPage() {
           />
         </div>
         <div className="flex w-full items-center gap-2 md:w-auto md:gap-3 [&>*]:min-w-0 [&>*]:flex-1 md:[&>*]:flex-none">
-          {platform !== 'tiktok' ? (
-            <AiCreateButton
-              brandId={brandId}
-              defaultPageId={query.accountId !== 'all' ? query.accountId : undefined}
-              onCreated={() =>
-                void queryClient.invalidateQueries({ queryKey: PLANNING_QUERY_KEYS.root(brandId) })
-              }
-              onOpenContent={(contentId) => navigate(getPlanningEditPath('facebook', contentId))}
-              onUseSuggestion={(aiSuggestion) =>
-                navigate(getPlanningCreatePath('facebook'), { state: { aiSuggestion } })
-              }
-            />
-          ) : null}
+          <AiCreateButton
+            brandId={brandId}
+            platform={platform === 'tiktok' ? 'tiktok' : 'facebook'}
+            defaultPageId={query.accountId !== 'all' ? query.accountId : undefined}
+            onCreated={() =>
+              void queryClient.invalidateQueries({ queryKey: PLANNING_QUERY_KEYS.root(brandId) })
+            }
+            onOpenContent={(contentId, contentPlatform) =>
+              navigate(getPlanningEditPath(contentPlatform, contentId))
+            }
+            onUseSuggestion={(aiSuggestion) =>
+              navigate(getPlanningCreatePath(aiSuggestion.platform), { state: { aiSuggestion } })
+            }
+          />
           <CreatePostButton accounts={accounts} platform={platform} />
         </div>
       </div>

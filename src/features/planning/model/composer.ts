@@ -51,6 +51,8 @@ export type PlanningComposerDraft = {
 
 /** What "Use" on an AI suggestion fills the composer with. */
 export type ComposerAiSuggestion = {
+  /** The post screen it opens on; Facebook when not given. */
+  platform?: PlanningPlatform
   socialAccountIds: string[]
   captions: Record<string, string>
   /** The caption of a suggestion made without Pages: the post screen picks them. */
@@ -59,7 +61,8 @@ export type ComposerAiSuggestion = {
 }
 
 /**
- * A Facebook post filled from an AI suggestion, for Pages still in `accountIds`. Pages with
+ * A post filled from an AI suggestion, for Pages still in `accountIds`. On TikTok, images make a
+ * photo post and their absence a video post; its audience is still chosen on the post screen. Pages with
  * different captions get them each; the same caption everywhere stays shared. Markdown comes off.
  */
 export function createComposerDraftFromAiSuggestion(
@@ -71,8 +74,12 @@ export function createComposerDraftFromAiSuggestion(
   const captions = targetIds.map((id) => toPlainCaption(suggestion.captions[id] ?? ''))
   const caption = captions[0] ?? toPlainCaption(suggestion.generalCaption ?? '')
   const perAccount = targetIds.length > 1 && captions.some((text) => text !== caption)
+  const platform = suggestion.platform ?? 'facebook'
   return {
-    ...createComposerDraft('facebook'),
+    ...createComposerDraft(platform),
+    ...(platform === 'tiktok'
+      ? { postType: suggestion.images.length ? 'tiktok_photo' : 'tiktok_video' }
+      : {}),
     targetIds,
     caption,
     captionMode: perAccount ? 'per_target' : 'shared',
@@ -131,8 +138,8 @@ export const TIKTOK_LIMITS = {
   photoTitle: 90,
   photoDescription: 4000,
   photos: 35,
-  /** TikTok takes JPEG and WebP photos only, up to 20 MB each. */
-  photoTypes: ['image/jpeg', 'image/webp'],
+  /** TikTok takes JPEG and WebP photos, up to 20 MB each; SocialOps sends a PNG as a JPEG copy. */
+  photoTypes: ['image/jpeg', 'image/webp', 'image/png'],
   photoBytes: 20 * 1024 * 1024,
   /** TikTok also takes MOV and WebM, but SocialOps stores MP4 videos only. */
   videoTypes: ['video/mp4'],

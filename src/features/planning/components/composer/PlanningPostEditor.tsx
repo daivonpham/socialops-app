@@ -122,7 +122,7 @@ export function PlanningPostEditor({
     const maxMedia = draft.postType === 'tiktok_photo' ? TIKTOK_LIMITS.photos : 10
     const slots = singleMedia ? 1 : maxMedia - draft.media.length
     const picked = [...files]
-    // TikTok takes JPEG and WebP photos up to 20 MB: say so instead of dropping files silently.
+    // TikTok photos are JPEG, PNG or WebP up to 20 MB: say so instead of dropping files silently.
     setRejectedFiles(
       picked.filter(
         (file) =>
