@@ -18,7 +18,8 @@ import {
   type PlanningApprovalStatus,
   type PlanningContent,
 } from '../api'
-import { approvalStatusLabelKey, approvalTransitions } from '../model'
+import { approvalStatusLabelKey, approvalTransitions, readTikTokSettings } from '../model'
+import { TikTokTermsConsent } from './TikTokTermsConsent'
 
 const STATUS_CLASS: Record<PlanningApprovalStatus, string> = {
   none: 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200',
@@ -29,17 +30,22 @@ const STATUS_CLASS: Record<PlanningApprovalStatus, string> = {
 
 /**
  * Changes a post's approval status, with the toast that follows. An approval whose requested time
- * has passed asks the approver how it goes out instead: render `dialog` for that.
+ * has passed asks the approver how it goes out instead, and approving a TikTok post first shows
+ * TikTok's terms, since approving is what sends it: render `dialog` for both.
  */
-export function useApprovalChange(brandId: string, contentId: string) {
+export function useApprovalChange(brandId: string, content: PlanningContent) {
+  const contentId = content.id
   const { t } = useTranslation('planning')
   const errorMessage = useApiErrorMessage('planning')
   const toast = useToast()
   const [expiredOpen, setExpiredOpen] = useState(false)
   const [newTime, setNewTime] = useState('')
+  const [consentOpen, setConsentOpen] = useState(false)
   const approval = useUpdatePlanningApproval(brandId)
+  const tiktok = content.platform === 'tiktok'
+  const branded = tiktok && readTikTokSettings(content.platformSettings ?? {}).brandContent
 
-  const change = (
+  const send = (
     approvalStatus: PlanningApprovalStatus,
     options: { publishNow?: boolean; scheduledAt?: string } = {},
   ) =>
@@ -48,6 +54,7 @@ export function useApprovalChange(brandId: string, contentId: string) {
       {
         onSuccess: () => {
           setExpiredOpen(false)
+          setConsentOpen(false)
           toast.success({ title: t(`approvalActions.done.${approvalStatus}`) })
         },
         onError: (error) => {
@@ -62,7 +69,49 @@ export function useApprovalChange(brandId: string, contentId: string) {
       },
     )
 
+  // TikTok asks for consent right before a post is sent to it; approving is that moment here.
+  const change: typeof send = (approvalStatus, options) => {
+    if (approvalStatus === 'approved' && tiktok && !consentOpen && !expiredOpen) {
+      setConsentOpen(true)
+      return
+    }
+    send(approvalStatus, options)
+  }
+
   const newTimeValid = Boolean(newTime) && new Date(newTime).getTime() > Date.now()
+
+  const consentDialog = consentOpen ? (
+    <Modal
+      open
+      width={480}
+      title={t('approvalActions.tiktokConsent.title')}
+      onClose={() => setConsentOpen(false)}
+      footer={
+        <div className="flex justify-end gap-2" onClick={(event) => event.stopPropagation()}>
+          <Button disabled={approval.isPending} onClick={() => setConsentOpen(false)}>
+            {t('approvalActions.tiktokConsent.cancel')}
+          </Button>
+          <Button
+            variant="primary"
+            icon={<IconCheck aria-hidden />}
+            loading={approval.isPending}
+            onClick={() => send('approved')}
+          >
+            {t('approvalActions.to.approved')}
+          </Button>
+        </div>
+      }
+    >
+      <div className="grid gap-3" onClick={(event) => event.stopPropagation()}>
+        <p className="text-body-md text-text-secondary">
+          {t('approvalActions.tiktokConsent.description')}
+        </p>
+        <p className="text-body-sm text-text-secondary">
+          <TikTokTermsConsent branded={branded} />
+        </p>
+      </div>
+    </Modal>
+  ) : null
 
   const dialog = expiredOpen ? (
     <Modal
@@ -75,7 +124,7 @@ export function useApprovalChange(brandId: string, contentId: string) {
           <Button
             loading={approval.isPending && approval.variables?.publishNow}
             disabled={approval.isPending}
-            onClick={() => change('approved', { publishNow: true })}
+            onClick={() => send('approved', { publishNow: true })}
           >
             {t('approvalActions.expired.publishNow')}
           </Button>
@@ -83,7 +132,7 @@ export function useApprovalChange(brandId: string, contentId: string) {
             variant="primary"
             loading={approval.isPending && Boolean(approval.variables?.scheduledAt)}
             disabled={!newTimeValid || approval.isPending}
-            onClick={() => change('approved', { scheduledAt: new Date(newTime).toISOString() })}
+            onClick={() => send('approved', { scheduledAt: new Date(newTime).toISOString() })}
           >
             {t('approvalActions.expired.schedule')}
           </Button>
@@ -110,7 +159,12 @@ export function useApprovalChange(brandId: string, contentId: string) {
     change,
     pending: approval.isPending,
     nextStatus: approval.variables?.approvalStatus,
-    dialog,
+    dialog: (
+      <>
+        {consentDialog}
+        {dialog}
+      </>
+    ),
   }
 }
 
@@ -127,7 +181,7 @@ export function ApprovalStatusSelect({
 }) {
   const { t } = useTranslation('planning')
   const [open, setOpen] = useState(false)
-  const { change, pending, dialog } = useApprovalChange(brandId, content.id)
+  const { change, pending, dialog } = useApprovalChange(brandId, content)
   const value = content.approvalStatus
   const { user } = useAuth()
   const transitions = approvalTransitions(content, { canApprove, canSubmit, userId: user?.id })
@@ -207,7 +261,7 @@ export function ApprovalButtons({
 }) {
   const { t } = useTranslation('planning')
   const { brandId } = useActiveBrand()
-  const { change, pending, nextStatus, dialog } = useApprovalChange(brandId ?? '', content.id)
+  const { change, pending, nextStatus, dialog } = useApprovalChange(brandId ?? '', content)
   const transitions = approvalTransitions(content, { canApprove, canSubmit: false })
   if (!brandId || !transitions.includes('approved')) return null
   return (

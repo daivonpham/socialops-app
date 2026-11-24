@@ -68,6 +68,12 @@ export const planningEnUS = {
     retry_wait: 'Waiting to retry',
   },
   approvalActions: {
+    tiktokConsent: {
+      title: 'Approve and send to TikTok?',
+      description:
+        'Approving sends this post to TikTok, now or at its scheduled time, with the settings chosen by its author.',
+      cancel: 'Cancel',
+    },
     to: {
       none: 'Withdraw from approval',
       pending: 'Submit for approval',
@@ -175,6 +181,8 @@ export const planningEnUS = {
     morePages_other: '+{{formattedCount}} other accounts',
   },
   detail: {
+    linkMissing:
+      'This post could not be opened. It may have been deleted, or you can no longer see it.',
     retryAllFailed_one: 'Retry',
     retryAllFailed_other: 'Retry {{count}} Pages',
     deleteAll: 'Delete all',
@@ -423,6 +431,8 @@ export const planningEnUS = {
         SELF_ONLY: 'Only me',
       },
       brandedNotPrivate: 'Branded content visibility cannot be set to private.',
+      publicPending:
+        'Public posts open once TikTok has approved SocialOps. Until then TikTok only accepts private ones.',
       interactions: 'Allow users to',
       allowComment: 'Comment',
       allowDuet: 'Duet',

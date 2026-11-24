@@ -186,10 +186,7 @@ export const workspacesEnUS = {
     goToApp: 'Go to SocialOps',
   },
   inbox: {
-    title: 'Notifications',
-    trigger: 'Notifications',
-    triggerWithCount: 'Notifications ({{count}} pending invitations)',
-    empty: 'No new notifications.',
+    title: 'Pending invitations',
     message: '{{inviter}} invited you to join {{workspace}}',
     expires: 'Expires {{date}}',
     accept: 'Accept',

@@ -91,6 +91,7 @@ Chúng tôi cũng có thể cung cấp dữ liệu khi pháp luật hoặc cơ q
 - Phiên đăng nhập: 30 ngày sau khi kết thúc.
 - Số liệu của tài khoản Facebook hoặc TikTok đã ngắt kết nối: 90 ngày sau khi ngắt.
 - Lịch sử đăng bài, lịch sử làm mới báo cáo và lời mời đã hết hạn: 90 ngày.
+- Thông báo trong ứng dụng: 90 ngày.
 - Nhật ký bảo mật: 365 ngày.`,
       },
       deletion: {

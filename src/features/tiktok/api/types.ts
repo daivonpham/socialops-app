@@ -62,6 +62,8 @@ export type TikTokCreatorInfoDto = {
   stitchDisabled: boolean
   maxVideoPostDurationSec: number
   canUploadDrafts: boolean
+  /** "Public" is held back until TikTok audits SocialOps; TikTok refuses public posts before. */
+  publicPostingPending?: boolean
 }
 
 export type TikTokRange = '7d' | '28d' | '30d' | '90d'

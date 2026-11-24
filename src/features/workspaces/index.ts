@@ -1,5 +1,5 @@
-export { WORKSPACE_QUERY_KEYS, useCreateWorkspace, useWorkspaces } from './api'
+export { WORKSPACE_QUERY_KEYS, useCreateWorkspace, useMyInvitations, useWorkspaces } from './api'
 export type { WorkspaceDto } from './api'
-export { InvitationsInbox } from './components/InvitationsInbox'
+export { PendingInvitations } from './components/PendingInvitations'
 export { WorkspaceSwitcher } from './components/WorkspaceSwitcher'
 export { WORKSPACES_I18N } from './i18n'

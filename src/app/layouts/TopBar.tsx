@@ -4,7 +4,8 @@ import { ROUTES } from '@/app/router/paths'
 import { getNavEntries } from '@/app/router/routes'
 import { BrandSwitcher } from '@/features/brands'
 import { PLATFORMS } from '@/features/social-accounts'
-import { InvitationsInbox, WorkspaceSwitcher } from '@/features/workspaces'
+import { NotificationsBell } from '@/features/notifications'
+import { WorkspaceSwitcher } from '@/features/workspaces'
 import {
   Avatar,
   Button,
@@ -18,11 +19,12 @@ import {
   useLocaleMenu,
 } from '@/shared/ui'
 import { useAuth } from '@/shared/auth'
+import { useOpenNotification } from './useOpenNotification'
 
 const topNav = getNavEntries('top')
 
 /**
- * Chrome only — zero API calls. Data-driven parts (workspace/brand switchers, invitations inbox)
+ * Chrome only — zero API calls. Data-driven parts (workspace/brand switchers, notification bell)
  * are feature components composed in. Height derives from compact tokens: 32px
  * controls + 8px vertical padding (design.md defines no explicit top bar height);
  * horizontal padding follows the page gutters of §6.1.
@@ -110,7 +112,7 @@ export function TopBar({
           >
             {platformNav}
           </nav>
-          <InvitationsInbox />
+          <NotificationBell />
           <AccountMenu />
         </div>
         <TopLoadingBar label={t('topbar.loading')} />
@@ -127,6 +129,11 @@ export function TopBar({
       ) : null}
     </>
   )
+}
+
+function NotificationBell() {
+  const open = useOpenNotification()
+  return <NotificationsBell onOpen={(value) => void open(value)} />
 }
 
 function AccountMenu() {

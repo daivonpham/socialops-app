@@ -71,6 +71,12 @@ export const planningViVN = {
     retry_wait: 'Chờ thử lại',
   },
   approvalActions: {
+    tiktokConsent: {
+      title: 'Duyệt và gửi lên TikTok?',
+      description:
+        'Duyệt là bài sẽ được gửi lên TikTok, ngay hoặc vào giờ đã hẹn, với các cài đặt người tạo bài đã chọn.',
+      cancel: 'Hủy',
+    },
     to: {
       none: 'Rút yêu cầu duyệt',
       pending: 'Gửi duyệt',
@@ -179,6 +185,7 @@ export const planningViVN = {
     morePages_other: '+{{formattedCount}} tài khoản khác',
   },
   detail: {
+    linkMissing: 'Không mở được bài này. Có thể bài đã bị xoá hoặc bạn không còn quyền xem.',
     retryAllFailed_one: 'Đăng lại',
     retryAllFailed_other: 'Đăng lại {{count}} Trang',
     deleteAll: 'Xóa toàn bộ',
@@ -423,6 +430,8 @@ export const planningViVN = {
         SELF_ONLY: 'Chỉ mình tôi',
       },
       brandedNotPrivate: 'Nội dung có thương hiệu không thể để riêng tư.',
+      publicPending:
+        'Đăng công khai sẽ mở sau khi TikTok duyệt SocialOps. Trước đó TikTok chỉ nhận bài riêng tư.',
       interactions: 'Cho phép người xem',
       allowComment: 'Bình luận',
       allowDuet: 'Duet',
@@ -451,8 +460,10 @@ export const planningViVN = {
       consentMusic: 'Khi đăng, bạn đồng ý với <music>Xác nhận sử dụng nhạc</music> của TikTok.',
       consentBranded:
         'Khi đăng, bạn đồng ý với <branded>Chính sách nội dung có thương hiệu</branded> và <music>Xác nhận sử dụng nhạc</music> của TikTok.',
-      photoRejected_one: 'Đã bỏ {{count}} tệp: TikTok chỉ nhận ảnh JPEG, PNG hoặc WebP tối đa 20 MB.',
-      photoRejected_other: 'Đã bỏ {{count}} tệp: TikTok chỉ nhận ảnh JPEG, PNG hoặc WebP tối đa 20 MB.',
+      photoRejected_one:
+        'Đã bỏ {{count}} tệp: TikTok chỉ nhận ảnh JPEG, PNG hoặc WebP tối đa 20 MB.',
+      photoRejected_other:
+        'Đã bỏ {{count}} tệp: TikTok chỉ nhận ảnh JPEG, PNG hoặc WebP tối đa 20 MB.',
       videoRejected_one: 'Đã bỏ {{count}} tệp: SocialOps chỉ đăng video MP4 lên TikTok.',
       videoRejected_other: 'Đã bỏ {{count}} tệp: SocialOps chỉ đăng video MP4 lên TikTok.',
     },

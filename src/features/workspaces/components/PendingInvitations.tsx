@@ -1,9 +1,8 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { AUTH_ROUTES } from '@/features/auth'
 import { formatDate } from '@/shared/i18n/format'
-import { Avatar, Badge, Button, IconBell, Popover, useToast } from '@/shared/ui'
+import { Avatar, Button, SectionLabel, useToast } from '@/shared/ui'
 import {
   useAcceptInvitationById,
   useDeclineInvitationById,
@@ -14,65 +13,23 @@ import { useEnterWorkspace } from '../model/use-enter-workspace'
 import { useApiErrorMessage } from '@/shared/hooks'
 
 /**
- * Top-bar inbox for pending Workspace invitations, so an invite can be accepted without the
- * email link (e.g. after first signing in with the wrong account).
+ * Pending Workspace invitations, accepted or declined in place, so an invite works without the
+ * email link (e.g. after first signing in with the wrong account). Shown at the top of the
+ * notification bell; renders nothing when none is waiting.
  */
-export function InvitationsInbox() {
+export function PendingInvitations({ onDone }: { onDone: () => void }) {
   const { t } = useTranslation('workspaces')
-  const [open, setOpen] = useState(false)
-  const invitations = useMyInvitations()
-  const items = invitations.data ?? []
-
+  const items = useMyInvitations().data ?? []
+  if (!items.length) return null
   return (
-    <Popover
-      open={open}
-      onOpenChange={setOpen}
-      placement="bottomRight"
-      content={
-        <div className="grid w-[22rem] max-w-[calc(100vw-2rem)]">
-          <div className="border-b border-border-subtle px-4 py-3">
-            <p className="text-label-md text-text-primary">{t('inbox.title')}</p>
-          </div>
-          {items.length ? (
-            <ul className="max-h-[26rem] divide-y divide-border-subtle overflow-y-auto">
-              {items.map((invitation) => (
-                <InvitationItem
-                  key={invitation.id}
-                  invitation={invitation}
-                  onDone={() => setOpen(false)}
-                />
-              ))}
-            </ul>
-          ) : (
-            <div className="grid justify-items-center gap-2 px-4 py-8 text-center">
-              <span className="flex size-10 items-center justify-center rounded-full bg-bg-surface-subtle text-icon-md text-text-tertiary">
-                <IconBell aria-hidden />
-              </span>
-              <p className="text-body-sm text-text-tertiary">{t('inbox.empty')}</p>
-            </div>
-          )}
-        </div>
-      }
-    >
-      <button
-        type="button"
-        aria-label={
-          items.length ? t('inbox.triggerWithCount', { count: items.length }) : t('inbox.trigger')
-        }
-        className="relative flex size-10 items-center justify-center rounded-lg text-icon-md text-text-secondary outline-none hover:bg-bg-surface-subtle focus-visible:focus-ring"
-      >
-        <IconBell aria-hidden />
-        {items.length ? (
-          <Badge
-            aria-hidden
-            count={items.length > 9 ? '9+' : items.length}
-            tone="danger"
-            placement="corner"
-            className="-end-1 -top-1"
-          />
-        ) : null}
-      </button>
-    </Popover>
+    <section aria-label={t('inbox.title')} className="border-b border-border-subtle">
+      <SectionLabel className="block px-4 pt-3">{t('inbox.title')}</SectionLabel>
+      <ul className="divide-y divide-border-subtle">
+        {items.map((invitation) => (
+          <InvitationItem key={invitation.id} invitation={invitation} onDone={onDone} />
+        ))}
+      </ul>
+    </section>
   )
 }
 

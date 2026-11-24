@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 import { AiCreateButton } from '@/features/ai-content'
@@ -60,6 +60,7 @@ import { PlanningCalendar } from '../components/PlanningCalendar'
 import { PlanningFilters } from '../components/PlanningFilters'
 import { PlanningList } from '../components/PlanningList'
 import { PlanningPostModal } from '../components/PlanningPostDrawer'
+import { useLinkedContent } from '../model/use-linked-content'
 import { planningCalendarWindows } from '../model/calendar-window'
 
 /** Failures that reconnecting the Page fixes; their toast offers to reconnect it. */
@@ -191,6 +192,21 @@ export default function PlanningPage() {
           refetch: () => void listQuery.refetch(),
         }
       : calendarQuery
+  const [searchParams, setSearchParams] = useSearchParams()
+  useLinkedContent(brandId, openDetails, () => toast.error({ title: t('detail.linkMissing') }))
+  // `?aiChat=<id>` (an AI notification's link) opens that chat in the AI dialog.
+  const clearAiChatParam = useCallback(
+    () =>
+      setSearchParams(
+        (current) => {
+          const next = new URLSearchParams(current)
+          next.delete('aiChat')
+          return next
+        },
+        { replace: true },
+      ),
+    [setSearchParams],
+  )
   const selectedContentQuery = usePlanningContent(brandId, selectedContent?.id ?? null)
   useEffect(() => {
     if (selectedContentQuery.data) setSelectedContent(selectedContentQuery.data)
@@ -323,6 +339,8 @@ export default function PlanningPage() {
             onUseSuggestion={(aiSuggestion) =>
               navigate(getPlanningCreatePath(aiSuggestion.platform), { state: { aiSuggestion } })
             }
+            openChatId={searchParams.get('aiChat')}
+            onChatOpened={clearAiChatParam}
           />
           <CreatePostButton accounts={accounts} platform={platform} />
         </div>

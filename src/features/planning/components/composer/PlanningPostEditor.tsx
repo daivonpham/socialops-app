@@ -56,6 +56,7 @@ export function PlanningPostEditor({
   mediaUploads = {},
   onRetryUpload,
   onMediaAdded,
+  onTikTokBlockedChange,
 }: {
   draft: PlanningComposerDraft
   accounts: PlanningAccount[]
@@ -68,6 +69,8 @@ export function PlanningPostEditor({
   onRetryUpload?: () => void
   /** Picked files, to be stored right away. */
   onMediaAdded?: (media: ComposerMedia[]) => void
+  /** TikTok cannot take the post right now; see `TikTokPostSettings`. */
+  onTikTokBlockedChange?: (blocked: boolean) => void
 }) {
   const { t } = useTranslation('planning')
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -504,6 +507,7 @@ export function PlanningPostEditor({
             setDraft={setDraft}
             accounts={selectedAccounts}
             disabled={published}
+            onBlockedChange={onTikTokBlockedChange}
           />
         </div>
       ) : null}

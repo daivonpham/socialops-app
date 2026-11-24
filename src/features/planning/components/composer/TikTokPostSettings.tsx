@@ -1,5 +1,5 @@
 import { useEffect, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react'
-import { Trans, useTranslation } from 'react-i18next'
+import { useTranslation } from 'react-i18next'
 import { TIKTOK_PRIVACY_LEVELS, useTikTokCreatorInfos } from '@/features/tiktok'
 import { useApiErrorMessage } from '@/shared/hooks'
 import { useActiveBrand } from '@/shared/scope'
@@ -16,10 +16,8 @@ import {
   Tooltip,
 } from '@/shared/ui'
 import type { PlanningAccount } from '../../model'
+import { TikTokTermsConsent } from '../TikTokTermsConsent'
 import { TIKTOK_LIMITS, readTikTokSettings, type PlanningComposerDraft } from '../../model/composer'
-
-const MUSIC_USAGE_URL = 'https://www.tiktok.com/legal/page/global/music-usage-confirmation/en'
-const BRANDED_CONTENT_URL = 'https://www.tiktok.com/legal/page/global/bc-policy/en'
 
 /** A video's length in seconds, read from the file once it loads. */
 function useVideoDuration(url?: string): number | null {
@@ -49,12 +47,18 @@ export function TikTokPostSettings({
   setDraft,
   accounts,
   disabled = false,
+  onBlockedChange,
 }: {
   draft: PlanningComposerDraft
   setDraft: Dispatch<SetStateAction<PlanningComposerDraft>>
   /** The accounts the post goes to. */
   accounts: PlanningAccount[]
   disabled?: boolean
+  /**
+   * Whether TikTok's guidelines forbid posting right now: an account's creator info is still
+   * loading or failed (it cannot post), or the video is longer than an account may post.
+   */
+  onBlockedChange?: (blocked: boolean) => void
 }) {
   const { t } = useTranslation('planning')
   const errorMessage = useApiErrorMessage('planning')
@@ -80,6 +84,7 @@ export function TikTokPostSettings({
   const privacyOptions = TIKTOK_PRIVACY_LEVELS.filter((level) =>
     loaded.length ? loaded.every((info) => info.privacyLevelOptions.includes(level)) : false,
   )
+  const publicPending = loaded.some((info) => info.publicPostingPending)
   const commentLocked = loaded.some((info) => info.commentDisabled)
   const duetLocked = loaded.some((info) => info.duetDisabled)
   const stitchLocked = loaded.some((info) => info.stitchDisabled)
@@ -89,6 +94,11 @@ export function TikTokPostSettings({
   const tooLong = duration !== null && Number.isFinite(maxDuration) && duration > maxDuration
   const draftsAllowed = loaded.length > 0 && loaded.every((info) => info.canUploadDrafts)
   const direct = settings.mode === 'direct'
+  const blocked =
+    accounts.length > 0 && (loading || infos.some((query) => query.isError) || (!photo && tooLong))
+  useEffect(() => onBlockedChange?.(blocked), [blocked, onBlockedChange])
+  // Leaving TikTok (or the screen) lifts the block.
+  useEffect(() => () => onBlockedChange?.(false), [onBlockedChange])
 
   // A choice no longer offered (accounts changed) is dropped rather than sent.
   useEffect(() => {
@@ -186,7 +196,7 @@ export function TikTokPostSettings({
             onChange={(event) => set({ photoTitle: event.target.value })}
           />
           <span className="text-end text-caption tabular-nums text-text-tertiary">
-            {[...settings.photoTitle].length}/{TIKTOK_LIMITS.photoTitle}
+            {settings.photoTitle.length}/{TIKTOK_LIMITS.photoTitle}
           </span>
         </Field>
       ) : null}
@@ -220,6 +230,11 @@ export function TikTokPostSettings({
                 })}
               />
             )}
+            {publicPending ? (
+              <span className="text-caption text-text-tertiary">
+                {t('composer.tiktok.publicPending')}
+              </span>
+            ) : null}
           </Field>
 
           <Field label={t('composer.tiktok.interactions')}>
@@ -382,34 +397,10 @@ export function TikTokPostSettings({
           {direct ? t('composer.tiktok.processing') : t('composer.tiktok.inboxProcessing')}
         </span>
         <span>
-          <Trans
-            t={t}
-            i18nKey={
-              settings.brandContent
-                ? 'composer.tiktok.consentBranded'
-                : 'composer.tiktok.consentMusic'
-            }
-            components={{
-              music: <TermsLink href={MUSIC_USAGE_URL} />,
-              branded: <TermsLink href={BRANDED_CONTENT_URL} />,
-            }}
-          />
+          <TikTokTermsConsent branded={settings.brandContent} />
         </span>
       </div>
     </div>
-  )
-}
-
-function TermsLink({ href, children }: { href: string; children?: ReactNode }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="font-semibold text-link hover:text-link-hover"
-    >
-      {children}
-    </a>
   )
 }
 

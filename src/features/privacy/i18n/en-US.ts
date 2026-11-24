@@ -88,6 +88,7 @@ We may also disclose data when required by law or by a competent authority.`,
 - Sign-in sessions: 30 days after they end.
 - Analytics of a disconnected Facebook or TikTok account: 90 days after it is disconnected.
 - Publishing history, report refreshes and expired invitations: 90 days.
+- In-app notifications: 90 days.
 - Security audit trail: 365 days.`,
       },
       deletion: {

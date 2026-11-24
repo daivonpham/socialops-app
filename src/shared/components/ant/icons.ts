@@ -56,6 +56,7 @@ export { IoSettingsOutline as IconSettingsOutline } from 'react-icons/io5'
 export { MdFacebook as IconFacebook } from 'react-icons/md'
 export { MdOutlineWorkspaces as IconWorkspaces } from 'react-icons/md'
 export { FaTiktok as IconTikTok } from 'react-icons/fa6'
+export { RiNotification4Line as IconNotification } from 'react-icons/ri'
 export {
   HiOutlineMail as IconMail,
   HiOutlineBell as IconBell,

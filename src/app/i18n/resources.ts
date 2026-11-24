@@ -10,6 +10,7 @@ import { PRIVACY_I18N } from '@/features/privacy'
 import { REPORTS_I18N } from '@/features/reports'
 import { GOOGLE_I18N } from '@/features/google'
 import { AI_CONTENT_I18N } from '@/features/ai-content'
+import { NOTIFICATIONS_I18N } from '@/features/notifications'
 import { commonEnUS, commonViVN, errorsEnUS, errorsViVN } from '@/shared/i18n'
 import { appEnUS } from './en-US'
 import { appViVN } from './vi-VN'
@@ -30,6 +31,7 @@ export const defaultResources = {
   reports: REPORTS_I18N['en-US'],
   google: GOOGLE_I18N['en-US'],
   aiContent: AI_CONTENT_I18N['en-US'],
+  notifications: NOTIFICATIONS_I18N['en-US'],
 } as const
 
 export const resources = {
@@ -50,5 +52,6 @@ export const resources = {
     reports: REPORTS_I18N['vi-VN'],
     google: GOOGLE_I18N['vi-VN'],
     aiContent: AI_CONTENT_I18N['vi-VN'],
+    notifications: NOTIFICATIONS_I18N['vi-VN'],
   },
 } as const

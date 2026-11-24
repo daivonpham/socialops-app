@@ -9,7 +9,7 @@ Chỉ đọc phần cần cho việc đang làm, không đọc toàn bộ source
 - Đụng tới API thì đọc thêm `../socialops-api/CLAUDE.md`; file này không tự nạp khi mở app.
 - Trạng thái dự án và việc tiếp theo: `../socialops-api/docs/PROJECT_HANDOFF.md`.
 - Việc còn lại và thứ tự: `../socialops-api/docs/AI_CONTENT_PLAN.md`.
-- Kế hoạch theo tính năng: `../socialops-api/docs/*_PLAN.md` (`AI_CONTENT_PLAN`, `ROLES_APPROVAL_PLAN`, `REPORTS_PLAN`, `REPORTS_EXPORT_PLAN`, `FACEBOOK_PUBLISHING_PLAN`, `TIKTOK_PLAN`).
+- Kế hoạch theo tính năng: `../socialops-api/docs/*_PLAN.md` (`AI_CONTENT_PLAN`, `ROLES_APPROVAL_PLAN`, `REPORTS_PLAN`, `REPORTS_EXPORT_PLAN`, `FACEBOOK_PUBLISHING_PLAN`, `TIKTOK_PLAN`, `NOTIFICATIONS_PLAN`).
 - Skill nằm ở `.agent/skills/<tên>/SKILL.md`. Mở `references/` chỉ khi SKILL.md trỏ tới.
 
 | Việc                         | Skill                                                      |
@@ -44,7 +44,7 @@ Chỉ đọc phần cần cho việc đang làm, không đọc toàn bộ source
 
 - `src/app/`: shell, router (`router/paths.ts`, `routes.tsx`), providers, i18n gốc (`i18n/resources.ts` đăng ký namespace).
 - `src/features/<tên>/`: `api/` (`service.ts`, `hooks.ts`, `types.ts`), `components/`, `pages/`, `i18n/{vi-VN,en-US}.ts`, `index.ts`.
-  - Features: `auth`, `brands`, `workspaces`, `overview`, `facebook`, `tiktok`, `social-accounts`, `planning`, `reports`, `google`, `profile`, `privacy`, `ai-content` (nút "Tạo bằng AI" cạnh nút tạo bài ở Planning, hồ sơ AI của Brand).
+  - Features: `auth`, `brands`, `workspaces`, `overview`, `facebook`, `tiktok`, `social-accounts`, `planning`, `reports`, `google`, `profile`, `privacy`, `ai-content` (nút "Tạo bằng AI" cạnh nút tạo bài ở Planning, hồ sơ AI của Brand), `notifications` (chuông ở header: lời mời đang chờ và thông báo mọi Workspace, cập nhật qua SSE).
 - `src/shared/ui/`: primitives (`primitives/`), `DataTable`, `charts`, `AsyncState`… Mọi UI và icon import từ `@/shared/ui`.
 - `src/shared/`: `api` (http client, `errors.ts` đọc lỗi API), `auth`, `permissions`, `scope` (workspace/brand), `hooks`, `lib`, `styles/tokens.ts`.
 

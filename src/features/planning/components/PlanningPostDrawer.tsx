@@ -1107,9 +1107,28 @@ function canRetryPublication(publication: PlanningPublication): boolean {
       'FACEBOOK_PUBLISH_PERMISSION_MISSING',
       'FACEBOOK_REQUEST_FAILED',
       'INVALID_MEDIA',
+      ...TIKTOK_NO_RETRY,
     ].includes(publication.errorCode ?? '')
   )
 }
+
+/**
+ * TikTok refusals that must not be sent again as they are: TikTok says not to retry (spam flags, a
+ * ban, the daily cap, a removed authorization), or the file or a setting must change first.
+ */
+const TIKTOK_NO_RETRY = [
+  'TIKTOK_POST_AUTH_REMOVED',
+  'TIKTOK_POSTING_BANNED',
+  'TIKTOK_POST_SPAM_TEXT',
+  'TIKTOK_POST_SPAM',
+  'TIKTOK_DAILY_POST_LIMIT',
+  'TIKTOK_POST_FILE_FORMAT',
+  'TIKTOK_POST_DURATION',
+  'TIKTOK_POST_FRAME_RATE',
+  'TIKTOK_POST_PICTURE_SIZE',
+  'TIKTOK_PRIVACY_LEVEL_INVALID',
+  'TIKTOK_UNAUDITED_PRIVATE_ONLY',
+]
 
 /** The post may exist on Facebook for this Page, so removing it means deleting it there. */
 function isOnFacebook(publication: PlanningPublication): boolean {

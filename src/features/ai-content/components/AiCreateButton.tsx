@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useAuth } from '@/shared/auth'
 import { ClickWave } from '@/shared/ui'
 import { useAiAvailability, type AiPlatform, type AiSuggestionHandoff } from '../api'
 import { AiCreateModal } from './AiCreateModal'
 import { AiMark } from './AiMark'
+import { rememberOpenChat } from '../model/chatMemory'
 
 /**
  * Sits beside "Create post". Shows only when AI is switched on and this person may create posts,
@@ -17,6 +19,8 @@ export function AiCreateButton({
   onUseSuggestion,
   onCreated,
   className = '',
+  openChatId = null,
+  onChatOpened,
 }: {
   brandId: string | null
   /** The network the post is for: the dialog offers only its accounts. */
@@ -28,6 +32,9 @@ export function AiCreateButton({
   onCreated: () => void
   /** Width and placement from the toolbar it sits in, e.g. full width on a phone. */
   className?: string
+  /** Opens the dialog on this chat, e.g. from a notification; `onChatOpened` then clears it. */
+  openChatId?: string | null
+  onChatOpened?: () => void
 }) {
   const { t } = useTranslation('aiContent')
   const availability = useAiAvailability(brandId)
@@ -36,6 +43,14 @@ export function AiCreateButton({
   const data = availability.data
   const shown = Boolean(brandId && data?.enabled && data.canGenerate)
   useRunningBorder(buttonRef, shown)
+  const { user } = useAuth()
+  useEffect(() => {
+    if (!openChatId || !brandId || !shown) return
+    // The dialog opens on the chat it remembers, so this chat becomes the remembered one.
+    rememberOpenChat(user?.id, brandId, openChatId)
+    setOpen(true)
+    onChatOpened?.()
+  }, [brandId, onChatOpened, openChatId, shown, user?.id])
   if (!brandId || !data?.enabled || !data.canGenerate) return null
 
   return (

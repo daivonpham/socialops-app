@@ -191,10 +191,7 @@ export const workspacesViVN = {
     goToApp: 'Vào SocialOps',
   },
   inbox: {
-    title: 'Thông báo',
-    trigger: 'Thông báo',
-    triggerWithCount: 'Thông báo ({{count}} lời mời đang chờ)',
-    empty: 'Không có thông báo mới.',
+    title: 'Lời mời đang chờ',
     message: '{{inviter}} mời bạn tham gia {{workspace}}',
     expires: 'Hết hạn {{date}}',
     accept: 'Chấp nhận',

@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderRoutes, scopeValue } from '@/test/render'
 import { server } from '@/test/server'
 import type { MyInvitationDto } from '../api'
-import { InvitationsInbox } from './InvitationsInbox'
+import { PendingInvitations } from './PendingInvitations'
 
 const invitation: MyInvitationDto = {
   id: 'inv-1',
@@ -20,13 +20,15 @@ const invitation: MyInvitationDto = {
 const selectBrand = vi.fn<(workspaceId: string, brandId: string) => void>()
 const setWorkspace = vi.fn<(workspaceId: string | null) => void>()
 
+const onDone = vi.fn()
+
 function renderInbox() {
-  return renderRoutes([{ path: '/', element: <InvitationsInbox /> }], {
+  return renderRoutes([{ path: '/', element: <PendingInvitations onDone={onDone} /> }], {
     scope: scopeValue({ selectBrand, setWorkspace }),
   })
 }
 
-describe('InvitationsInbox', () => {
+describe('PendingInvitations', () => {
   let pending: MyInvitationDto[]
   const calls: string[] = []
 
@@ -51,48 +53,33 @@ describe('InvitationsInbox', () => {
     )
   })
 
-  it('shows the pending count and the invitation details', async () => {
+  it('shows the invitation details', async () => {
     renderInbox()
-    const trigger = await screen.findByRole('button', {
-      name: 'Notifications (1 pending invitations)',
-    })
-    expect(within(trigger).getByText('1')).toBeInTheDocument()
-
-    await userEvent.click(trigger)
-    expect(await screen.findByText('Lan invited you to join North Agency')).toBeInTheDocument()
+    const section = await screen.findByRole('region', { name: 'Pending invitations' })
+    expect(within(section).getByText('Lan invited you to join North Agency')).toBeInTheDocument()
     expect(screen.getByText(/Editor/)).toBeInTheDocument()
   })
 
   it('accepts an invitation and opens the joined workspace', async () => {
     renderInbox()
-    await userEvent.click(
-      await screen.findByRole('button', { name: 'Notifications (1 pending invitations)' }),
-    )
     await userEvent.click(await screen.findByRole('button', { name: 'Accept' }))
 
     await waitFor(() => expect(calls).toEqual(['accept:inv-1']))
     // The user lands in the joined workspace with its first Brand open.
     await waitFor(() => expect(selectBrand).toHaveBeenCalledWith('ws-1', 'brand-1'))
     expect(await screen.findByText('You joined North Agency.')).toBeInTheDocument()
+    expect(onDone).toHaveBeenCalled()
   })
 
-  it('declines an invitation and clears the badge', async () => {
+  it('declines an invitation and removes it', async () => {
     renderInbox()
-    await userEvent.click(
-      await screen.findByRole('button', { name: 'Notifications (1 pending invitations)' }),
-    )
     await userEvent.click(await screen.findByRole('button', { name: 'Decline' }))
 
     await waitFor(() => expect(calls).toEqual(['decline:inv-1']))
     expect(selectBrand).not.toHaveBeenCalled()
     expect(setWorkspace).not.toHaveBeenCalled()
-    expect(await screen.findByRole('button', { name: 'Notifications' })).toBeInTheDocument()
-  })
-
-  it('says so when nothing is waiting', async () => {
-    pending = []
-    renderInbox()
-    await userEvent.click(await screen.findByRole('button', { name: 'Notifications' }))
-    expect(await screen.findByText('No new notifications.')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.queryByRole('region', { name: 'Pending invitations' })).not.toBeInTheDocument(),
+    )
   })
 })

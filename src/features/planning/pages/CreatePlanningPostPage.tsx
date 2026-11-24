@@ -438,6 +438,7 @@ function PlanningComposerWorkspace({
   const [submitPhase, setSubmitPhase] = useState<'uploading' | 'saving' | null>(null)
   // Caption errors stay hidden until the user first tries to post.
   const [captionErrorsShown, setCaptionErrorsShown] = useState(false)
+  const [tiktokBlocked, setTikTokBlocked] = useState(false)
   const [mediaUploads, setMediaUploads] = useState<Record<string, MediaUploadState>>({})
   const submitting = useRef(false)
   const [submitError, setSubmitError] = useState<unknown>(null)
@@ -598,7 +599,12 @@ function PlanningComposerWorkspace({
 
   // A missing caption does not lock the button: it shows its error once the user tries to post.
   // TikTok also needs its audience (no default) and, for commercial content, which kind.
-  const canSubmit = canSubmitComposer(draft, { ignoreCaption: true }) && !tiktokMissingChoice(draft)
+  // TikTok's guidelines: no post while an account cannot post or the video is too long for it.
+  const blockedByTikTok = draft.platform === 'tiktok' && tiktokBlocked
+  const canSubmit =
+    canSubmitComposer(draft, { ignoreCaption: true }) &&
+    !tiktokMissingChoice(draft) &&
+    !blockedByTikTok
   const validateSubmit = () => {
     if (publishIntent === 'draft' || !isComposerCaptionMissing(draft)) return true
     setCaptionErrorsShown(true)
@@ -651,6 +657,7 @@ function PlanningComposerWorkspace({
               mediaUploads={mediaUploads}
               onRetryUpload={retryUploads}
               onMediaAdded={startUploads}
+              onTikTokBlockedChange={setTikTokBlocked}
             />
           </div>
           {/* Pinned past the page's bottom padding, so nothing shows beneath it. */}
